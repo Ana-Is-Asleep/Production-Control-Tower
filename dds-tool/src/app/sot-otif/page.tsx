@@ -7,31 +7,33 @@ import {
 } from 'recharts';
 import { useData } from '../../context/DataContext';
 import { useFilters } from '../../hooks/useFilters';
-import { useAnnotations } from '../../hooks/useAnnotations';
 import { useKPIs } from '../../hooks/useKPIs';
-import { AnnotationRow } from '../../components/shared/AnnotationRow';
 import { computeKPI } from '../../lib/kpiFormulas';
+import { categorizeSKU } from '../../lib/skuUtils';
 import { formatDateShort } from '../../lib/dateUtils';
-import type { AnnotationEntry } from '../../types';
+
+const REASON_LABELS: Record<string, string> = {
+  supplier_delay: 'Supplier delay',
+  capacity_constraints: 'Capacity constraints',
+  material_shortage: 'Material shortage',
+  quality_issues: 'Quality issues',
+  documentation_issue: 'Documentation issue',
+  transit_delay: 'Transit delay',
+  booking_not_made: 'Booking not made',
+  data_issue: 'Data issue',
+  other: 'Other',
+};
 
 export default function SOTOTIFPage() {
   const router = useRouter();
-  const { allLines } = useData();
+  const { allLines, annotations, tmComment, tmName } = useData();
   const { weeklyLines, accumulatingLines, lastWeek, lastYear } = useFilters(allLines);
-  const annotations = useAnnotations();
   const kpis = useKPIs(weeklyLines, accumulatingLines);
-
-  const sotAnnotated = kpis.failingLines.filter((l) => computeKPI(l).sotFail && annotations.entries[`${l.po}-${l.line}`]?.reason).length;
-  const sotTotal = kpis.failingLines.filter((l) => computeKPI(l).sotFail).length;
-  const otifAnnotated = kpis.failingLines.filter((l) => computeKPI(l).otifFail && annotations.entries[`${l.po}-${l.line}`]?.reason).length;
-  const otifTotal = kpis.failingLines.filter((l) => computeKPI(l).otifFail).length;
 
   return (
     <div className="min-h-screen bg-white page-enter">
       <header className="bg-white border-b border-[#F0F0F0] px-6 py-3 flex items-center gap-3 sticky top-0 z-30">
-        <button onClick={() => router.push('/')} className="text-sm text-[#888] hover:text-[#111] transition-colors flex items-center gap-1.5">
-          ← Dashboard
-        </button>
+        <button onClick={() => router.push('/')} className="text-sm text-[#888] hover:text-[#111] transition-colors">← Dashboard</button>
         <span className="text-[#D0D0D0]">/</span>
         <span className="text-sm font-semibold text-[#111]">SOT + OTIF</span>
         <div className="flex-1" />
@@ -40,39 +42,37 @@ export default function SOTOTIFPage() {
         </span>
       </header>
 
-      <div className="max-w-5xl mx-auto px-6 py-8 space-y-10">
+      <div className="max-w-5xl mx-auto px-6 py-8 space-y-8">
         {/* hero numbers */}
-        <div className="grid grid-cols-2 gap-6">
-          <div className="bg-white rounded-2xl border border-[#F0F0F0] p-8" style={{ boxShadow: 'var(--shadow-card)' }}>
-            <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-3">SOT</p>
-            <p className="font-serif text-7xl font-bold text-[#111]">
-              {kpis.sotPct !== null ? `${kpis.sotPct}%` : '—'}
-            </p>
-            <p className={`text-sm font-medium mt-2 ${(kpis.sotPct ?? 0) >= 90 ? 'text-pass' : 'text-fail'}`}>
-              {kpis.sotPct !== null ? `${kpis.sotPct >= 90 ? '↑' : '↓'} ${Math.abs(kpis.sotPct - 90)}pp vs 90% target` : 'No data'}
-            </p>
-          </div>
-          <div className="bg-white rounded-2xl border border-[#F0F0F0] p-8" style={{ boxShadow: 'var(--shadow-card)' }}>
-            <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-3">OTIF</p>
-            <p className="font-serif text-7xl font-bold text-[#111]">
-              {kpis.otifPct !== null ? `${kpis.otifPct}%` : '—'}
-            </p>
-            <p className={`text-sm font-medium mt-2 ${(kpis.otifPct ?? 0) >= 90 ? 'text-pass' : 'text-warn'}`}>
-              {kpis.otifPct !== null ? `${kpis.otifPct >= 90 ? '↑' : '↓'} ${Math.abs(kpis.otifPct - 90)}pp vs 90% target` : 'No data'}
-            </p>
-          </div>
+        <div className="grid grid-cols-2 gap-5">
+          {[
+            { label: 'SOT', pct: kpis.sotPct, good: 'text-pass', bad: 'text-fail' },
+            { label: 'OTIF', pct: kpis.otifPct, good: 'text-pass', bad: 'text-warn' },
+          ].map((item) => (
+            <div key={item.label} className="bg-white rounded-2xl border border-[#F0F0F0] p-8" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-3">{item.label}</p>
+              <p className={`kpi-number font-serif text-8xl font-bold ${item.pct === null ? 'text-[#E0E0E0]' : item.pct >= 90 ? item.good : item.bad}`}>
+                {item.pct !== null ? `${item.pct}%` : '—'}
+              </p>
+              {item.pct !== null && (
+                <p className={`text-sm font-medium mt-2 ${item.pct >= 90 ? item.good : item.bad}`}>
+                  {item.pct >= 90 ? '↑' : '↓'} {Math.abs(item.pct - 90)}pp vs 90% target
+                </p>
+              )}
+            </div>
+          ))}
         </div>
 
-        {/* 10-week trend chart */}
+        {/* trend chart */}
         <div className="bg-white rounded-2xl border border-[#F0F0F0] p-6" style={{ boxShadow: 'var(--shadow-card)' }}>
           <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-5">10-Week Trend</p>
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer width="100%" height={200}>
             <ComposedChart data={kpis.weeklyTrend} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#F0F0F0" vertical={false} />
-              <XAxis dataKey="weekLabel" tick={{ fill: '#AAA', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis domain={[0, 100]} tick={{ fill: '#AAA', fontSize: 11 }} unit="%" axisLine={false} tickLine={false} />
-              <ReferenceLine y={90} stroke="#DDDDDD" strokeDasharray="4 4" />
-              <Bar dataKey="sotOutOfTarget" fill="rgba(255,137,0,0.10)" radius={[3, 3, 0, 0]} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#F5F5F5" vertical={false} />
+              <XAxis dataKey="weekLabel" tick={{ fill: '#CCC', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis domain={[0, 100]} tick={{ fill: '#CCC', fontSize: 11 }} unit="%" axisLine={false} tickLine={false} />
+              <ReferenceLine y={90} stroke="#E8E8E8" strokeDasharray="4 4" />
+              <Bar dataKey="sotOutOfTarget" fill="rgba(255,137,0,0.08)" radius={[3, 3, 0, 0]} />
               <Line dataKey="otifPct" stroke="#34A853" strokeWidth={2} dot={{ r: 3, fill: '#34A853' }} connectNulls={false} />
               <Line dataKey="sotPct" stroke="#FF8900" strokeWidth={2.5} dot={{ r: 3, fill: '#FF8900' }} activeDot={{ r: 5 }} connectNulls={false} />
               <Tooltip contentStyle={{ background: '#111', border: 'none', color: 'white', borderRadius: 8, fontSize: 12 }} labelStyle={{ color: '#FF8900', fontWeight: 600 }} />
@@ -80,67 +80,60 @@ export default function SOTOTIFPage() {
           </ResponsiveContainer>
         </div>
 
-        {/* week breakdown table */}
-        <div className="bg-white rounded-2xl border border-[#F0F0F0] overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
-          <div className="px-6 py-4 border-b border-[#F0F0F0]">
-            <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Week Breakdown</p>
-          </div>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-[#111] text-white">
-                {['Week', 'Lines', 'SOT%', 'OTIF%', 'SOT Fails'].map((h) => (
-                  <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {kpis.weeklyTrend.filter((w) => !w.isFuture && w.totalLines > 0).map((w) => (
-                <tr key={w.isoWeek} className={`border-b border-[#F7F7F7] ${w.isCurrent ? 'bg-[#FFFBF5]' : ''}`}>
-                  <td className="px-4 py-2.5 font-medium text-[#111]">{w.weekLabel}</td>
-                  <td className="px-4 py-2.5 text-[#555]">{w.totalLines}</td>
-                  <td className={`px-4 py-2.5 font-semibold ${(w.sotPct ?? 0) >= 90 ? 'text-pass' : 'text-fail'}`}>{w.sotPct !== null ? `${w.sotPct}%` : '—'}</td>
-                  <td className={`px-4 py-2.5 font-semibold ${(w.otifPct ?? 0) >= 90 ? 'text-pass' : 'text-warn'}`}>{w.otifPct !== null ? `${w.otifPct}%` : '—'}</td>
-                  <td className="px-4 py-2.5 text-[#555]">{w.sotOutOfTarget}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* annotations */}
+        {/* failing lines with root causes */}
         {kpis.failingLines.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Annotations</p>
-              <div className="flex gap-4 text-xs text-[#888]">
-                <span>SOT: <span className={sotAnnotated === sotTotal ? 'text-pass font-semibold' : 'text-fail font-semibold'}>{sotAnnotated}/{sotTotal}</span></span>
-                <span>OTIF: <span className={otifAnnotated === otifTotal ? 'text-pass font-semibold' : 'text-warn font-semibold'}>{otifAnnotated}/{otifTotal}</span></span>
+          <div className="space-y-3">
+            <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Root Causes — {kpis.failingLines.length} lines</p>
+            {kpis.failingLines.map((line) => {
+              const key = `${line.po}-${line.line}`;
+              const kpi = computeKPI(line);
+              const entry = annotations[key];
+              const hasReason = !!entry?.reason;
+
+              return (
+                <div key={key} className={`rounded-xl border p-4 transition-all ${hasReason ? 'border-[#E0E0E0] bg-white' : 'border-[#FEE2E2] bg-[#FFFAFA]'}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-sm text-[#111]">{line.po}</span>
+                        <span className="text-xs text-[#888]">{line.sku}</span>
+                        <span className="text-[10px] text-[#CCC]">{categorizeSKU(line.sku)}</span>
+                        <span className="text-xs text-[#AAA]">{line.supplier}</span>
+                        <span className="text-xs text-[#AAA]">{line.destination}</span>
+                      </div>
+                      <div className="flex gap-3 text-xs text-[#AAA]">
+                        <span>PGRD {formatDateShort(line.pgrd)}</span>
+                        {line.asd && <span>ASD {formatDateShort(line.asd)}</span>}
+                        {line.esd ? <span>ESD {formatDateShort(line.esd)}</span> : <span className="text-fail">No ESD</span>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {kpi.sotFail && <span className="text-[10px] bg-[#FEE2E2] text-fail px-2 py-0.5 rounded-full font-medium">SOT</span>}
+                      {kpi.otifFail && <span className="text-[10px] bg-[#FEF3C7] text-warn px-2 py-0.5 rounded-full font-medium">OTIF</span>}
+                    </div>
+                  </div>
+
+                  {hasReason ? (
+                    <div className="mt-3 flex items-center gap-2">
+                      <span className="text-xs bg-[#F5F5F5] text-[#555] px-3 py-1 rounded-full font-medium">
+                        {REASON_LABELS[entry.reason] ?? entry.reason}
+                      </span>
+                      {entry.tmComment && <span className="text-xs text-[#888] italic">&ldquo;{entry.tmComment}&rdquo;</span>}
+                      {entry.scmComment && <span className="text-xs text-[#888] italic">&ldquo;{entry.scmComment}&rdquo;</span>}
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-xs text-fail">No root cause added — use &ldquo;Prepare for Meeting&rdquo;</p>
+                  )}
+                </div>
+              );
+            })}
+
+            {tmComment && (
+              <div className="mt-2 p-4 bg-[#F9F9F9] rounded-xl border border-[#F0F0F0]">
+                <p className="text-xs text-[#AAA] uppercase tracking-widest mb-1">TM Notes{tmName ? ` — ${tmName}` : ''}</p>
+                <p className="text-sm text-[#555]">{tmComment}</p>
               </div>
-            </div>
-            <div className="space-y-2">
-              {kpis.failingLines.map((line) => {
-                const kpi = computeKPI(line);
-                return (
-                  <AnnotationRow
-                    key={`${line.po}-${line.line}`}
-                    line={line}
-                    sotFail={kpi.sotFail}
-                    otifFail={kpi.otifFail}
-                    entry={annotations.entries[`${line.po}-${line.line}`]}
-                    onUpdate={(key, data) => {
-                      if (annotations.entries[key]) annotations.updateAnnotation(key, data);
-                      else annotations.addAnnotation(key, data);
-                    }}
-                  />
-                );
-              })}
-            </div>
-            <div className="space-y-2 pt-2">
-              <input type="text" placeholder="TM Name" value={annotations.tmName} onChange={(e) => annotations.setTmName(e.target.value)}
-                className="w-full text-sm border border-[#EBEBEB] rounded-lg px-3 py-2 focus:outline-none focus:border-brand" />
-              <textarea rows={3} placeholder="TM meeting notes..." value={annotations.tmComment} onChange={(e) => annotations.setTmComment(e.target.value)}
-                className="w-full text-sm border border-[#EBEBEB] rounded-lg px-3 py-2 focus:outline-none focus:border-brand resize-none" />
-            </div>
+            )}
           </div>
         )}
       </div>
