@@ -162,7 +162,7 @@ export default function SOTOTIFPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-[#111] text-white">
-                  {['PO', 'SKU', 'Category', 'Vendor', 'Dest.', 'PGRD', 'ASD', 'EDD', 'SOT', 'OTIF'].map((h) => (
+                  {['PO', 'SKU', 'Category', 'Vendor', 'Dest.', 'PGRD', 'ASD', 'ESD', 'SOT', 'OTIF'].map((h) => (
                     <th key={h} className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -179,7 +179,7 @@ export default function SOTOTIFPage() {
                     <td className="px-3 py-2.5 text-[#555] whitespace-nowrap">{formatDateShort(l.asd)}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap">
                       {l.esd ? <span className="text-[#555]">{formatDateShort(l.esd)}</span>
-                        : <span className="text-[10px] bg-[#FEE2E2] text-fail px-2 py-0.5 rounded-full">No EDD</span>}
+                        : <span className="text-[10px] bg-[#FEE2E2] text-fail px-2 py-0.5 rounded-full">No ESD</span>}
                     </td>
                     <td className="px-3 py-2.5">
                       {kpi.sotResult === null ? <span className="text-[#CCC]">—</span>
@@ -222,7 +222,7 @@ export default function SOTOTIFPage() {
                         <div className="flex gap-3 text-xs text-[#CCC]">
                           <span>PGRD {formatDateShort(line.pgrd)}</span>
                           {line.asd && <span>ASD {formatDateShort(line.asd)}</span>}
-                          {line.esd ? <span>EDD {formatDateShort(line.esd)}</span> : <span className="text-fail">No EDD</span>}
+                          {line.esd ? <span>ESD {formatDateShort(line.esd)}</span> : <span className="text-fail">No ESD</span>}
                         </div>
                       </div>
                       <div className="flex gap-1.5 shrink-0">
