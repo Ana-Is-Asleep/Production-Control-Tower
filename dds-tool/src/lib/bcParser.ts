@@ -29,19 +29,29 @@ function parseHeaders(wb: XLSX.WorkBook): PurchaseHeader[] {
   const sheet = wb.Sheets[wb.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1 });
   const hIdx = findHeaderRow(rows);
-  // skip if no date, happens with open POs
   if (hIdx < 0) return [];
+
+  // find columns by name — BC exports vary so we don't hardcode indices here
+  const headerRow = rows[hIdx] as string[];
+  const col = (needle: string) => headerRow.findIndex((h) => typeof h === 'string' && h.toLowerCase().includes(needle.toLowerCase()));
+
+  const vendorNameCol  = col('vendor name');
+  const poCol          = col('no.');
+  const purchaserCol   = col('purchaser');
+  const orderDateCol   = col('order date') !== -1 ? col('order date') : col('document date');
+  const shipmentCol    = col('vendor shipment');
 
   const results: PurchaseHeader[] = [];
   for (let i = hIdx + 1; i < rows.length; i++) {
     const r = rows[i] as unknown[];
     if (!r || !r[1]) continue;
     results.push({
-      po: String(r[1] ?? ''),
-      orderDate: parseDate(r[5]),
-      purchaser: String(r[9] ?? ''),
-      supplier: String(r[3] ?? ''),
-      vendorShipmentNo: String(r[8] ?? ''),
+      po:              String(r[poCol          !== -1 ? poCol          : 1] ?? ''),
+      orderDate:       parseDate(r[orderDateCol !== -1 ? orderDateCol  : 5]),
+      purchaser:       String(r[purchaserCol   !== -1 ? purchaserCol   : 9] ?? ''),
+      // pretty please don't change to a fixed index :) vendor name column moves between BC versions
+      supplier:        String(r[vendorNameCol  !== -1 ? vendorNameCol  : 3] ?? ''),
+      vendorShipmentNo:String(r[shipmentCol    !== -1 ? shipmentCol    : 8] ?? ''),
     });
   }
   return results;
