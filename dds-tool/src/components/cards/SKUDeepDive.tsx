@@ -39,7 +39,7 @@ export function SKUDeepDive({ lines }: SKUDeepDiveProps) {
     { key: 'po', header: 'PO', render: (r) => <span className="font-medium text-navy">{r.po}</span> },
     { key: 'line', header: 'Line', render: (r) => r.line },
     { key: 'sku', header: 'SKU', render: (r) => r.sku },
-    { key: 'supplier', header: 'Supplier', render: (r) => r.supplier },
+    { key: 'supplier', header: 'Vendor', render: (r) => r.supplier },
     { key: 'destination', header: 'Dest.', render: (r) => r.destination },
     { key: 'pgrd', header: 'PGRD', render: (r) => formatDateShort(r.pgrd) },
     { key: 'asd', header: 'ASD', render: (r) => formatDateShort(r.asd) },

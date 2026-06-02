@@ -112,7 +112,7 @@ export function UploadPanel({ open, onClose, onLoad }: UploadPanelProps) {
                 </div>
               )}
               <div className="flex justify-between">
-                <span>Suppliers</span>
+                <span>Vendors</span>
                 <span className="font-medium text-dark">{result.suppliers.length}</span>
               </div>
               <div className="flex justify-between">

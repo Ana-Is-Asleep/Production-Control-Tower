@@ -42,7 +42,7 @@ export default function NotBookedPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-[#111] text-white">
-                  {['PO', 'Line', 'SKU', 'Supplier', 'Destination', 'PGRD', 'Status'].map((h) => (
+                  {['PO', 'Line', 'SKU', 'Vendor', 'Destination', 'PGRD', 'Status'].map((h) => (
                     <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide">{h}</th>
                   ))}
                 </tr>

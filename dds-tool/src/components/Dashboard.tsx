@@ -55,6 +55,8 @@ export function Dashboard() {
   const otifDelta = kpis.otifPct !== null ? kpis.otifPct - 90 : null;
   const backlogTotal = kpis.backlogSummary.critical.length + kpis.backlogSummary.recent.length + kpis.backlogSummary.atRisk.length;
   const annotatedCount = kpis.failingLines.filter((l) => isAnnotated(`${l.po}-${l.line}`)).length;
+  // not booked = unique POs, not lines
+  const notBookedPOs = [...new Set(kpis.notBookedLines.map((l) => l.po))];
 
   return (
     <div className="min-h-screen w-full bg-white">
@@ -113,12 +115,12 @@ export function Dashboard() {
         <div className="page-enter">
           {/* filter bar */}
           <div className="px-6 py-3 border-b border-[#F7F7F7] flex items-center gap-2 flex-wrap">
-            {/* supplier pills */}
+            {/* vendor pills */}
             <button
               onClick={() => setFilters({ ...filters, suppliers: [] })}
               className={`filter-pill text-xs px-3 py-1 rounded-full border font-medium ${filters.suppliers.length === 0 ? 'bg-[#111] text-white border-[#111]' : 'border-[#E0E0E0] text-[#555] hover:border-[#111]'}`}
             >
-              All suppliers
+              All vendors
             </button>
             {allSuppliers.map((s) => (
               <button
@@ -217,12 +219,12 @@ export function Dashboard() {
               {/* Not Booked */}
               <div onClick={() => router.push('/not-booked')} className="kpi-card bg-white rounded-2xl border border-[#F0F0F0] p-7" style={{ boxShadow: 'var(--shadow-card)' }}>
                 <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-5">Not Booked</p>
-                <p className={`kpi-number font-serif text-8xl font-bold leading-none mb-2 ${kpis.notBookedLines.length === 0 ? 'text-pass' : 'text-fail'}`}>
-                  {kpis.notBookedLines.length}
+                <p className={`kpi-number font-serif text-8xl font-bold leading-none mb-2 ${notBookedPOs.length === 0 ? 'text-pass' : 'text-fail'}`}>
+                  {notBookedPOs.length}
                 </p>
-                <p className="text-sm text-[#888]">lines without pickup booking</p>
-                {kpis.notBookedLines.length === 0 && (
-                  <p className="text-xs text-pass font-semibold mt-3">✓ All lines booked</p>
+                <p className="text-sm text-[#888]">POs without pickup booking</p>
+                {notBookedPOs.length === 0 && (
+                  <p className="text-xs text-pass font-semibold mt-3">✓ All POs booked</p>
                 )}
                 <p className="text-xs text-brand font-semibold mt-4">Drill down →</p>
               </div>

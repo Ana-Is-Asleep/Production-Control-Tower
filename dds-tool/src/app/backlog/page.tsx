@@ -18,7 +18,7 @@ function BacklogTable({ lines, label, color }: { lines: PurchaseLine[]; label: s
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-[#111] text-white">
-            {['PO', 'SKU', 'Supplier', 'Destination', 'PGRD', 'ESD'].map((h) => (
+            {['PO', 'SKU', 'Vendor', 'Destination', 'PGRD', 'ESD'].map((h) => (
               <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide">{h}</th>
             ))}
           </tr>

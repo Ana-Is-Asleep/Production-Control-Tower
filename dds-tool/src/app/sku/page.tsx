@@ -64,7 +64,7 @@ export default function SKUPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-[#111] text-white">
-                {['PO', 'Line', 'SKU', 'Supplier', 'Dest.', 'PGRD', 'ASD', 'ESD', 'SOT', 'OTIF'].map((h) => (
+                {['PO', 'Line', 'SKU', 'Vendor', 'Dest.', 'PGRD', 'ASD', 'ESD', 'SOT', 'OTIF'].map((h) => (
                   <th key={h} className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">{h}</th>
                 ))}
               </tr>
