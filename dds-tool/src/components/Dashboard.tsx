@@ -67,7 +67,7 @@ export function Dashboard() {
         <div className="flex flex-col items-center justify-center min-h-[80vh] gap-6 px-4">
           <div className="text-center space-y-2">
             <p className="font-serif text-5xl font-bold text-[#111]">Ready when you are.</p>
-            <p className="text-[#888] text-base mt-3">Upload your Business Central exports to see this week's data.</p>
+            <p className="text-[#888] text-base mt-3">Upload your Business Central exports to see this week&apos;s data.</p>
           </div>
           <button
             onClick={() => setUploadOpen(true)}
