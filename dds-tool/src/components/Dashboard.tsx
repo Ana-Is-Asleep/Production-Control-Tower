@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useData } from '../context/DataContext';
 import { useFilters, type ActiveFilters } from '../hooks/useFilters';
@@ -20,6 +20,46 @@ const CATEGORY_COLORS: Record<SKUCategory, string> = {
   'Accessories': '#34A853',
   'Comps/Other': '#8A8A8A',
 };
+
+function VendorDropdown({ allSuppliers, selected, onChange }: { allSuppliers: string[]; selected: string[]; onChange: (s: string[]) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const label = selected.length === 0 ? 'All vendors' : selected.length === 1 ? selected[0] : `${selected.length} vendors`;
+  const toggle = (s: string) => onChange(selected.includes(s) ? selected.filter((x) => x !== s) : [...selected, s]);
+
+  return (
+    <div ref={ref} className="relative shrink-0">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`filter-pill flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border font-medium ${selected.length > 0 ? 'bg-[#111] text-white border-[#111]' : 'border-[#E0E0E0] text-[#555] hover:border-[#111]'}`}
+      >
+        <span className="max-w-[220px] truncate">{label}</span>
+        <span className="opacity-50 text-[10px]">▾</span>
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1 bg-white border border-[#F0F0F0] rounded-xl shadow-lg z-50 w-72 py-1 max-h-72 overflow-y-auto" style={{ boxShadow: 'var(--shadow-card-hover)' }}>
+          <button onClick={() => onChange([])} className={`w-full text-left px-4 py-2 text-xs font-medium ${selected.length === 0 ? 'text-brand' : 'text-[#555] hover:bg-[#F9F9F9]'}`}>
+            All vendors {selected.length === 0 && '✓'}
+          </button>
+          <div className="border-t border-[#F5F5F5] my-1" />
+          {allSuppliers.map((s) => (
+            <button key={s} onClick={() => toggle(s)} className="w-full text-left px-4 py-2 text-xs flex items-center justify-between hover:bg-[#F9F9F9]">
+              <span className={selected.includes(s) ? 'text-[#111] font-medium' : 'text-[#555]'}>{s}</span>
+              {selected.includes(s) && <span className="text-brand text-xs">✓</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function Dashboard() {
   const router = useRouter();
@@ -114,30 +154,19 @@ export function Dashboard() {
       {hasData && (
         <div className="page-enter">
           {/* filter bar */}
-          <div className="px-6 py-3 border-b border-[#F7F7F7] flex items-center gap-2 flex-wrap">
-            {/* vendor pills */}
-            <button
-              onClick={() => setFilters({ ...filters, suppliers: [] })}
-              className={`filter-pill text-xs px-3 py-1 rounded-full border font-medium ${filters.suppliers.length === 0 ? 'bg-[#111] text-white border-[#111]' : 'border-[#E0E0E0] text-[#555] hover:border-[#111]'}`}
-            >
-              All vendors
-            </button>
-            {allSuppliers.map((s) => (
-              <button
-                key={s}
-                onClick={() => toggleSupplier(s)}
-                className={`filter-pill text-xs px-3 py-1 rounded-full border font-medium ${filters.suppliers.includes(s) ? 'bg-[#111] text-white border-[#111]' : 'border-[#E0E0E0] text-[#555] hover:border-[#111]'}`}
-              >
-                {s}
-              </button>
-            ))}
-            <span className="text-[#E0E0E0] mx-1">|</span>
-            {/* category pills */}
+          <div className="px-6 py-3 border-b border-[#F7F7F7] flex items-center gap-3">
+            <VendorDropdown
+              allSuppliers={allSuppliers}
+              selected={filters.suppliers}
+              onChange={(s) => setFilters({ ...filters, suppliers: s })}
+            />
+            <span className="text-[#E0E0E0]">|</span>
+            {/* category pills — only 4 so these stay as pills */}
             {SKU_CATEGORIES.map((c) => (
               <button
                 key={c}
                 onClick={() => toggleCategory(c)}
-                className={`filter-pill text-xs px-3 py-1 rounded-full border font-medium ${filters.categories.includes(c) ? 'text-white border-transparent' : 'border-[#E0E0E0] text-[#555] hover:border-[#111]'}`}
+                className={`filter-pill text-xs px-3 py-1 rounded-full border font-medium whitespace-nowrap ${filters.categories.includes(c) ? 'text-white border-transparent' : 'border-[#E0E0E0] text-[#555] hover:border-[#111]'}`}
                 style={filters.categories.includes(c) ? { background: CATEGORY_COLORS[c] } : {}}
               >
                 {c}
