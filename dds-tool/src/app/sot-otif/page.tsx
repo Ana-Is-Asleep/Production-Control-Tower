@@ -22,14 +22,10 @@ const REASON_LABELS: Record<string, string> = {
 
 type GroupBy = 'supplier' | 'po';
 
-function GroupedTable({ lines, groupBy }: { lines: ReturnType<typeof computeKPI> extends infer K ? { line: Parameters<typeof computeKPI>[0]; kpi: K }[] : never; groupBy: GroupBy }) {
-  return null;
-}
-
 export default function SOTOTIFPage() {
   const router = useRouter();
-  const { allLines, annotations, tmComment, tmName } = useData();
-  const { weeklyLines, accumulatingLines, lastWeek, lastYear, filters } = useFilters(allLines);
+  const { allLines, annotations } = useData();
+  const { weeklyLines, accumulatingLines, lastWeek, lastYear } = useFilters(allLines);
   const kpis = useKPIs(weeklyLines, accumulatingLines);
   const [groupBy, setGroupBy] = useState<GroupBy>('supplier');
 

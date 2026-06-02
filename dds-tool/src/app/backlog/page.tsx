@@ -90,7 +90,7 @@ function BacklogTable({ lines }: { lines: PurchaseLine[] }) {
                 <td className="px-4 py-2.5 text-[#555] whitespace-nowrap">{formatDateShort(l.pgrd)}</td>
                 <td className="px-4 py-2.5 whitespace-nowrap">
                   {l.esd
-                    ? <span className="text-[#555]">{formatDateShort(l.esd)}</span>  {/* ESD = Expected Delivery Date from BC col 17 */}
+                    ? <span className="text-[#555]">{formatDateShort(l.esd)}</span>
                     : <span className="text-xs bg-[#FEE2E2] text-fail px-2 py-0.5 rounded-full font-medium">No ESD</span>}
                 </td>
               </tr>
