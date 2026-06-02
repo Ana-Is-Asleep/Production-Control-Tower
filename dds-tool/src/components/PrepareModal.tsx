@@ -54,7 +54,6 @@ export function PrepareModal({ onClose, failingLines }: PrepareModalProps) {
   const STEPS = [
     { n: 1, label: 'Select vendors' },
     { n: 2, label: 'Add root causes' },
-    { n: 3, label: 'TM notes' },
   ];
 
   return (
@@ -187,36 +186,17 @@ export function PrepareModal({ onClose, failingLines }: PrepareModalProps) {
           </div>
         )}
 
-        {/* step 3 — TM notes */}
-        {step === 3 && (
-          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
-            <p className="text-sm text-[#555]">Add any final notes from the Transportation Manager for the meeting.</p>
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs uppercase tracking-widest text-[#AAA] mb-1.5 block">TM Name</label>
-                <input type="text" placeholder="e.g. João Santos" value={tmName} onChange={(e) => setTmName(e.target.value)}
-                  className="w-full text-sm border border-[#E8E8E8] rounded-lg px-3 py-2.5 focus:outline-none focus:border-brand" />
-              </div>
-              <div>
-                <label className="text-xs uppercase tracking-widest text-[#AAA] mb-1.5 block">Meeting Notes</label>
-                <textarea rows={5} placeholder="Key points for the carrier meeting..." value={tmComment} onChange={(e) => setTmComment(e.target.value)}
-                  className="w-full text-sm border border-[#E8E8E8] rounded-lg px-3 py-2.5 focus:outline-none focus:border-brand resize-none" />
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* footer */}
         <div className="px-6 py-4 border-t border-[#F0F0F0] flex items-center justify-between gap-3">
           {step > 1 ? (
             <button onClick={() => setStep(step - 1)} className="text-sm text-[#888] hover:text-[#111] transition-colors">← Back</button>
           ) : <div />}
-          {step < 3 ? (
+          {step < 2 ? (
             <button
-              onClick={() => setStep(step + 1)}
+              onClick={() => setStep(2)}
               className="bg-[#111] text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#333] transition-colors"
             >
-              {step === 1 ? `Continue with ${selectedVendors.length === 0 ? 'all' : selectedVendors.length} vendor${selectedVendors.length === 1 ? '' : 's'} →` : 'Next step →'}
+              {`Continue with ${selectedVendors.length === 0 ? 'all' : selectedVendors.length} vendor${selectedVendors.length === 1 ? '' : 's'} →`}
             </button>
           ) : (
             <button
