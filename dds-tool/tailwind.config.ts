@@ -31,7 +31,8 @@ const config: Config = {
         'warn-text':    '#92400E',
       },
       fontFamily: {
-        serif: ['Georgia', 'serif'],
+        serif:   ['Georgia', 'serif'],
+        display: ['var(--font-display)', 'var(--font-inter)', 'sans-serif'],
       },
     },
   },
