@@ -36,23 +36,18 @@ export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: Purchase
     [kpiResults]
   );
 
-  // 10-week window: 4 past + 1 current + 3 future (future weeks have null KPIs, shown as empty on chart)
+  // show last 8 completed weeks only — future can't be calculated so we don't show it
   // pretty please don't touch the offset math :) it handles year boundaries and 52-week rollover
   const weeklyTrend = useMemo((): WeeklyKPIPoint[] => {
     const points: WeeklyKPIPoint[] = [];
-    for (let offset = -4; offset <= 3; offset++) {
+    for (let offset = -7; offset <= 0; offset++) {
       const targetWeek = lastWeek + offset;
       const adjustedWeek = ((targetWeek - 1 + 52) % 52) + 1;
       const adjustedYear = targetWeek <= 0 ? lastYear - 1 : targetWeek > 52 ? lastYear + 1 : lastYear;
       const key = `${adjustedYear}-W${String(adjustedWeek).padStart(2, '0')}`;
       const label = `W${String(adjustedWeek).padStart(2, '0')}`;
-      const isCurrent = offset === -1;
-      const isFuture = offset >= 0;
-
-      if (isFuture) {
-        points.push({ isoWeek: key, weekLabel: label, sotPct: null, otifPct: null, sotOutOfTarget: 0, totalLines: 0, isCurrent: false, isFuture: true });
-        continue;
-      }
+      const isCurrent = offset === 0;
+      const isFuture = false;
 
       const wLines = accumulatingLines.filter((l) => {
         if (!l.pgrd) return false;

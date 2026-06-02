@@ -99,7 +99,7 @@ export function Dashboard() {
   const notBookedPOs = [...new Set(kpis.notBookedLines.map((l) => l.po))];
 
   return (
-    <div className="min-h-screen w-full bg-white">
+    <div className="min-h-screen w-full bg-[#F4F4F6]">
       {/* header */}
       <header className="bg-white border-b border-[#F0F0F0] px-6 py-3 flex items-center gap-3 sticky top-0 z-30">
         <span className="font-serif font-bold text-brand text-xl shrink-0">emma.</span>
@@ -172,6 +172,23 @@ export function Dashboard() {
                 {c}
               </button>
             ))}
+            <span className="text-[#E0E0E0]">|</span>
+            {/* week filter */}
+            <select
+              value={filters.pgrdWeek ?? ''}
+              onChange={(e) => setFilters({ ...filters, pgrdWeek: e.target.value ? Number(e.target.value) : null })}
+              className="filter-pill text-xs px-3 py-1.5 rounded-lg border border-[#E0E0E0] text-[#555] bg-white focus:outline-none focus:border-[#111] font-medium"
+            >
+              <option value="">All weeks</option>
+              {availableWeeks.map((w) => (
+                <option key={w} value={w}>W{String(w).padStart(2, '0')}</option>
+              ))}
+            </select>
+            {(filters.suppliers.length > 0 || filters.categories.length > 0 || filters.pgrdWeek !== null) && (
+              <button onClick={() => setFilters({ suppliers: [], categories: [], pgrdWeek: null })} className="text-xs text-[#AAA] hover:text-fail transition-colors">
+                Clear ✕
+              </button>
+            )}
           </div>
 
           <div className="p-5 space-y-4">
@@ -182,7 +199,7 @@ export function Dashboard() {
                 <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-5">SOT + OTIF</p>
                 <div className="flex items-end gap-8 mb-5">
                   <div>
-                    <p className={`kpi-number font-serif text-6xl font-bold ${kpis.sotPct === null ? 'text-[#DDD]' : kpis.sotPct >= 90 ? 'text-pass' : 'text-fail'}`}>
+                    <p className={`kpi-number font-extrabold text-6xl font-bold ${kpis.sotPct === null ? 'text-[#DDD]' : kpis.sotPct >= 90 ? 'text-pass' : 'text-fail'}`}>
                       {kpis.sotPct !== null ? `${kpis.sotPct}%` : '—'}
                     </p>
                     <p className="text-xs text-[#999] mt-1 uppercase tracking-wide">SOT</p>
@@ -193,7 +210,7 @@ export function Dashboard() {
                     )}
                   </div>
                   <div>
-                    <p className={`kpi-number font-serif text-6xl font-bold ${kpis.otifPct === null ? 'text-[#DDD]' : kpis.otifPct >= 90 ? 'text-pass' : 'text-warn'}`}>
+                    <p className={`kpi-number font-extrabold text-6xl font-bold ${kpis.otifPct === null ? 'text-[#DDD]' : kpis.otifPct >= 90 ? 'text-pass' : 'text-warn'}`}>
                       {kpis.otifPct !== null ? `${kpis.otifPct}%` : '—'}
                     </p>
                     <p className="text-xs text-[#999] mt-1 uppercase tracking-wide">OTIF</p>
@@ -235,7 +252,7 @@ export function Dashboard() {
                         <span className="text-sm text-[#555]">{item.label}</span>
                         <span className="text-xs text-[#CCC]">{item.sub}</span>
                       </div>
-                      <span className={`kpi-number font-serif text-4xl font-bold ${item.color}`}>{item.count}</span>
+                      <span className={`kpi-number font-extrabold text-4xl font-bold ${item.color}`}>{item.count}</span>
                     </div>
                   ))}
                 </div>
@@ -248,7 +265,7 @@ export function Dashboard() {
               {/* Not Booked */}
               <div onClick={() => router.push('/not-booked')} className="kpi-card bg-white rounded-2xl border border-[#F0F0F0] p-7" style={{ boxShadow: 'var(--shadow-card)' }}>
                 <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-5">Not Booked</p>
-                <p className={`kpi-number font-serif text-8xl font-bold leading-none mb-2 ${notBookedPOs.length === 0 ? 'text-pass' : 'text-fail'}`}>
+                <p className={`kpi-number font-extrabold text-8xl font-bold leading-none mb-2 ${notBookedPOs.length === 0 ? 'text-pass' : 'text-fail'}`}>
                   {notBookedPOs.length}
                 </p>
                 <p className="text-sm text-[#888]">POs without pickup booking</p>
@@ -263,7 +280,7 @@ export function Dashboard() {
             <div className="grid grid-cols-4 gap-4">
               <div onClick={() => router.push('/sku')} className="kpi-card bg-white rounded-2xl border border-[#F0F0F0] p-5" style={{ boxShadow: 'var(--shadow-card)' }}>
                 <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-3">SKU Deep Dive</p>
-                <p className="kpi-number font-serif text-5xl font-bold text-[#111]">{weeklyLines.length}</p>
+                <p className="kpi-number font-extrabold text-5xl font-bold text-[#111]">{weeklyLines.length}</p>
                 <p className="text-xs text-[#999] mt-1">lines this week</p>
                 <div className="flex gap-2 mt-3 flex-wrap">
                   {kpis.failingLines.length > 0 && (
@@ -279,7 +296,7 @@ export function Dashboard() {
                   {[{ l: 'Overdue', v: '3', c: 'text-fail' }, { l: 'P2W', v: '1', c: 'text-warn' }, { l: 'On time', v: '14', c: 'text-pass' }].map((r) => (
                     <div key={r.l} className="flex justify-between items-center">
                       <span className="text-xs text-[#888]">{r.l}</span>
-                      <span className={`font-serif text-2xl font-bold ${r.c}`}>{r.v}</span>
+                      <span className={`font-extrabold text-2xl ${r.c}`}>{r.v}</span>
                     </div>
                   ))}
                 </div>

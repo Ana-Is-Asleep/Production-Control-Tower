@@ -8,6 +8,7 @@ import { useKPIs } from '../../hooks/useKPIs';
 import { formatDateShort } from '../../lib/dateUtils';
 import { categorizeSKU, SKU_CATEGORIES, type SKUCategory } from '../../lib/skuUtils';
 import type { PurchaseLine } from '../../types';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const CATEGORY_COLORS: Record<SKUCategory, string> = {
   'Beds': '#6366F1',
@@ -69,7 +70,7 @@ function BacklogTable({ lines }: { lines: PurchaseLine[] }) {
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-[#111] text-white">
-            {['PO', 'SKU', 'Category', 'Vendor', 'Destination', 'PGRD', 'ESD'].map((h) => (
+            {['PO', 'SKU', 'Category', 'Vendor', 'Destination', 'PGRD', 'EDD'].map((h) => (
               <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">{h}</th>
             ))}
           </tr>
@@ -89,7 +90,7 @@ function BacklogTable({ lines }: { lines: PurchaseLine[] }) {
                 <td className="px-4 py-2.5 text-[#555] whitespace-nowrap">{formatDateShort(l.pgrd)}</td>
                 <td className="px-4 py-2.5 whitespace-nowrap">
                   {l.esd
-                    ? <span className="text-[#555]">{formatDateShort(l.esd)}</span>
+                    ? <span className="text-[#555]">{formatDateShort(l.esd)}</span>  {/* EDD = Expected Delivery Date from BC col 17 */}
                     : <span className="text-xs bg-[#FEE2E2] text-fail px-2 py-0.5 rounded-full font-medium">No ESD</span>}
                 </td>
               </tr>
@@ -115,6 +116,9 @@ export default function BacklogPage() {
   const allLines_ = [...critical, ...recent, ...atRisk];
   const allVendors = useMemo(() => [...new Set(allLines_.map((l) => l.supplier))].sort(), [critical, recent, atRisk]);
 
+  // count distinct POs, not lines
+  const distinctPOs = (lines: PurchaseLine[]) => new Set(lines.map((l) => l.po)).size;
+
   const applyFilters = (lines: PurchaseLine[]) => {
     let result = lines;
     if (selectedVendors.length > 0) result = result.filter((l) => selectedVendors.includes(l.supplier));
@@ -127,16 +131,32 @@ export default function BacklogPage() {
 
   const tabLines = applyFilters(activeTab === 'critical' ? critical : activeTab === 'recent' ? recent : atRisk);
 
+  // bar chart data: backlog by vendor (top 10)
+  const chartData = useMemo(() => {
+    const map = new Map<string, { critical: number; recent: number; atRisk: number }>();
+    [...critical, ...recent, ...atRisk].forEach((l) => {
+      if (!map.has(l.supplier)) map.set(l.supplier, { critical: 0, recent: 0, atRisk: 0 });
+      const e = map.get(l.supplier)!;
+      if (critical.includes(l)) e.critical++;
+      else if (recent.includes(l)) e.recent++;
+      else e.atRisk++;
+    });
+    return [...map.entries()]
+      .map(([vendor, v]) => ({ vendor: vendor.split(' ')[0], ...v, total: v.critical + v.recent + v.atRisk }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 12);
+  }, [critical, recent, atRisk]);
+
   const TABS = [
-    { key: 'critical' as BacklogTab, label: 'Critical', count: applyFilters(critical).length, total: critical.length, color: 'text-fail', dot: 'bg-fail', border: 'border-fail' },
-    { key: 'recent'   as BacklogTab, label: 'Recent',   count: applyFilters(recent).length,   total: recent.length,   color: 'text-warn', dot: 'bg-warn', border: 'border-warn' },
-    { key: 'at-risk'  as BacklogTab, label: 'At Risk',  count: applyFilters(atRisk).length,   total: atRisk.length,   color: 'text-brand', dot: 'bg-brand', border: 'border-brand' },
+    { key: 'critical' as BacklogTab, label: 'Critical', count: distinctPOs(applyFilters(critical)), total: distinctPOs(critical), color: 'text-fail', dot: 'bg-fail', border: 'border-fail' },
+    { key: 'recent'   as BacklogTab, label: 'Recent',   count: distinctPOs(applyFilters(recent)),   total: distinctPOs(recent),   color: 'text-warn', dot: 'bg-warn', border: 'border-warn' },
+    { key: 'at-risk'  as BacklogTab, label: 'At Risk',  count: distinctPOs(applyFilters(atRisk)),   total: distinctPOs(atRisk),   color: 'text-brand', dot: 'bg-brand', border: 'border-brand' },
   ];
 
   return (
-    <div className="min-h-screen bg-white page-enter">
+    <div className="min-h-screen bg-[#F4F4F6] page-enter">
       {/* header */}
-      <header className="bg-white border-b border-[#F0F0F0] px-6 py-3 flex items-center gap-3 sticky top-0 z-30">
+      <header className="bg-white border-b border-[#EBEBEB] px-6 py-3 flex items-center gap-3 sticky top-0 z-30">
         <button onClick={() => router.push('/')} className="text-sm text-[#888] hover:text-[#111] transition-colors">← Dashboard</button>
         <span className="text-[#D0D0D0]">/</span>
         <span className="text-sm font-semibold text-[#111]">Backlog</span>
@@ -164,6 +184,24 @@ export default function BacklogPage() {
           </button>
         ))}
       </div>
+
+      {/* backlog by vendor chart */}
+      {chartData.length > 0 && (
+        <div className="mx-6 mt-4 bg-white rounded-2xl p-6" style={{ boxShadow: 'var(--shadow-card)' }}>
+          <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-4">Backlog by Vendor</p>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={chartData} margin={{ top: 0, right: 10, left: -20, bottom: 40 }}>
+              <XAxis dataKey="vendor" tick={{ fill: '#AAA', fontSize: 11 }} angle={-35} textAnchor="end" axisLine={false} tickLine={false} interval={0} />
+              <YAxis tick={{ fill: '#AAA', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ background: '#111', border: 'none', color: 'white', borderRadius: 8, fontSize: 12 }} labelStyle={{ color: '#FF8900', fontWeight: 700 }} />
+              <Legend verticalAlign="top" align="right" iconSize={8} formatter={(v) => <span style={{ color: '#555', fontSize: 11 }}>{v}</span>} />
+              <Bar dataKey="critical" stackId="a" fill="#DC3545" name="Critical" radius={[0,0,0,0]} />
+              <Bar dataKey="recent" stackId="a" fill="#F59E0B" name="Recent" />
+              <Bar dataKey="atRisk" stackId="a" fill="#FF8900" name="At Risk" radius={[3,3,0,0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       {/* filters */}
       <div className="px-6 py-4 flex items-center gap-3 flex-wrap">
