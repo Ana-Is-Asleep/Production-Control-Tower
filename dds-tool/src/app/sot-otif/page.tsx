@@ -4,14 +4,14 @@ import { useState, useMemo, useRef, useEffect, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, ReferenceLine, ResponsiveContainer, Legend,
+  Tooltip, ReferenceLine, ReferenceArea, ResponsiveContainer, Legend,
 } from 'recharts';
 import { useData } from '../../context/DataContext';
 import { useFilters } from '../../hooks/useFilters';
 import { useKPIs } from '../../hooks/useKPIs';
 import { computeKPI, computeExpectedSOT } from '../../lib/kpiFormulas';
 import { categorizeSKU } from '../../lib/skuUtils';
-import { formatDateShort, getISOWeek } from '../../lib/dateUtils';
+import { formatDateShort, getISOWeek, isoWeekLabel } from '../../lib/dateUtils';
 import type { PurchaseLine } from '../../types';
 
 const REASON_LABELS: Record<string, string> = {
@@ -66,10 +66,30 @@ export default function SOTOTIFPage() {
   const [groupBy, setGroupBy] = useState<GroupBy>('supplier');
   const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
   const [expandedVendor, setExpandedVendor] = useState<string | null>(null);
+  const [clickedWeek, setClickedWeek] = useState<string | null>(null);
+
+  // clicking a week on the chart filters the breakdown to that week's lines
+  const handleChartClick = (data: Record<string, unknown>) => {
+    if (data?.activeLabel) {
+      const label = String(data.activeLabel);
+      setClickedWeek((prev) => prev === label ? null : label);
+      setExpandedVendor(null);
+    }
+  };
+
+  const sourceLines = useMemo(() => {
+    if (clickedWeek) {
+      const weekNum = parseInt(clickedWeek.replace('W', ''));
+      return (allD2cLines ?? weeklyLines).filter((l) =>
+        l.pgrd && getISOWeek(l.pgrd) === weekNum
+      );
+    }
+    return weeklyLines;
+  }, [weeklyLines, allD2cLines, clickedWeek]);
 
   const filteredLines = useMemo(() =>
-    selectedVendors.length === 0 ? weeklyLines : weeklyLines.filter((l) => selectedVendors.includes(l.supplier)),
-    [weeklyLines, selectedVendors]
+    selectedVendors.length === 0 ? sourceLines : sourceLines.filter((l) => selectedVendors.includes(l.supplier)),
+    [sourceLines, selectedVendors]
   );
 
   const enriched = useMemo(() => filteredLines.map((l) => ({ line: l, kpi: computeKPI(l), expectedSot: computeExpectedSOT(l) })), [filteredLines]);
@@ -170,7 +190,7 @@ export default function SOTOTIFPage() {
           <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-1">Trend by PGRD Week</p>
           <p className="text-xs text-[#CCC] mb-5">Bars = POs placed per PGRD week · Future SOT% estimated from ESD vs PGRD</p>
           <ResponsiveContainer width="100%" height={320}>
-            <ComposedChart data={chartData} margin={{ top: 10, right: 40, left: -10, bottom: 0 }}>
+            <ComposedChart data={chartData} margin={{ top: 10, right: 40, left: -10, bottom: 0 }} onClick={handleChartClick} style={{ cursor: 'pointer' }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F0F0F0" vertical={false} />
               <XAxis dataKey="weekLabel" tick={{ fill: '#AAA', fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="pct" domain={[0, 100]} tick={{ fill: '#AAA', fontSize: 12 }} unit="%" axisLine={false} tickLine={false} />
@@ -186,6 +206,9 @@ export default function SOTOTIFPage() {
                 labelStyle={{ color: '#FF8900', fontWeight: 700, marginBottom: 4 }}
                 formatter={(value, name) => [String(name) === 'POs placed' ? `${value} POs` : `${value}%`, name]}
               />
+              {clickedWeek && (
+                <ReferenceArea yAxisId="pct" x1={clickedWeek} x2={clickedWeek} fill="rgba(255,137,0,0.12)" stroke="#FF8900" strokeOpacity={0.4} />
+              )}
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -193,7 +216,16 @@ export default function SOTOTIFPage() {
         {/* breakdown */}
         <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
           <div className="px-5 py-4 border-b border-[#F5F5F5] flex items-center justify-between">
-            <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Breakdown — W{String(lastWeek).padStart(2, '0')}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-[11px] uppercase tracking-widest text-[#AAA]">
+                Breakdown — {clickedWeek ?? `W${String(lastWeek).padStart(2, '0')}`}
+              </p>
+              {clickedWeek && (
+                <button onClick={() => setClickedWeek(null)} className="text-[10px] text-brand hover:text-brand-soft font-medium">
+                  Clear ✕
+                </button>
+              )}
+            </div>
             <div className="flex gap-1 bg-[#F5F5F5] p-0.5 rounded-lg">
               {(['supplier', 'po'] as GroupBy[]).map((g) => (
                 <button key={g} onClick={() => setGroupBy(g)}
