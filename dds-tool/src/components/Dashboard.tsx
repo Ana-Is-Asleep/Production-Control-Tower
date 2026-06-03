@@ -11,7 +11,7 @@ import { SKU_CATEGORIES, type SKUCategory } from '../lib/skuUtils';
 import { summariseLeadTimes } from '../lib/leadTimeUtils';
 import type { PurchaseLine } from '../types';
 import {
-  ComposedChart, BarChart, Bar, Line, XAxis, YAxis, CartesianGrid,
+  ComposedChart, LineChart, BarChart, Bar, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ReferenceLine, ResponsiveContainer,
 } from 'recharts';
 
@@ -193,86 +193,84 @@ export function Dashboard() {
             )}
           </div>
 
-          <div className="px-4 pt-3 pb-4 space-y-3">
+          <div className="px-4 pt-3 pb-4 flex flex-col gap-3" style={{ minHeight: 'calc(100vh - 96px)' }}>
 
-            {/* row 1: SOT+OTIF hero — numbers left, chart right */}
-            <div onClick={() => router.push('/sot-otif')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] px-5 py-4 cursor-pointer" style={{ boxShadow: 'var(--shadow-card)' }}>
-              <div className="flex items-stretch gap-8">
-                <div className="flex gap-8 shrink-0 items-center">
+            {/* row 1: SOT+OTIF hero */}
+            <div onClick={() => router.push('/sot-otif')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] px-6 py-5 cursor-pointer flex-[2]" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <div className="flex items-stretch gap-10 h-full">
+                <div className="flex gap-10 shrink-0 items-center">
                   <div>
-                    <p className="text-[10px] uppercase tracking-widest text-[#AAA] mb-1">SOT · 90% target</p>
-                    <p className={`kpi-number font-extrabold text-7xl leading-none ${kpis.sotPct === null ? 'text-[#DDD]' : kpis.sotPct >= 90 ? 'text-pass' : 'text-fail'}`}>
+                    <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-2">SOT · 90% target</p>
+                    <p className={`kpi-number font-extrabold text-8xl leading-none ${kpis.sotPct === null ? 'text-[#DDD]' : kpis.sotPct >= 90 ? 'text-pass' : 'text-fail'}`}>
                       {kpis.sotPct !== null ? `${kpis.sotPct}%` : '—'}
                     </p>
-                    {sotDelta !== null && <p className={`text-xs font-semibold mt-1 ${sotDelta >= 0 ? 'text-pass' : 'text-fail'}`}>{sotDelta >= 0 ? '↑' : '↓'} {Math.abs(sotDelta)}pp</p>}
+                    {sotDelta !== null && <p className={`text-sm font-semibold mt-2 ${sotDelta >= 0 ? 'text-pass' : 'text-fail'}`}>{sotDelta >= 0 ? '↑' : '↓'} {Math.abs(sotDelta)}pp vs target</p>}
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase tracking-widest text-[#AAA] mb-1">OTIF · 90% target</p>
-                    <p className={`kpi-number font-extrabold text-7xl leading-none ${kpis.otifPct === null ? 'text-[#DDD]' : kpis.otifPct >= 90 ? 'text-pass' : 'text-warn'}`}>
+                    <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-2">OTIF · 90% target</p>
+                    <p className={`kpi-number font-extrabold text-8xl leading-none ${kpis.otifPct === null ? 'text-[#DDD]' : kpis.otifPct >= 90 ? 'text-pass' : 'text-warn'}`}>
                       {kpis.otifPct !== null ? `${kpis.otifPct}%` : '—'}
                     </p>
-                    {otifDelta !== null && <p className={`text-xs font-semibold mt-1 ${otifDelta >= 0 ? 'text-pass' : 'text-warn'}`}>{otifDelta >= 0 ? '↑' : '↓'} {Math.abs(otifDelta)}pp</p>}
+                    {otifDelta !== null && <p className={`text-sm font-semibold mt-2 ${otifDelta >= 0 ? 'text-pass' : 'text-warn'}`}>{otifDelta >= 0 ? '↑' : '↓'} {Math.abs(otifDelta)}pp vs target</p>}
                   </div>
-                  <p className="text-[10px] text-brand font-semibold self-end pb-1">Drill down →</p>
+                  <p className="text-xs text-brand font-semibold self-end pb-1">Drill down →</p>
                 </div>
-                <div className="flex-1 h-[120px]">
+                <div className="flex-1">
                   <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={kpis.weeklyTrend} margin={{ top: 4, right: 36, left: -10, bottom: 0 }}>
+                    <LineChart data={kpis.weeklyTrend} margin={{ top: 8, right: 16, left: -10, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="2 4" stroke="#F0F0F0" vertical={false} />
-                      <XAxis dataKey="weekLabel" tick={{ fill: '#CCC', fontSize: 10 }} axisLine={false} tickLine={false} />
-                      <YAxis yAxisId="pct" domain={[0, 100]} tick={{ fill: '#CCC', fontSize: 10 }} unit="%" axisLine={false} tickLine={false} />
-                      <YAxis yAxisId="pos" orientation="right" hide />
-                      <ReferenceLine yAxisId="pct" y={90} stroke="#E8E8E8" strokeDasharray="3 3" />
-                      <Bar yAxisId="pos" dataKey="totalPOs" fill="rgba(100,116,239,0.09)" radius={[2, 2, 0, 0]} />
-                      <Line yAxisId="pct" dataKey="otifPct" stroke="#34A853" strokeWidth={2} dot={false} connectNulls={false} />
-                      <Line yAxisId="pct" dataKey="sotPct" stroke="#FF8900" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} connectNulls={false} />
-                      <Tooltip contentStyle={{ background: '#111', border: 'none', color: 'white', borderRadius: 8, fontSize: 11 }} labelStyle={{ color: '#FF8900', fontWeight: 700 }} formatter={(v, n) => [String(n) === 'POs' ? `${v} POs` : `${v}%`, n]} />
-                    </ComposedChart>
+                      <XAxis dataKey="weekLabel" tick={{ fill: '#CCC', fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis domain={[0, 100]} tick={{ fill: '#CCC', fontSize: 11 }} unit="%" axisLine={false} tickLine={false} />
+                      <ReferenceLine y={90} stroke="#E5E5E5" strokeDasharray="3 3" />
+                      <Line dataKey="otifPct" stroke="#34A853" strokeWidth={2.5} dot={{ r: 3, fill: '#34A853', strokeWidth: 0 }} name="OTIF %" connectNulls={false} />
+                      <Line dataKey="sotPct" stroke="#FF8900" strokeWidth={2.5} dot={{ r: 3, fill: '#FF8900', strokeWidth: 0 }} activeDot={{ r: 5 }} name="SOT %" connectNulls={false} />
+                      <Tooltip contentStyle={{ background: '#111', border: 'none', color: 'white', borderRadius: 8, fontSize: 12 }} labelStyle={{ color: '#FF8900', fontWeight: 700 }} formatter={(v) => [`${v}%`]} />
+                    </LineChart>
                   </ResponsiveContainer>
                 </div>
               </div>
             </div>
 
             {/* row 2: Backlog | Not Booked | SKU | Invoices | Pickup */}
-            <div className="grid grid-cols-5 gap-3">
-              <div onClick={() => router.push('/backlog')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
-                <p className="text-[10px] uppercase tracking-widest text-[#AAA] mb-3">Backlog</p>
-                <div className="space-y-2">
+            <div className="grid grid-cols-5 gap-3 flex-[1.2]">
+              <div onClick={() => router.push('/backlog')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Backlog</p>
+                <div className="space-y-3">
                   {[
                     { label: 'Critical', count: new Set(kpis.backlogSummary.critical.map(l => l.po)).size, color: 'text-fail' },
                     { label: 'Recent',   count: new Set(kpis.backlogSummary.recent.map(l => l.po)).size,   color: 'text-warn' },
                     { label: 'At Risk',  count: new Set(kpis.backlogSummary.atRisk.map(l => l.po)).size,   color: 'text-brand' },
                   ].map((item) => (
                     <div key={item.label} className="flex items-baseline justify-between">
-                      <span className="text-xs text-[#777]">{item.label}</span>
-                      <span className={`kpi-number font-extrabold text-2xl ${item.color}`}>{item.count}</span>
+                      <span className="text-sm text-[#777]">{item.label}</span>
+                      <span className={`kpi-number font-extrabold text-3xl ${item.color}`}>{item.count}</span>
                     </div>
                   ))}
                 </div>
-                <p className="text-[10px] text-brand font-semibold mt-2">Drill down →</p>
+                <p className="text-xs text-brand font-semibold">Drill down →</p>
               </div>
 
-              <div onClick={() => router.push('/not-booked')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] p-4 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
-                <p className="text-[10px] uppercase tracking-widest text-[#AAA]">Not Booked</p>
+              <div onClick={() => router.push('/not-booked')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Not Booked</p>
                 <div>
-                  <p className={`kpi-number font-extrabold text-5xl leading-none ${notBookedPOs.length === 0 ? 'text-pass' : 'text-fail'}`}>{notBookedPOs.length}</p>
-                  <p className="text-[10px] text-[#AAA] mt-1">POs without ESD</p>
+                  <p className={`kpi-number font-extrabold text-6xl leading-none ${notBookedPOs.length === 0 ? 'text-pass' : 'text-fail'}`}>{notBookedPOs.length}</p>
+                  <p className="text-xs text-[#AAA] mt-1">POs without ESD</p>
                 </div>
-                <p className="text-[10px] text-brand font-semibold">Drill down →</p>
+                <p className="text-xs text-brand font-semibold">Drill down →</p>
               </div>
 
-              <div onClick={() => router.push('/sku')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] p-4 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
-                <p className="text-[10px] uppercase tracking-widest text-[#AAA]">SKU Deep Dive</p>
+              <div onClick={() => router.push('/sku')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <p className="text-[11px] uppercase tracking-widest text-[#AAA]">SKU Deep Dive</p>
                 <div>
-                  <p className="kpi-number font-extrabold text-5xl leading-none text-[#111]">{weeklyLines.length}</p>
-                  <p className="text-[10px] text-[#AAA] mt-1">lines this week</p>
-                  {kpis.failingLines.length > 0 && <span className="text-[10px] bg-[#FEE2E2] text-fail px-1.5 py-0.5 rounded-full font-medium">{kpis.failingLines.length} failing</span>}
+                  <p className="kpi-number font-extrabold text-6xl leading-none text-[#111]">{weeklyLines.length}</p>
+                  <p className="text-xs text-[#AAA] mt-1">lines this week</p>
+                  {kpis.failingLines.length > 0 && <span className="inline-block mt-2 text-xs bg-[#FEE2E2] text-fail px-2 py-0.5 rounded-full font-medium">{kpis.failingLines.length} failing</span>}
                 </div>
-                <p className="text-[10px] text-brand font-semibold">Drill down →</p>
+                <p className="text-xs text-brand font-semibold">Drill down →</p>
               </div>
 
-              <div className="bg-white rounded-xl border border-[#F0F0F0] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
-                <p className="text-[10px] uppercase tracking-widest text-[#AAA] mb-3">Invoices</p>
+              <div className="bg-white rounded-xl border border-[#F0F0F0] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Invoices</p>
                 <div className="space-y-2">
                   {[{ l: 'Overdue', v: '3', c: 'text-fail' }, { l: 'P2W', v: '1', c: 'text-warn' }, { l: 'On time', v: '14', c: 'text-pass' }].map((r) => (
                     <div key={r.l} className="flex items-baseline justify-between">
@@ -283,19 +281,21 @@ export function Dashboard() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-[#F0F0F0] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
-                <p className="text-[10px] uppercase tracking-widest text-[#AAA] mb-2">Pickups</p>
-                <ResponsiveContainer width="100%" height={80}>
-                  <BarChart data={['M','T','W','T','F'].map((day, i) => ({ day, n: weeklyLines.filter((l) => l.asd && l.asd.getDay() === i + 1).length }))} margin={{ top: 0, right: 0, left: -28, bottom: 0 }}>
+              <div className="bg-white rounded-xl border border-[#F0F0F0] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Pickups</p>
+                <ResponsiveContainer width="100%" height={100}>
+                  <BarChart data={['Mon','Tue','Wed','Thu','Fri'].map((day, i) => ({ day, n: weeklyLines.filter((l) => l.asd && l.asd.getDay() === i + 1).length }))} margin={{ top: 0, right: 0, left: -24, bottom: 0 }}>
                     <XAxis dataKey="day" tick={{ fill: '#CCC', fontSize: 10 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fill: '#CCC', fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <Bar dataKey="n" fill="#FF8900" radius={[2, 2, 0, 0]} />
+                    <Tooltip contentStyle={{ background: '#111', border: 'none', color: 'white', borderRadius: 8, fontSize: 11 }} />
+                    <Bar dataKey="n" fill="#FF8900" radius={[3, 3, 0, 0]} name="Pickups" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
-            {/* row 3: lead times compact strip */}
-            <div onClick={() => router.push('/lead-times')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] px-5 py-3 cursor-pointer" style={{ boxShadow: 'var(--shadow-card)' }}>
+
+            {/* row 3: lead times strip */}
+            <div onClick={() => router.push('/lead-times')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] px-6 py-4 cursor-pointer flex-[0.6]" style={{ boxShadow: 'var(--shadow-card)' }}>
               <div className="flex items-center gap-6">
                 <div className="shrink-0">
                   <p className="text-[10px] uppercase tracking-widest text-[#AAA]">Lead Times</p>
