@@ -129,14 +129,14 @@ export function Dashboard() {
       {!hasData && (
         <div className="flex flex-col items-center justify-center min-h-[80vh] gap-8 px-4 page-enter">
           <div className="text-center">
-            <p className="font-serif text-6xl font-bold text-[#111] leading-tight">Ready when<br />you are.</p>
-            <p className="text-[#999] text-base mt-4">Upload your Business Central exports to see this week&apos;s data.</p>
+            <p className="text-2xl font-semibold text-[#111]">No data loaded</p>
+            <p className="text-[#999] text-sm mt-2">Upload your Business Central exports to begin the review.</p>
           </div>
           <button
             onClick={() => setUploadOpen(true)}
-            className="bg-brand text-white px-8 py-3 rounded-xl text-sm font-bold hover:bg-brand-soft transition-colors shadow-sm"
+            className="bg-brand text-white px-8 py-3 rounded-xl text-sm font-semibold hover:bg-brand-soft transition-colors"
           >
-            ↑ Upload BC Files
+            Upload BC Files
           </button>
           {/* ghost cards */}
           <div className="grid grid-cols-3 gap-4 w-full max-w-3xl opacity-[0.07] pointer-events-none select-none mt-4">

@@ -203,7 +203,7 @@ export function PrepareModal({ onClose, failingLines }: PrepareModalProps) {
               onClick={onClose}
               className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${allDone ? 'bg-pass text-white' : 'bg-[#111] text-white hover:bg-[#333]'}`}
             >
-              {allDone ? '✓ All done — ready for Wednesday!' : `Save & close (${annotatedCount}/${visibleLines.length} done)`}
+              {allDone ? '✓ All lines annotated — ready for review' : `Save & close (${annotatedCount}/${visibleLines.length} done)`}
             </button>
           )}
         </div>

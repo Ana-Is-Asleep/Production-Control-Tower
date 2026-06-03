@@ -49,5 +49,14 @@ export function classifyBacklog(line: PurchaseLine, today: Date): BacklogType {
   return 'on-time';
 }
 
+// expected SOT: if ESD falls in same ISO week as PGRD, the line is on track to be SOT
+// only applies to lines that haven't shipped yet (no ASD)
+export function computeExpectedSOT(line: PurchaseLine): boolean | null {
+  if (line.asd) return null; // already shipped, use actual SOT
+  if (!line.esd || !line.pgrd) return null;
+  return getISOWeek(line.esd) === getISOWeek(line.pgrd) &&
+    getISOWeekYear(line.esd) === getISOWeekYear(line.pgrd);
+}
+
 export const SOT_TARGET = 90;
 export const OTIF_TARGET = 90;
