@@ -67,8 +67,8 @@ export function Dashboard() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [prepareOpen, setPrepareOpen] = useState(false);
 
-  const { filters, setFilters, weeklyLines, accumulatingLines, allSuppliers, availableWeeks, lastWeek, lastYear } = useFilters(allLines);
-  const kpis = useKPIs(weeklyLines, accumulatingLines);
+  const { filters, setFilters, weeklyLines, accumulatingLines, allD2cLines, allSuppliers, availableWeeks, lastWeek, lastYear } = useFilters(allLines);
+  const kpis = useKPIs(weeklyLines, accumulatingLines, allD2cLines);
 
   const allAnnotated = useMemo(() => {
     if (kpis.failingLines.length === 0) return allLines.length > 0;

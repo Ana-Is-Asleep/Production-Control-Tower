@@ -5,7 +5,7 @@ import { getISOWeek, getISOWeekYear, isoWeekKey, isoWeekLabel, lastCompletedWeek
 import { computeKPI, computeExpectedSOT, classifyBacklog, SOT_TARGET, OTIF_TARGET } from '../lib/kpiFormulas';
 import type { PurchaseLine, WeeklyKPIPoint, BacklogSummary } from '../types';
 
-export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: PurchaseLine[]) {
+export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: PurchaseLine[], allD2cLines?: PurchaseLine[]) {
   const today = useMemo(() => new Date(), []);
   const { week: lastWeek, year: lastYear } = lastCompletedWeek();
 
@@ -50,7 +50,9 @@ export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: Purchase
       const isCurrent = offset === 0;
       const isFuture = offset > 0;
 
-      const wLines = accumulatingLines.filter((l) => {
+      // use allD2cLines for future weeks so we can show planned POs and estimated SOT
+      const sourceLines = isFuture && allD2cLines ? allD2cLines : accumulatingLines;
+      const wLines = sourceLines.filter((l) => {
         if (!l.pgrd) return false;
         return getISOWeek(l.pgrd) === adjustedWeek && getISOWeekYear(l.pgrd) === adjustedYear;
       });

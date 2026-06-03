@@ -61,8 +61,8 @@ function VendorDropdown({ vendors, selected, onChange }: { vendors: string[]; se
 export default function SOTOTIFPage() {
   const router = useRouter();
   const { allLines, annotations } = useData();
-  const { weeklyLines, accumulatingLines, lastWeek, lastYear } = useFilters(allLines);
-  const kpis = useKPIs(weeklyLines, accumulatingLines);
+  const { weeklyLines, accumulatingLines, allD2cLines, lastWeek, lastYear } = useFilters(allLines);
+  const kpis = useKPIs(weeklyLines, accumulatingLines, allD2cLines);
   const [groupBy, setGroupBy] = useState<GroupBy>('supplier');
   const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
   const [expandedVendor, setExpandedVendor] = useState<string | null>(null);

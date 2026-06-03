@@ -62,6 +62,8 @@ export function useFilters(allLines: PurchaseLine[]) {
     setFilters,
     weeklyLines: applyFilters(weeklyLines),
     accumulatingLines: applyFilters(accumulatingLines),
+    // all 2026 D2C lines including future PGRDs — used for trend chart future weeks
+    allD2cLines: applyFilters(d2cLines),
     allSuppliers,
     availableWeeks,
     lastWeek,
