@@ -61,6 +61,7 @@ export interface WeeklyKPIPoint {
   otifPct: number | null;
   sotOutOfTarget: number;
   totalLines: number;
+  totalPOs: number;
   isCurrent: boolean;
   isFuture: boolean;
 }

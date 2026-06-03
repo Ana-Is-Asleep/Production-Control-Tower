@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { getISOWeek, getISOWeekYear, isoWeekKey, isoWeekLabel, lastCompletedWeek, weekRangeFor } from '../lib/dateUtils';
-import { computeKPI, classifyBacklog, SOT_TARGET, OTIF_TARGET } from '../lib/kpiFormulas';
+import { computeKPI, computeExpectedSOT, classifyBacklog, SOT_TARGET, OTIF_TARGET } from '../lib/kpiFormulas';
 import type { PurchaseLine, WeeklyKPIPoint, BacklogSummary } from '../types';
 
 export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: PurchaseLine[]) {
@@ -61,16 +61,23 @@ export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: Purchase
       const wSotPct = wSot.length > 0 ? Math.round((wSot.filter((k) => k.sotResult).length / wSot.length) * 100) : null;
       const wOtifPct = wOtif.length > 0 ? Math.round((wOtif.filter((k) => k.otif).length / wOtif.length) * 100) : null;
       const sotFails = wKpis.filter((k) => k.sotFail).length;
+      const totalPOs = new Set(wLines.map((l) => l.po)).size;
+      // for future weeks: estimate SOT using ESD vs PGRD
+      const expSotLines = isFuture ? wLines.filter((l) => computeExpectedSOT(l) !== null) : [];
+      const expSotPct = isFuture && expSotLines.length > 0
+        ? Math.round(expSotLines.filter((l) => computeExpectedSOT(l) === true).length / expSotLines.length * 100)
+        : null;
 
       points.push({
         isoWeek: key,
         weekLabel: label,
-        sotPct: wSotPct,
-        otifPct: wOtifPct,
+        sotPct: isFuture ? expSotPct : wSotPct,
+        otifPct: isFuture ? null : wOtifPct,
         sotOutOfTarget: sotFails,
         totalLines: wLines.length,
+        totalPOs,
         isCurrent,
-        isFuture: false,
+        isFuture,
       });
     }
     return points;
