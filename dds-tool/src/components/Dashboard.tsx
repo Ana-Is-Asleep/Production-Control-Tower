@@ -193,10 +193,10 @@ export function Dashboard() {
             )}
           </div>
 
-          <div className="px-4 pt-3 pb-4 flex flex-col gap-3" style={{ minHeight: 'calc(100vh - 96px)' }}>
+          <div className="px-4 pt-3 pb-4 space-y-3">
 
             {/* row 1: SOT+OTIF hero */}
-            <div onClick={() => router.push('/sot-otif')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] px-6 py-5 cursor-pointer flex-[2]" style={{ boxShadow: 'var(--shadow-card)' }}>
+            <div onClick={() => router.push('/sot-otif')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] px-6 py-5 cursor-pointer h-[260px]" style={{ boxShadow: 'var(--shadow-card)' }}>
               <div className="flex items-stretch gap-10 h-full">
                 <div className="flex gap-10 shrink-0 items-center">
                   <div>
@@ -232,7 +232,7 @@ export function Dashboard() {
             </div>
 
             {/* row 2: Backlog | Not Booked | SKU | Invoices | Pickup */}
-            <div className="grid grid-cols-5 gap-3 flex-[1.2]">
+            <div className="grid grid-cols-5 gap-3 h-[220px]">
               <div onClick={() => router.push('/backlog')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
                 <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Backlog</p>
                 <div className="space-y-3">
@@ -295,7 +295,7 @@ export function Dashboard() {
             </div>
 
             {/* row 3: lead times strip */}
-            <div onClick={() => router.push('/lead-times')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] px-6 py-4 cursor-pointer flex-[0.6]" style={{ boxShadow: 'var(--shadow-card)' }}>
+            <div onClick={() => router.push('/lead-times')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] px-6 py-4 cursor-pointer" style={{ boxShadow: 'var(--shadow-card)' }}>
               <div className="flex items-center gap-6">
                 <div className="shrink-0">
                   <p className="text-[10px] uppercase tracking-widest text-[#AAA]">Lead Times</p>
