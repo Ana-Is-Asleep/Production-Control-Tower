@@ -3,7 +3,7 @@
 import { useState, useMemo, useRef, useEffect, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ReferenceLine, ResponsiveContainer, Legend,
 } from 'recharts';
 import { useData } from '../../context/DataContext';
@@ -170,12 +170,11 @@ export default function SOTOTIFPage() {
           <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-1">Trend by PGRD Week</p>
           <p className="text-xs text-[#CCC] mb-5">W23–W25 = future PGRDs, KPI not yet calculable</p>
           <ResponsiveContainer width="100%" height={320}>
-            <ComposedChart data={chartData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+            <LineChart data={chartData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F0F0F0" vertical={false} />
               <XAxis dataKey="weekLabel" tick={{ fill: '#AAA', fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis domain={[0, 100]} tick={{ fill: '#AAA', fontSize: 12 }} unit="%" axisLine={false} tickLine={false} />
-              <ReferenceLine y={90} stroke="#CCC" strokeDasharray="4 4" label={{ value: '90%', position: 'right', fill: '#CCC', fontSize: 11 }} />
-              <Bar dataKey="sotOutOfTarget" fill="rgba(255,137,0,0.10)" radius={[3, 3, 0, 0]} name="SOT fails (count)" />
+              <ReferenceLine y={90} stroke="#E0E0E0" strokeDasharray="4 4" label={{ value: '90% target', position: 'insideTopRight', fill: '#CCC', fontSize: 11 }} />
               <Line dataKey="otifPct" stroke="#34A853" strokeWidth={2.5} dot={{ r: 4, fill: '#34A853', strokeWidth: 0 }} name="OTIF %" connectNulls={false} />
               <Line dataKey="sotPct" stroke="#FF8900" strokeWidth={2.5} dot={{ r: 4, fill: '#FF8900', strokeWidth: 0 }} activeDot={{ r: 6 }} name="SOT %" connectNulls={false} />
               <Legend verticalAlign="bottom" align="center" iconType="circle" iconSize={8} wrapperStyle={{ paddingTop: 16 }}
@@ -183,9 +182,9 @@ export default function SOTOTIFPage() {
               <Tooltip
                 contentStyle={{ background: '#111', border: 'none', color: 'white', borderRadius: 10, fontSize: 12, padding: '8px 14px' }}
                 labelStyle={{ color: '#FF8900', fontWeight: 700, marginBottom: 4 }}
-                formatter={(value, name) => [String(name).includes('fails') ? value : `${value}%`, name]}
+                formatter={(value, name) => [`${value}%`, name]}
               />
-            </ComposedChart>
+            </LineChart>
           </ResponsiveContainer>
         </div>
 
