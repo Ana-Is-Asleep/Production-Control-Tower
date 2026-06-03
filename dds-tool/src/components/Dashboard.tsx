@@ -294,47 +294,42 @@ export function Dashboard() {
               </div>
             </div>
 
-            {/* row 3: lead times strip */}
-            <div onClick={() => router.push('/lead-times')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] px-6 py-4 cursor-pointer" style={{ boxShadow: 'var(--shadow-card)' }}>
-              <div className="flex items-center gap-6">
-                <div className="shrink-0">
-                  <p className="text-[10px] uppercase tracking-widest text-[#AAA]">Lead Times</p>
-                  <p className="text-[10px] text-brand font-semibold mt-1">Drill down →</p>
+            {/* row 3: lead times */}
+            <div onClick={() => router.push('/lead-times')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] p-5 cursor-pointer" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <div className="flex items-stretch gap-6 h-full">
+                <div className="shrink-0 flex flex-col justify-between">
+                  <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Lead Times</p>
+                  <p className="text-xs text-brand font-semibold">Drill down →</p>
                 </div>
-                <div className="h-8 w-px bg-[#F0F0F0] shrink-0" />
-                <div className="flex gap-6 flex-1">
+                <div className="w-px bg-[#F0F0F0] shrink-0" />
+                <div className="flex gap-8 flex-1 items-center">
                   {[
-                    { label: 'Planned', sub: '→ PGRD', value: ltSummary.avgPlannedLT, color: '#6366F1' },
-                    { label: 'Expected', sub: '→ EGRD', value: ltSummary.avgExpectedLT, color: '#FF8900' },
-                    { label: 'Actual', sub: '→ ASD', value: ltSummary.avgActualLT, color: ltSummary.avgActualLT !== null && ltSummary.avgActualLT <= ltSummary.avgAgreedLT ? '#34A853' : '#DC3545' },
-                    { label: 'Agreed', sub: 'From file', value: ltSummary.avgAgreedLT, color: '#999' },
-                    { label: 'Target', sub: 'Always', value: 30, color: '#999' },
+                    { label: 'Planned LT', sub: 'Order → PGRD', value: ltSummary.avgPlannedLT, color: '#6366F1' },
+                    { label: 'Expected LT', sub: 'Order → EGRD', value: ltSummary.avgExpectedLT, color: '#FF8900' },
+                    { label: 'Actual LT', sub: 'Order → ASD', value: ltSummary.avgActualLT, color: ltSummary.avgActualLT !== null && ltSummary.avgActualLT <= ltSummary.avgAgreedLT ? '#34A853' : '#DC3545' },
+                    { label: 'Agreed LT', sub: 'From file', value: ltSummary.avgAgreedLT, color: '#AAA' },
+                    { label: 'Target LT', sub: 'Always 30d', value: 30, color: '#AAA' },
                   ].map((item) => (
-                    <div key={item.label} className="flex items-baseline gap-1.5">
-                      <span className="kpi-number font-extrabold text-2xl leading-none" style={{ color: item.color }}>
+                    <div key={item.label} className="flex flex-col">
+                      <span className="kpi-number font-extrabold text-4xl leading-none" style={{ color: item.color }}>
                         {item.value !== null ? `${item.value}d` : '—'}
                       </span>
-                      <div>
-                        <p className="text-[10px] font-semibold text-[#555] leading-tight">{item.label}</p>
-                        <p className="text-[9px] text-[#CCC] leading-tight">{item.sub}</p>
-                      </div>
+                      <p className="text-xs font-semibold text-[#555] mt-1.5">{item.label}</p>
+                      <p className="text-[10px] text-[#CCC]">{item.sub}</p>
                     </div>
                   ))}
                 </div>
-                <div className="h-8 w-px bg-[#F0F0F0] shrink-0" />
-                <div className="flex gap-4 shrink-0">
-                  <div className={`rounded-lg px-3 py-1.5 flex items-center gap-2 ${ltSummary.earlyCount > 0 ? 'bg-[#F0FFF4]' : 'bg-[#F7F7F7]'}`}>
-                    <span className="font-extrabold text-xl text-pass">{ltSummary.earlyCount}</span>
-                    <div>
-                      <p className="text-[10px] font-semibold text-pass leading-tight">Early</p>
-                      {ltSummary.avgDaysEarly !== null && <p className="text-[9px] text-pass leading-tight">{ltSummary.avgDaysEarly}d avg</p>}
-                    </div>
+                <div className="w-px bg-[#F0F0F0] shrink-0" />
+                <div className="flex gap-4 shrink-0 items-center">
+                  <div className={`rounded-xl px-5 py-3 flex flex-col items-center ${ltSummary.earlyCount > 0 ? 'bg-[#F0FFF4]' : 'bg-[#F7F7F7]'}`}>
+                    <span className="kpi-number font-extrabold text-4xl text-pass">{ltSummary.earlyCount}</span>
+                    <p className="text-xs font-semibold text-pass mt-1">Early</p>
+                    {ltSummary.avgDaysEarly !== null && <p className="text-[10px] text-pass">{ltSummary.avgDaysEarly}d avg vs agreed</p>}
                   </div>
-                  <div className={`rounded-lg px-3 py-1.5 flex items-center gap-2 ${ltSummary.lateCount > 0 ? 'bg-[#FFF5F5]' : 'bg-[#F7F7F7]'}`}>
-                    <span className="font-extrabold text-xl text-fail">{ltSummary.lateCount}</span>
-                    <div>
-                      <p className="text-[10px] font-semibold text-fail leading-tight">Late</p>
-                      {ltSummary.avgDaysLate !== null && <p className="text-[9px] text-fail leading-tight">+{ltSummary.avgDaysLate}d avg</p>}
+                  <div className={`rounded-xl px-5 py-3 flex flex-col items-center ${ltSummary.lateCount > 0 ? 'bg-[#FFF5F5]' : 'bg-[#F7F7F7]'}`}>
+                    <span className="kpi-number font-extrabold text-4xl text-fail">{ltSummary.lateCount}</span>
+                    <p className="text-xs font-semibold text-fail mt-1">Late</p>
+                    {ltSummary.avgDaysLate !== null && <p className="text-[10px] text-fail">+{ltSummary.avgDaysLate}d avg vs agreed</p>}
                     </div>
                   </div>
                 </div>
