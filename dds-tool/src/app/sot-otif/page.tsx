@@ -183,7 +183,7 @@ export default function SOTOTIFPage() {
               <Tooltip
                 contentStyle={{ background: '#111', border: 'none', color: 'white', borderRadius: 10, fontSize: 12, padding: '8px 14px' }}
                 labelStyle={{ color: '#FF8900', fontWeight: 700, marginBottom: 4 }}
-                formatter={(value, name) => [name?.includes('fails') ? value : `${value}%`, name]}
+                formatter={(value, name) => [String(name).includes('fails') ? value : `${value}%`, name]}
               />
             </ComposedChart>
           </ResponsiveContainer>
