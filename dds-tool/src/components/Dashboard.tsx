@@ -8,6 +8,7 @@ import { useKPIs } from '../hooks/useKPIs';
 import { UploadPanel } from './upload/UploadPanel';
 import { PrepareModal } from './PrepareModal';
 import { SKU_CATEGORIES, type SKUCategory } from '../lib/skuUtils';
+import { summariseLeadTimes } from '../lib/leadTimeUtils';
 import type { PurchaseLine } from '../types';
 import {
   ComposedChart, BarChart, Bar, Line, XAxis, YAxis, CartesianGrid,
@@ -97,6 +98,7 @@ export function Dashboard() {
   const annotatedCount = kpis.failingLines.filter((l) => isAnnotated(`${l.po}-${l.line}`)).length;
   // not booked = unique POs, not lines
   const notBookedPOs = [...new Set(kpis.notBookedLines.map((l) => l.po))];
+  const ltSummary = useMemo(() => summariseLeadTimes(weeklyLines), [weeklyLines]);
 
   return (
     <div className="min-h-screen w-full bg-[#F4F4F6]">
@@ -312,6 +314,51 @@ export function Dashboard() {
                   <Bar dataKey="pickups" fill="#FF8900" radius={[4, 4, 0, 0]} name="Pickups" />
                 </BarChart>
               </ResponsiveContainer>
+            </div>
+            {/* lead times cluster */}
+            <div onClick={() => router.push('/lead-times')} className="kpi-card bg-white rounded-2xl border border-[#F0F0F0] p-6 cursor-pointer" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <div className="flex items-start justify-between mb-5">
+                <div>
+                  <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Lead Times</p>
+                  <p className="text-xs text-[#CCC] mt-0.5">Order date → PGRD / EGRD / ASD · {ltSummary.totalEvaluable} shipped POs evaluated</p>
+                </div>
+                <p className="text-xs text-brand font-semibold">Drill down →</p>
+              </div>
+              <div className="grid grid-cols-6 gap-4">
+                {/* avg LT comparison */}
+                {[
+                  { label: 'Planned LT', sub: 'Order → PGRD', value: ltSummary.avgPlannedLT, color: '#6366F1' },
+                  { label: 'Expected LT', sub: 'Order → EGRD', value: ltSummary.avgExpectedLT, color: '#FF8900' },
+                  { label: 'Actual LT', sub: 'Order → ASD', value: ltSummary.avgActualLT, color: ltSummary.avgActualLT !== null && ltSummary.avgActualLT <= ltSummary.avgAgreedLT ? '#34A853' : '#DC3545' },
+                  { label: 'Agreed LT', sub: 'From file', value: ltSummary.avgAgreedLT, color: '#8A8A8A' },
+                  { label: 'Target LT', sub: 'Always 30d', value: 30, color: '#8A8A8A' },
+                ].map((item) => (
+                  <div key={item.label} className="flex flex-col">
+                    <span className="kpi-number font-extrabold text-4xl leading-none" style={{ color: item.color }}>
+                      {item.value !== null ? `${item.value}d` : '—'}
+                    </span>
+                    <span className="text-xs font-semibold text-[#555] mt-2">{item.label}</span>
+                    <span className="text-[10px] text-[#CCC] mt-0.5">{item.sub}</span>
+                  </div>
+                ))}
+                {/* early / late column */}
+                <div className="flex flex-col gap-2">
+                  <div className={`rounded-xl px-3 py-2 ${ltSummary.earlyCount > 0 ? 'bg-[#F0FFF4]' : 'bg-[#F7F7F7]'}`}>
+                    <p className="text-[10px] uppercase tracking-widest text-[#AAA]">Early</p>
+                    <p className="font-extrabold text-xl text-pass">{ltSummary.earlyCount}</p>
+                    {ltSummary.avgDaysEarly !== null && (
+                      <p className="text-[10px] text-pass">avg {ltSummary.avgDaysEarly}d vs agreed</p>
+                    )}
+                  </div>
+                  <div className={`rounded-xl px-3 py-2 ${ltSummary.lateCount > 0 ? 'bg-[#FFF5F5]' : 'bg-[#F7F7F7]'}`}>
+                    <p className="text-[10px] uppercase tracking-widest text-[#AAA]">Late</p>
+                    <p className="font-extrabold text-xl text-fail">{ltSummary.lateCount}</p>
+                    {ltSummary.avgDaysLate !== null && (
+                      <p className="text-[10px] text-fail">avg +{ltSummary.avgDaysLate}d vs agreed</p>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
