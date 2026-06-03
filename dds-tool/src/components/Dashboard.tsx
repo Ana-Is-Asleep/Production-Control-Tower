@@ -243,9 +243,9 @@ export function Dashboard() {
                 <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-5">Backlog</p>
                 <div className="space-y-4 mb-5">
                   {[
-                    { label: 'Critical', count: kpis.backlogSummary.critical.length, color: 'text-fail', dot: 'bg-fail', sub: '>14d no ASD' },
-                    { label: 'Recent', count: kpis.backlogSummary.recent.length, color: 'text-warn', dot: 'bg-warn', sub: '≤14d no ASD' },
-                    { label: 'At Risk', count: kpis.backlogSummary.atRisk.length, color: 'text-brand', dot: 'bg-brand', sub: 'ESD > PGRD' },
+                    { label: 'Critical', count: new Set(kpis.backlogSummary.critical.map(l => l.po)).size, color: 'text-fail', dot: 'bg-fail', sub: '>14d no ASD' },
+                    { label: 'Recent', count: new Set(kpis.backlogSummary.recent.map(l => l.po)).size, color: 'text-warn', dot: 'bg-warn', sub: '≤14d no ASD' },
+                    { label: 'At Risk', count: new Set(kpis.backlogSummary.atRisk.map(l => l.po)).size, color: 'text-brand', dot: 'bg-brand', sub: 'ESD > PGRD' },
                   ].map((item) => (
                     <div key={item.label} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">

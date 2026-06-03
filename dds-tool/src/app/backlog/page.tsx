@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import { useData } from '../../context/DataContext';
 import { useFilters } from '../../hooks/useFilters';
 import { useKPIs } from '../../hooks/useKPIs';
 import { formatDateShort } from '../../lib/dateUtils';
-import { categorizeSKU, SKU_CATEGORIES, type SKUCategory } from '../../lib/skuUtils';
+import { categorizeSKU, SKU_CATEGORIES, SKUCategory } from '../../lib/skuUtils';
 import type { PurchaseLine } from '../../types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
@@ -62,40 +62,62 @@ function VendorDropdown({ vendors, selected, onChange }: { vendors: string[]; se
 
 function BacklogTable({ lines }: { lines: PurchaseLine[] }) {
   if (lines.length === 0) return (
-    <div className="text-center py-10 text-[#CCC] text-sm">No lines match the current filters</div>
+    <div className="text-center py-10 text-[#CCC] text-sm">No POs match the current filters</div>
   );
+
+  // group by PO — one row per PO, show line count and all unique categories
+  const grouped = useMemo(() => {
+    const map = new Map<string, { lines: PurchaseLine[]; categories: Set<SKUCategory> }>();
+    lines.forEach((l) => {
+      if (!map.has(l.po)) map.set(l.po, { lines: [], categories: new Set() });
+      const g = map.get(l.po)!;
+      g.lines.push(l);
+      g.categories.add(categorizeSKU(l.sku));
+    });
+    return [...map.entries()].map(([po, g]) => ({
+      po,
+      vendor: g.lines[0].supplier,
+      destination: g.lines[0].destination,
+      pgrd: g.lines[0].pgrd,
+      esd: g.lines.find(l => l.esd)?.esd ?? null,
+      lineCount: g.lines.length,
+      categories: [...g.categories],
+      hasNoEsd: g.lines.some(l => !l.esd),
+    }));
+  }, [lines]);
 
   return (
     <div className="bg-white rounded-2xl border border-[#F0F0F0] overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-[#111] text-white">
-            {['PO', 'SKU', 'Category', 'Vendor', 'Destination', 'PGRD', 'ESD'].map((h) => (
+            {['PO', 'Category', 'Vendor', 'Destination', 'PGRD', 'ESD', 'Lines'].map((h) => (
               <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">{h}</th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {lines.map((l) => {
-            const cat = categorizeSKU(l.sku);
-            return (
-              <tr key={`${l.po}-${l.line}`} className="border-b border-[#F7F7F7] hover:bg-[#FAFAFA] transition-colors">
-                <td className="px-4 py-2.5 font-semibold text-[#111] whitespace-nowrap">{l.po}</td>
-                <td className="px-4 py-2.5 text-[#555] font-mono text-xs">{l.sku}</td>
-                <td className="px-4 py-2.5">
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full text-white" style={{ background: CATEGORY_COLORS[cat] }}>{cat}</span>
-                </td>
-                <td className="px-4 py-2.5 text-[#555]">{l.supplier}</td>
-                <td className="px-4 py-2.5 text-[#555]">{l.destination}</td>
-                <td className="px-4 py-2.5 text-[#555] whitespace-nowrap">{formatDateShort(l.pgrd)}</td>
-                <td className="px-4 py-2.5 whitespace-nowrap">
-                  {l.esd
-                    ? <span className="text-[#555]">{formatDateShort(l.esd)}</span>
-                    : <span className="text-xs bg-[#FEE2E2] text-fail px-2 py-0.5 rounded-full font-medium">No ESD</span>}
-                </td>
-              </tr>
-            );
-          })}
+          {grouped.map((g) => (
+            <tr key={g.po} className="border-b border-[#F7F7F7] hover:bg-[#FAFAFA] transition-colors">
+              <td className="px-4 py-2.5 font-semibold text-[#111] whitespace-nowrap">{g.po}</td>
+              <td className="px-4 py-2.5">
+                <div className="flex gap-1 flex-wrap">
+                  {g.categories.map((c) => (
+                    <span key={c} className="text-[10px] font-medium px-2 py-0.5 rounded-full text-white" style={{ background: CATEGORY_COLORS[c] }}>{c}</span>
+                  ))}
+                </div>
+              </td>
+              <td className="px-4 py-2.5 text-[#555]">{g.vendor}</td>
+              <td className="px-4 py-2.5 text-[#555]">{g.destination}</td>
+              <td className="px-4 py-2.5 text-[#555] whitespace-nowrap">{formatDateShort(g.pgrd)}</td>
+              <td className="px-4 py-2.5 whitespace-nowrap">
+                {g.hasNoEsd
+                  ? <span className="text-xs bg-[#FEE2E2] text-fail px-2 py-0.5 rounded-full font-medium">No ESD</span>
+                  : <span className="text-[#555]">{formatDateShort(g.esd)}</span>}
+              </td>
+              <td className="px-4 py-2.5 text-[#888] text-xs">{g.lineCount}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
