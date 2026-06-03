@@ -196,19 +196,19 @@ export function Dashboard() {
           <div className="px-4 pt-3 pb-4 space-y-3">
 
             {/* row 1: SOT+OTIF hero */}
-            <div onClick={() => router.push('/sot-otif')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] px-6 py-5 cursor-pointer h-[260px]" style={{ boxShadow: 'var(--shadow-card)' }}>
+            <div onClick={() => router.push('/sot-otif')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] px-6 py-5 cursor-pointer h-[280px]" style={{ boxShadow: 'var(--shadow-card)' }}>
               <div className="flex items-stretch gap-10 h-full">
                 <div className="flex gap-10 shrink-0 items-center">
                   <div>
                     <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-2">SOT · 90% target</p>
-                    <p className={`kpi-number font-extrabold text-8xl leading-none ${kpis.sotPct === null ? 'text-[#DDD]' : kpis.sotPct >= 90 ? 'text-pass' : 'text-fail'}`}>
+                    <p className={`kpi-number font-extrabold text-6xl leading-none ${kpis.sotPct === null ? 'text-[#DDD]' : kpis.sotPct >= 90 ? 'text-pass' : 'text-fail'}`}>
                       {kpis.sotPct !== null ? `${kpis.sotPct}%` : '—'}
                     </p>
                     {sotDelta !== null && <p className={`text-sm font-semibold mt-2 ${sotDelta >= 0 ? 'text-pass' : 'text-fail'}`}>{sotDelta >= 0 ? '↑' : '↓'} {Math.abs(sotDelta)}pp vs target</p>}
                   </div>
                   <div>
                     <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-2">OTIF · 90% target</p>
-                    <p className={`kpi-number font-extrabold text-8xl leading-none ${kpis.otifPct === null ? 'text-[#DDD]' : kpis.otifPct >= 90 ? 'text-pass' : 'text-warn'}`}>
+                    <p className={`kpi-number font-extrabold text-6xl leading-none ${kpis.otifPct === null ? 'text-[#DDD]' : kpis.otifPct >= 90 ? 'text-pass' : 'text-warn'}`}>
                       {kpis.otifPct !== null ? `${kpis.otifPct}%` : '—'}
                     </p>
                     {otifDelta !== null && <p className={`text-sm font-semibold mt-2 ${otifDelta >= 0 ? 'text-pass' : 'text-warn'}`}>{otifDelta >= 0 ? '↑' : '↓'} {Math.abs(otifDelta)}pp vs target</p>}
@@ -232,7 +232,7 @@ export function Dashboard() {
             </div>
 
             {/* row 2: Backlog | Not Booked | SKU | Invoices | Pickup */}
-            <div className="grid grid-cols-5 gap-3 h-[220px]">
+            <div className="grid grid-cols-5 gap-3 h-[300px]">
               <div onClick={() => router.push('/backlog')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
                 <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Backlog</p>
                 <div className="space-y-3">
@@ -243,7 +243,7 @@ export function Dashboard() {
                   ].map((item) => (
                     <div key={item.label} className="flex items-baseline justify-between">
                       <span className="text-sm text-[#777]">{item.label}</span>
-                      <span className={`kpi-number font-extrabold text-3xl ${item.color}`}>{item.count}</span>
+                      <span className={`kpi-number font-extrabold text-4xl ${item.color}`}>{item.count}</span>
                     </div>
                   ))}
                 </div>
@@ -253,7 +253,7 @@ export function Dashboard() {
               <div onClick={() => router.push('/not-booked')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
                 <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Not Booked</p>
                 <div>
-                  <p className={`kpi-number font-extrabold text-6xl leading-none ${notBookedPOs.length === 0 ? 'text-pass' : 'text-fail'}`}>{notBookedPOs.length}</p>
+                  <p className={`kpi-number font-extrabold text-7xl leading-none ${notBookedPOs.length === 0 ? 'text-pass' : 'text-fail'}`}>{notBookedPOs.length}</p>
                   <p className="text-xs text-[#AAA] mt-1">POs without ESD</p>
                 </div>
                 <p className="text-xs text-brand font-semibold">Drill down →</p>
@@ -262,7 +262,7 @@ export function Dashboard() {
               <div onClick={() => router.push('/sku')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
                 <p className="text-[11px] uppercase tracking-widest text-[#AAA]">SKU Deep Dive</p>
                 <div>
-                  <p className="kpi-number font-extrabold text-6xl leading-none text-[#111]">{weeklyLines.length}</p>
+                  <p className="kpi-number font-extrabold text-7xl leading-none text-[#111]">{weeklyLines.length}</p>
                   <p className="text-xs text-[#AAA] mt-1">lines this week</p>
                   {kpis.failingLines.length > 0 && <span className="inline-block mt-2 text-xs bg-[#FEE2E2] text-fail px-2 py-0.5 rounded-full font-medium">{kpis.failingLines.length} failing</span>}
                 </div>
@@ -283,7 +283,7 @@ export function Dashboard() {
 
               <div className="bg-white rounded-xl border border-[#F0F0F0] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
                 <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Pickups</p>
-                <ResponsiveContainer width="100%" height={100}>
+                <ResponsiveContainer width="100%" height={150}>
                   <BarChart data={['Mon','Tue','Wed','Thu','Fri'].map((day, i) => ({ day, n: weeklyLines.filter((l) => l.asd && l.asd.getDay() === i + 1).length }))} margin={{ top: 0, right: 0, left: -24, bottom: 0 }}>
                     <XAxis dataKey="day" tick={{ fill: '#CCC', fontSize: 10 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fill: '#CCC', fontSize: 10 }} axisLine={false} tickLine={false} />
