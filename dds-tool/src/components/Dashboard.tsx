@@ -221,16 +221,17 @@ export function Dashboard() {
                     )}
                   </div>
                 </div>
-                <div className="h-[90px]">
+                <div className="h-[140px] mt-4">
                   <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={kpis.weeklyTrend} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="2 4" stroke="#F5F5F5" vertical={false} />
-                      <XAxis dataKey="weekLabel" tick={{ fill: '#CCC', fontSize: 10 }} axisLine={false} tickLine={false} />
-                      <YAxis domain={[0, 100]} hide />
-                      <ReferenceLine y={90} stroke="#E8E8E8" strokeDasharray="3 3" />
-                      <Bar dataKey="sotOutOfTarget" fill="rgba(255,137,0,0.08)" radius={[2, 2, 0, 0]} />
-                      <Line dataKey="otifPct" stroke="#34A853" strokeWidth={2} dot={false} connectNulls={false} />
-                      <Line dataKey="sotPct" stroke="#FF8900" strokeWidth={2.5} dot={false} connectNulls={false} />
+                    <ComposedChart data={kpis.weeklyTrend} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="2 4" stroke="#F0F0F0" vertical={false} />
+                      <XAxis dataKey="weekLabel" tick={{ fill: '#CCC', fontSize: 10 }} axisLine={false} tickLine={false} interval={1} />
+                      <YAxis yAxisId="pct" domain={[0, 100]} hide />
+                      <YAxis yAxisId="pos" orientation="right" hide />
+                      <ReferenceLine yAxisId="pct" y={90} stroke="#E5E5E5" strokeDasharray="3 3" />
+                      <Bar yAxisId="pos" dataKey="totalPOs" fill="rgba(100,116,239,0.10)" radius={[2, 2, 0, 0]} />
+                      <Line yAxisId="pct" dataKey="otifPct" stroke="#34A853" strokeWidth={2} dot={false} connectNulls={false} />
+                      <Line yAxisId="pct" dataKey="sotPct" stroke="#FF8900" strokeWidth={2.5} dot={false} connectNulls={false} />
                     </ComposedChart>
                   </ResponsiveContainer>
                 </div>
