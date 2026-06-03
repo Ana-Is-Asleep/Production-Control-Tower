@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
@@ -214,9 +214,8 @@ export default function SOTOTIFPage() {
               </thead>
               <tbody>
                 {bySupplier.map((row) => (
-                  <>
+                  <Fragment key={row.supplier}>
                     <tr
-                      key={row.supplier}
                       onClick={() => setExpandedVendor(expandedVendor === row.supplier ? null : row.supplier)}
                       className={`border-b border-[#F7F7F7] cursor-pointer transition-colors ${expandedVendor === row.supplier ? 'bg-[#FAFAFA]' : 'hover:bg-[#FAFAFA]'}`}
                     >
@@ -244,7 +243,7 @@ export default function SOTOTIFPage() {
                       </td>
                     </tr>
                     {expandedVendor === row.supplier && row.failingLines.length > 0 && (
-                      <tr key={`${row.supplier}-expanded`} className="bg-[#FFFBF5]">
+                      <tr className="bg-[#FFFBF5]">
                         <td colSpan={5} className="px-4 py-3">
                           <p className="text-[10px] uppercase tracking-widest text-[#AAA] mb-2">Failing POs — {row.failingLines.length} lines</p>
                           <table className="w-full text-xs">
@@ -294,11 +293,11 @@ export default function SOTOTIFPage() {
                       </tr>
                     )}
                     {expandedVendor === row.supplier && row.failingLines.length === 0 && (
-                      <tr key={`${row.supplier}-ok`} className="bg-[#F9FFF9]">
+                      <tr className="bg-[#F9FFF9]">
                         <td colSpan={5} className="px-4 py-3 text-xs text-pass font-medium">✓ No failing lines for this vendor</td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>
