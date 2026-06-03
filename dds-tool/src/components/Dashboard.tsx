@@ -297,11 +297,12 @@ export function Dashboard() {
             {/* row 3: lead times */}
             <div onClick={() => router.push('/lead-times')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] p-5 cursor-pointer" style={{ boxShadow: 'var(--shadow-card)' }}>
               <div className="flex items-stretch gap-6 h-full">
-                <div className="shrink-0 flex flex-col justify-between">
+                <div className="shrink-0 flex flex-col justify-between pr-2">
                   <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Lead Times</p>
                   <p className="text-xs text-brand font-semibold">Drill down →</p>
                 </div>
                 <div className="w-px bg-[#F0F0F0] shrink-0" />
+
                 <div className="flex gap-8 flex-1 items-center">
                   {[
                     { label: 'Planned LT', sub: 'Order → PGRD', value: ltSummary.avgPlannedLT, color: '#6366F1' },
@@ -330,7 +331,6 @@ export function Dashboard() {
                     <span className="kpi-number font-extrabold text-4xl text-fail">{ltSummary.lateCount}</span>
                     <p className="text-xs font-semibold text-fail mt-1">Late</p>
                     {ltSummary.avgDaysLate !== null && <p className="text-[10px] text-fail">+{ltSummary.avgDaysLate}d avg vs agreed</p>}
-                    </div>
                   </div>
                 </div>
               </div>
