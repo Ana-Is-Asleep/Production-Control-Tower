@@ -13,11 +13,13 @@ export function computeSOT(line: PurchaseLine): boolean | null {
   return shippedOnTime && inFull;
 }
 
-// OTIF = expected receipt on or before PGRD, and quantity ≥ 97%
+// On-Time = Week(EGRD) ≤ Week(PGRD)
+// In-Full = CQTY ≥ 0.97 × QTY
+// OTIF = On-Time AND In-Full
 export function computeOTIF(line: PurchaseLine): { ot: boolean | null; inFull: boolean | null; otif: boolean | null } {
-  // skip if no EGRD, can't evaluate on-time without an expected date
+  // skip if no EGRD, can't evaluate on-time without a confirmed delivery date
   if (!line.egrd || !line.pgrd) return { ot: null, inFull: null, otif: null };
-  const ot = line.egrd <= line.pgrd;
+  const ot = startOfISOWeek(line.egrd) <= startOfISOWeek(line.pgrd);
   const inFull = line.cqty >= line.qty * 0.97;
   return { ot, inFull, otif: ot && inFull };
 }
