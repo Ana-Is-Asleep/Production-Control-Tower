@@ -104,7 +104,7 @@ export default function PickupsPage() {
             <BarChart data={chartData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}
               onClick={(d) => {
                 if (!d?.activeLabel) return;
-                const dow = DAYS_SHORT.indexOf(d.activeLabel);
+                const dow = DAYS_SHORT.indexOf(String(d.activeLabel));
                 setFilterDay(filterDay === dow ? null : dow);
               }}
               style={{ cursor: 'pointer' }}
