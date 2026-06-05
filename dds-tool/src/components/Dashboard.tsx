@@ -238,8 +238,8 @@ export function Dashboard() {
               </div>
             </div>
 
-            {/* row 2: Backlog | Not Booked | SKU | Invoices | Pickup */}
-            <div className="grid grid-cols-5 gap-3 h-[300px]">
+            {/* row 2: Backlog | Not Booked | Invoices | Pickup */}
+            <div className="grid grid-cols-4 gap-3 h-[300px]">
               <div onClick={() => router.push('/backlog')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
                 <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Backlog</p>
                 <div className="space-y-3">
@@ -266,17 +266,7 @@ export function Dashboard() {
                 <p className="text-xs text-brand font-semibold">Drill down →</p>
               </div>
 
-              <div onClick={() => router.push('/sku')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
-                <p className="text-[11px] uppercase tracking-widest text-[#AAA]">SKU Deep Dive</p>
-                <div>
-                  <p className="kpi-number font-extrabold text-7xl leading-none text-[#111]">{weeklyLines.length}</p>
-                  <p className="text-xs text-[#AAA] mt-1">lines this week</p>
-                  {kpis.failingLines.length > 0 && <span className="inline-block mt-2 text-xs bg-[#FEE2E2] text-fail px-2 py-0.5 rounded-full font-medium">{kpis.failingLines.length} failing</span>}
-                </div>
-                <p className="text-xs text-brand font-semibold">Drill down →</p>
-              </div>
-
-              <div onClick={() => router.push('/invoices')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
+<div onClick={() => router.push('/invoices')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
                 <div className="flex items-center justify-between">
                   <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Invoices</p>
                   {invoices.length > 0 && (
