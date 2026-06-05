@@ -30,43 +30,46 @@ export function useFilters(allLines: PurchaseLine[]) {
     [allLines]
   );
 
-  // weekly scope = just the last completed week, used for SOT/OTIF scoring and annotations
+  // active week: when pgrdWeek filter is set, use that week; otherwise use last completed week
+  const activeWeek = filters.pgrdWeek ?? lastWeek;
+
+  // weekly scope = the active week (respects the week filter)
   const weeklyLines = useMemo(
-    () => d2cLines.filter((l) => l.pgrd !== null && getISOWeek(l.pgrd) === lastWeek && getISOWeekYear(l.pgrd) === lastYear),
-    [d2cLines, lastWeek, lastYear]
+    () => d2cLines.filter((l) => l.pgrd !== null && getISOWeek(l.pgrd) === activeWeek && l.pgrd.getFullYear() === 2026),
+    [d2cLines, activeWeek]
   );
 
-  // accumulating scope = W01 through last completed week, used for backlog and trend chart
+  // accumulating scope = W01 through active week, used for backlog and trend chart
   const accumulatingLines = useMemo(
-    () => d2cLines.filter((l) => { if (!l.pgrd) return false; return getISOWeekYear(l.pgrd) === lastYear && getISOWeek(l.pgrd) <= lastWeek; }),
+    () => d2cLines.filter((l) => { if (!l.pgrd) return false; return l.pgrd.getFullYear() === lastYear && getISOWeek(l.pgrd) <= lastWeek; }),
     [d2cLines, lastWeek, lastYear]
   );
 
-  const applyFilters = (lines: PurchaseLine[]) => {
+  // supplier + category filters only (week filter is already baked into weeklyLines above)
+  const applyNonWeekFilters = (lines: PurchaseLine[]) => {
     let result = lines;
     if (filters.suppliers.length > 0) result = result.filter((l) => filters.suppliers.includes(l.supplier));
     if (filters.categories.length > 0) result = result.filter((l) => filters.categories.includes(categorizeSKU(l.sku)));
-    if (filters.pgrdWeek !== null) result = result.filter((l) => l.pgrd && getISOWeek(l.pgrd) === filters.pgrdWeek);
     return result;
   };
 
   const allSuppliers = useMemo(() => [...new Set(d2cLines.map((l) => l.supplier))].sort(), [d2cLines]);
 
   const availableWeeks = useMemo(() => {
-    const weeks = new Set(accumulatingLines.map((l) => l.pgrd ? getISOWeek(l.pgrd) : null).filter(Boolean) as number[]);
+    const weeks = new Set(d2cLines.map((l) => l.pgrd ? getISOWeek(l.pgrd) : null).filter(Boolean) as number[]);
     return [...weeks].sort((a, b) => a - b);
-  }, [accumulatingLines]);
+  }, [d2cLines]);
 
   return {
     filters,
     setFilters,
-    weeklyLines: applyFilters(weeklyLines),
-    accumulatingLines: applyFilters(accumulatingLines),
+    weeklyLines: applyNonWeekFilters(weeklyLines),
+    accumulatingLines: applyNonWeekFilters(accumulatingLines),
     // all 2026 D2C lines including future PGRDs — used for trend chart future weeks
-    allD2cLines: applyFilters(d2cLines),
+    allD2cLines: applyNonWeekFilters(d2cLines),
     allSuppliers,
     availableWeeks,
-    lastWeek,
+    lastWeek: activeWeek, // expose active week so header shows the right label
     lastYear,
   };
 }
