@@ -114,10 +114,14 @@ export function Dashboard() {
         <span className="font-serif font-bold text-brand text-xl shrink-0">emma.</span>
         <span className="text-[#E0E0E0]">|</span>
         <span className="text-[#111] text-sm font-semibold shrink-0">DDS · P2W EU D2C</span>
+        {hasData && (
+          <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${filters.pgrdWeek !== null ? 'bg-brand text-white' : 'bg-[#F0F0F0] text-[#555]'}`}>
+            W{String(lastWeek).padStart(2, '0')} {lastYear}
+          </span>
+        )}
         <div className="flex-1" />
         {hasData && (
           <>
-            <span className="text-xs text-[#888] font-medium shrink-0">W{String(lastWeek).padStart(2, '0')} {lastYear}</span>
             <button onClick={() => setUploadOpen(true)} className="filter-pill text-xs border border-[#E0E0E0] rounded-lg px-3 py-1.5 text-[#555] hover:border-brand hover:text-brand">
               ↑ Upload
             </button>
@@ -186,10 +190,10 @@ export function Dashboard() {
             <select
               value={filters.pgrdWeek ?? ''}
               onChange={(e) => setFilters({ ...filters, pgrdWeek: e.target.value ? Number(e.target.value) : null })}
-              className="filter-pill text-xs px-3 py-1.5 rounded-lg border border-[#E0E0E0] text-[#555] bg-white focus:outline-none focus:border-[#111] font-medium"
+              className={`filter-pill text-xs px-3 py-1.5 rounded-lg border font-medium bg-white focus:outline-none ${filters.pgrdWeek !== null ? 'border-[#111] text-[#111]' : 'border-[#E0E0E0] text-[#555]'}`}
             >
-              <option value="">All weeks</option>
-              {availableWeeks.map((w) => (
+              <option value="">W{String(lastWeek).padStart(2, '0')} {lastYear} (current)</option>
+              {availableWeeks.filter(w => w !== lastWeek).map((w) => (
                 <option key={w} value={w}>W{String(w).padStart(2, '0')}</option>
               ))}
             </select>
