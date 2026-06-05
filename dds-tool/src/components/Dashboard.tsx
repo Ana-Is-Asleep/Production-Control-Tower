@@ -330,11 +330,11 @@ export function Dashboard() {
                       formatter={(v, n) => [`${v} POs`, n === 'actual' ? 'Shipped' : 'Expected']} />
                     <Bar dataKey="actual" stackId="a" fill="#FF8900" radius={[0,0,0,0]} name="actual">
                       <LabelList dataKey="actual" position="top" style={{ fill: '#888', fontSize: 10, fontWeight: 600 }}
-                        formatter={(v: number) => v > 0 ? v : ''} />
+                        formatter={(v: unknown) => Number(v) > 0 ? Number(v) : ''} />
                     </Bar>
                     <Bar dataKey="predicted" stackId="a" fill="rgba(255,137,0,0.25)" radius={[3,3,0,0]} name="predicted">
                       <LabelList dataKey="predicted" position="top" style={{ fill: '#FF8900', fontSize: 10, fontWeight: 600 }}
-                        formatter={(v: number) => v > 0 ? `+${v}` : ''} />
+                        formatter={(v: unknown) => Number(v) > 0 ? `+${Number(v)}` : ''} />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>

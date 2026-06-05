@@ -115,11 +115,11 @@ export default function PickupsPage() {
                 formatter={(v, n) => [`${v} POs`, n === 'shipped' ? 'Shipped' : 'Expected']} />
               <Bar dataKey="shipped" stackId="a" fill="#FF8900" radius={[0,0,0,0]} name="shipped">
                 <LabelList dataKey="shipped" position="inside" style={{ fill: 'white', fontSize: 11, fontWeight: 700 }}
-                  formatter={(v: number) => v > 0 ? v : ''} />
+                  formatter={(v: unknown) => Number(v) > 0 ? Number(v) : ''} />
               </Bar>
               <Bar dataKey="expected" stackId="a" fill="rgba(255,137,0,0.3)" radius={[4,4,0,0]} name="expected">
                 <LabelList dataKey="expected" position="top" style={{ fill: '#FF8900', fontSize: 11, fontWeight: 700 }}
-                  formatter={(v: number) => v > 0 ? `+${v}` : ''} />
+                  formatter={(v: unknown) => Number(v) > 0 ? `+${Number(v)}` : ''} />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
