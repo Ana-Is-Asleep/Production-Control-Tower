@@ -9,7 +9,9 @@ import { UploadPanel } from './upload/UploadPanel';
 import { PrepareModal } from './PrepareModal';
 import { SKU_CATEGORIES, type SKUCategory } from '../lib/skuUtils';
 import { summariseLeadTimes } from '../lib/leadTimeUtils';
+import { computeKPIs, filterByChannel, formatAmountsByCurrency } from '../lib/invoiceUtils';
 import type { PurchaseLine } from '../types';
+import type { InvoiceRow, InvoiceChannel } from '../types/invoice';
 import {
   ComposedChart, LineChart, BarChart, Bar, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ReferenceLine, ResponsiveContainer,
@@ -64,7 +66,8 @@ function VendorDropdown({ allSuppliers, selected, onChange }: { allSuppliers: st
 
 export function Dashboard() {
   const router = useRouter();
-  const { allLines, setAllLines, resetAnnotations, isAnnotated } = useData();
+  const { allLines, setAllLines, invoices, setInvoices, resetAnnotations, isAnnotated } = useData();
+  const [invoiceChannel, setInvoiceChannel] = useState<InvoiceChannel>('All');
   const [uploadOpen, setUploadOpen] = useState(false);
   const [prepareOpen, setPrepareOpen] = useState(false);
 
@@ -76,10 +79,14 @@ export function Dashboard() {
     return kpis.failingLines.every((l) => isAnnotated(`${l.po}-${l.line}`));
   }, [kpis.failingLines, isAnnotated, allLines.length]);
 
-  const handleLoad = (lines: PurchaseLine[]) => {
+  const handleLoad = (lines: PurchaseLine[], inv?: InvoiceRow[]) => {
     setAllLines(lines);
+    if (inv) setInvoices(inv);
     resetAnnotations();
   };
+
+  const filteredInvoices = useMemo(() => filterByChannel(invoices, invoiceChannel), [invoices, invoiceChannel]);
+  const invoiceKPIs = useMemo(() => computeKPIs(filteredInvoices), [filteredInvoices]);
 
   const toggleSupplier = (s: string) => {
     const next = filters.suppliers.includes(s) ? filters.suppliers.filter((x) => x !== s) : [...filters.suppliers, s];
@@ -269,16 +276,48 @@ export function Dashboard() {
                 <p className="text-xs text-brand font-semibold">Drill down →</p>
               </div>
 
-              <div className="bg-white rounded-xl border border-[#F0F0F0] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
-                <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Invoices</p>
-                <div className="space-y-2">
-                  {[{ l: 'Overdue', v: '3', c: 'text-fail' }, { l: 'P2W', v: '1', c: 'text-warn' }, { l: 'On time', v: '14', c: 'text-pass' }].map((r) => (
-                    <div key={r.l} className="flex items-baseline justify-between">
-                      <span className="text-xs text-[#888]">{r.l}</span>
-                      <span className={`kpi-number font-extrabold text-2xl ${r.c}`}>{r.v}</span>
+              <div onClick={() => router.push('/invoices')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Invoices</p>
+                  {invoices.length > 0 && (
+                    <div className="flex gap-1">
+                      {(['All', 'Online', 'Offline'] as InvoiceChannel[]).map((c) => (
+                        <button key={c} onClick={(e) => { e.stopPropagation(); setInvoiceChannel(c); }}
+                          className={`text-[10px] px-2 py-0.5 rounded font-medium transition-all ${invoiceChannel === c ? 'bg-[#111] text-white' : 'text-[#AAA] hover:text-[#555]'}`}>
+                          {c}
+                        </button>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
+                {invoices.length === 0 ? (
+                  <p className="text-xs text-[#CCC] mt-2">Upload invoice file to see data</p>
+                ) : (
+                  <div className="space-y-2 mt-2">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <span className="text-xs text-[#777]">Overdue P2W</span>
+                        <p className="text-[10px] text-[#CCC]">{formatAmountsByCurrency(invoiceKPIs.overdueP2w)}</p>
+                      </div>
+                      <span className="kpi-number font-extrabold text-3xl text-fail">{invoiceKPIs.overdueP2w.length}</span>
+                    </div>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <span className="text-xs text-[#777]">Total Pending</span>
+                        <p className="text-[10px] text-[#CCC]">{formatAmountsByCurrency(invoiceKPIs.totalPending)}</p>
+                      </div>
+                      <span className="kpi-number font-extrabold text-3xl text-warn">{invoiceKPIs.totalPending.length}</span>
+                    </div>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <span className="text-xs text-[#777]">Approved, Awaiting</span>
+                        <p className="text-[10px] text-[#CCC]">{formatAmountsByCurrency(invoiceKPIs.approvedNotPaid)}</p>
+                      </div>
+                      <span className="kpi-number font-extrabold text-3xl text-pass">{invoiceKPIs.approvedNotPaid.length}</span>
+                    </div>
+                  </div>
+                )}
+                <p className="text-xs text-brand font-semibold mt-2">Drill down →</p>
               </div>
 
               <div className="bg-white rounded-xl border border-[#F0F0F0] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>

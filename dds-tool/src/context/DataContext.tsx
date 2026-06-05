@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useCallback } from 'react';
 import type { PurchaseLine, AnnotationEntry, ReasonCode } from '../types';
+import type { InvoiceRow } from '../types/invoice';
 
 // annotations live here so they survive page navigation
 const TM_REASONS: ReasonCode[] = ['transit_delay', 'booking_not_made'];
@@ -9,6 +10,8 @@ const TM_REASONS: ReasonCode[] = ['transit_delay', 'booking_not_made'];
 interface DataContextType {
   allLines: PurchaseLine[];
   setAllLines: (lines: PurchaseLine[]) => void;
+  invoices: InvoiceRow[];
+  setInvoices: (rows: InvoiceRow[]) => void;
   annotations: Record<string, AnnotationEntry>;
   tmComment: string;
   setTmComment: (v: string) => void;
@@ -23,6 +26,8 @@ interface DataContextType {
 const DataContext = createContext<DataContextType>({
   allLines: [],
   setAllLines: () => {},
+  invoices: [],
+  setInvoices: () => {},
   annotations: {},
   tmComment: '',
   setTmComment: () => {},
@@ -36,6 +41,7 @@ const DataContext = createContext<DataContextType>({
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [allLines, setAllLines] = useState<PurchaseLine[]>([]);
+  const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [annotations, setAnnotations] = useState<Record<string, AnnotationEntry>>({});
   const [tmComment, setTmComment] = useState('');
   const [tmName, setTmName] = useState('');
@@ -69,7 +75,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <DataContext.Provider value={{ allLines, setAllLines, annotations, tmComment, setTmComment, tmName, setTmName, addAnnotation, updateAnnotation, isAnnotated, resetAnnotations }}>
+    <DataContext.Provider value={{ allLines, setAllLines, invoices, setInvoices, annotations, tmComment, setTmComment, tmName, setTmName, addAnnotation, updateAnnotation, isAnnotated, resetAnnotations }}>
       {children}
     </DataContext.Provider>
   );
