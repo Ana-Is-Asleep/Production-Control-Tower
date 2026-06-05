@@ -32,14 +32,14 @@ export default function LeadTimesPage() {
 
   // per-vendor chart data
   const byVendor = useMemo(() => {
-    const map = new Map<string, { planned: number[]; expected: number[]; actual: number[]; agreedLT: number }>();
+    const map = new Map<string, { planned: number[]; expected: number[]; production: number[]; agreedLT: number }>();
     filtered.forEach((l) => {
       const r = computeLeadTime(l);
-      if (!map.has(l.supplier)) map.set(l.supplier, { planned: [], expected: [], actual: [], agreedLT: r.agreedLT });
+      if (!map.has(l.supplier)) map.set(l.supplier, { planned: [], expected: [], production: [], agreedLT: r.agreedLT });
       const e = map.get(l.supplier)!;
       if (r.plannedLT !== null) e.planned.push(r.plannedLT);
       if (r.expectedLT !== null) e.expected.push(r.expectedLT);
-      if (r.actualLT !== null) e.actual.push(r.actualLT);
+      if (r.productionLT !== null) e.production.push(r.productionLT);
     });
     const avg = (arr: number[]) => arr.length > 0 ? Math.round(arr.reduce((s, n) => s + n, 0) / arr.length) : null;
     return [...map.entries()].map(([vendor, v]) => ({
@@ -47,16 +47,16 @@ export default function LeadTimesPage() {
       fullVendor: vendor,
       planned: avg(v.planned),
       expected: avg(v.expected),
-      actual: avg(v.actual),
+      actual: avg(v.production),
       agreed: v.agreedLT,
       target: TARGET_LT,
       vsAgreed: avg(v.actual) !== null ? (avg(v.actual) as number) - v.agreedLT : null,
-    })).filter((r) => r.actual !== null).sort((a, b) => (b.vsAgreed ?? 0) - (a.vsAgreed ?? 0));
+    })).filter((r) => r.actual !== null && r.actual > 0).sort((a, b) => (b.vsAgreed ?? 0) - (a.vsAgreed ?? 0));
   }, [filtered]);
 
   // detail table
   const detailRows = useMemo(() =>
-    filtered.map(computeLeadTime).filter((r) => r.actualLT !== null || r.plannedLT !== null),
+    filtered.map(computeLeadTime).filter((r) => r.productionLT !== null || r.plannedLT !== null),
     [filtered]
   );
 
@@ -102,7 +102,7 @@ export default function LeadTimesPage() {
           {[
             { label: 'Avg Planned LT', sub: 'Order → PGRD', value: summary.avgPlannedLT, color: '#6366F1' },
             { label: 'Avg Expected LT', sub: 'Order → EGRD', value: summary.avgExpectedLT, color: '#FF8900' },
-            { label: 'Avg Actual LT', sub: 'Order → ASD', value: summary.avgActualLT, color: summary.avgActualLT !== null && summary.avgActualLT <= summary.avgAgreedLT ? '#34A853' : '#DC3545' },
+            { label: 'Avg Production LT', sub: 'Order → ASD', value: summary.avgProductionLT, color: summary.avgProductionLT !== null && summary.avgProductionLT <= summary.avgAgreedLT ? '#34A853' : '#DC3545' },
             { label: 'Avg Agreed LT', sub: 'From file', value: summary.avgAgreedLT, color: '#8A8A8A' },
             { label: 'Target LT', sub: 'Always 30d', value: 30, color: '#8A8A8A' },
           ].map((item) => (
@@ -177,7 +177,7 @@ export default function LeadTimesPage() {
                 <ReferenceLine y={TARGET_LT} stroke="#F59E0B" strokeDasharray="4 4" label={{ value: '30d target', position: 'right', fill: '#F59E0B', fontSize: 11 }} />
                 <Tooltip contentStyle={{ background: '#111', border: 'none', color: 'white', borderRadius: 8, fontSize: 12 }} formatter={(v, n) => [`${v}d`, n]} />
                 <Legend verticalAlign="top" align="right" iconSize={8} formatter={(v) => <span style={{ color: '#555', fontSize: 11 }}>{v}</span>} />
-                <Bar dataKey="actual" fill="#FF8900" radius={[3, 3, 0, 0]} name="Actual LT" />
+                <Bar dataKey="actual" fill="#FF8900" radius={[3, 3, 0, 0]} name="Production LT" />
                 <Bar dataKey="agreed" fill="rgba(100,116,239,0.3)" radius={[3, 3, 0, 0]} name="Agreed LT" />
               </BarChart>
             </ResponsiveContainer>
@@ -190,7 +190,7 @@ export default function LeadTimesPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-[#111] text-white">
-                  {['PO', 'SKU', 'Category', 'Vendor', 'Order Date', 'PGRD', 'EGRD', 'ASD', 'Planned LT', 'Expected LT', 'Actual LT', 'Agreed LT', 'vs Agreed', 'vs Target'].map((h) => (
+                  {['PO', 'SKU', 'Category', 'Vendor', 'Order Date', 'PGRD', 'EGRD', 'ASD', 'Planned LT', 'Expected LT', 'Production LT', 'Agreed LT', 'vs Agreed', 'vs Target'].map((h) => (
                     <th key={h} className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -212,7 +212,7 @@ export default function LeadTimesPage() {
                       <td className="px-3 py-2 text-[#555] whitespace-nowrap">{r.line.asd ? formatDateShort(r.line.asd) : <span className="text-[#CCC]">—</span>}</td>
                       <td className="px-3 py-2 text-[#555]">{r.plannedLT !== null ? `${r.plannedLT}d` : '—'}</td>
                       <td className="px-3 py-2 text-[#555]">{r.expectedLT !== null ? `${r.expectedLT}d` : '—'}</td>
-                      <td className="px-3 py-2 font-semibold">{r.actualLT !== null ? `${r.actualLT}d` : <span className="text-[#CCC]">—</span>}</td>
+                      <td className="px-3 py-2 font-semibold">{r.productionLT !== null ? `${r.productionLT}d` : <span className="text-[#CCC]">—</span>}</td>
                       <td className="px-3 py-2 text-[#888]">{r.agreedLT}d</td>
                       <td className="px-3 py-2">
                         {r.vsAgreed === null ? <span className="text-[#CCC]">—</span>

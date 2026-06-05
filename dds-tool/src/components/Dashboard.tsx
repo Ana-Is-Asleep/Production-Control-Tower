@@ -336,7 +336,7 @@ export function Dashboard() {
                   {[
                     { label: 'Planned LT', sub: 'Order → PGRD', value: ltSummary.avgPlannedLT, color: '#6366F1' },
                     { label: 'Expected LT', sub: 'Order → EGRD', value: ltSummary.avgExpectedLT, color: '#FF8900' },
-                    { label: 'Actual LT', sub: 'Order → ASD', value: ltSummary.avgActualLT, color: ltSummary.avgActualLT !== null && ltSummary.avgActualLT <= ltSummary.avgAgreedLT ? '#34A853' : '#DC3545' },
+                    { label: 'Production LT', sub: 'Order → ASD', value: ltSummary.avgProductionLT, color: ltSummary.avgProductionLT !== null && ltSummary.avgProductionLT <= ltSummary.avgAgreedLT ? '#34A853' : '#DC3545' },
                     { label: 'Agreed LT', sub: 'From file', value: ltSummary.avgAgreedLT, color: '#AAA' },
                     { label: 'Target LT', sub: 'Always 30d', value: 30, color: '#AAA' },
                   ].map((item) => (
