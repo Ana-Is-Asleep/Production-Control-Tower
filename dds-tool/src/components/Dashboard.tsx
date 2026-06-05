@@ -14,7 +14,7 @@ import type { PurchaseLine } from '../types';
 import type { InvoiceRow, InvoiceChannel } from '../types/invoice';
 import {
   ComposedChart, LineChart, BarChart, Bar, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, ReferenceLine, ResponsiveContainer,
+  Tooltip, ReferenceLine, ResponsiveContainer, LabelList,
 } from 'recharts';
 
 const CATEGORY_COLORS: Record<SKUCategory, string> = {
@@ -310,14 +310,32 @@ export function Dashboard() {
                 <p className="text-xs text-brand font-semibold mt-2">Drill down →</p>
               </div>
 
-              <div className="bg-white rounded-xl border border-[#F0F0F0] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
-                <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Pickups</p>
+              <div onClick={() => router.push('/pickups')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Pickups</p>
+                  <p className="text-[10px] text-brand font-semibold">Drill down →</p>
+                </div>
                 <ResponsiveContainer width="100%" height={150}>
-                  <BarChart data={['Mon','Tue','Wed','Thu','Fri'].map((day, i) => ({ day, n: weeklyLines.filter((l) => l.asd && l.asd.getDay() === i + 1).length }))} margin={{ top: 0, right: 0, left: -24, bottom: 0 }}>
-                    <XAxis dataKey="day" tick={{ fill: '#CCC', fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#CCC', fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={{ background: '#111', border: 'none', color: 'white', borderRadius: 8, fontSize: 11 }} />
-                    <Bar dataKey="n" fill="#FF8900" radius={[3, 3, 0, 0]} name="Pickups" />
+                  <BarChart
+                    data={['Mon','Tue','Wed','Thu','Fri'].map((day, i) => ({
+                      day,
+                      actual:    weeklyLines.filter((l) =>  l.asd && l.asd.getDay() === i + 1).length,
+                      predicted: weeklyLines.filter((l) => !l.asd && l.esd && l.esd.getDay() === i + 1).length,
+                    }))}
+                    margin={{ top: 16, right: 0, left: -24, bottom: 0 }}
+                  >
+                    <XAxis dataKey="day" tick={{ fill: '#AAA', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: '#AAA', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{ background: '#111', border: 'none', color: 'white', borderRadius: 8, fontSize: 11 }}
+                      formatter={(v, n) => [`${v} POs`, n === 'actual' ? 'Shipped' : 'Expected']} />
+                    <Bar dataKey="actual" stackId="a" fill="#FF8900" radius={[0,0,0,0]} name="actual">
+                      <LabelList dataKey="actual" position="top" style={{ fill: '#888', fontSize: 10, fontWeight: 600 }}
+                        formatter={(v: number) => v > 0 ? v : ''} />
+                    </Bar>
+                    <Bar dataKey="predicted" stackId="a" fill="rgba(255,137,0,0.25)" radius={[3,3,0,0]} name="predicted">
+                      <LabelList dataKey="predicted" position="top" style={{ fill: '#FF8900', fontSize: 10, fontWeight: 600 }}
+                        formatter={(v: number) => v > 0 ? `+${v}` : ''} />
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
