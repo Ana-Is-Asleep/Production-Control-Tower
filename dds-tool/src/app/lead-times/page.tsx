@@ -50,7 +50,7 @@ export default function LeadTimesPage() {
       actual: avg(v.production),
       agreed: v.agreedLT,
       target: TARGET_LT,
-      vsAgreed: avg(v.actual) !== null ? (avg(v.actual) as number) - v.agreedLT : null,
+      vsAgreed: avg(v.production) !== null ? (avg(v.production) as number) - v.agreedLT : null,
     })).filter((r) => r.actual !== null && r.actual > 0).sort((a, b) => (b.vsAgreed ?? 0) - (a.vsAgreed ?? 0));
   }, [filtered]);
 
