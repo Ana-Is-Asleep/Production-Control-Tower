@@ -33,7 +33,7 @@ export interface KPIResult {
   otifFail: boolean;
 }
 
-export type BacklogType = 'critical' | 'recent' | 'at-risk' | 'on-time';
+export type BacklogType = 'backlog-critical' | 'backlog-recent' | 'future-backlog' | 'on-track' | 'shipped';
 
 export interface AnnotationEntry {
   poLine: string;
@@ -67,9 +67,9 @@ export interface WeeklyKPIPoint {
 }
 
 export interface BacklogSummary {
-  critical: PurchaseLine[];
-  recent: PurchaseLine[];
-  atRisk: PurchaseLine[];
+  critical: PurchaseLine[];     // backlog >14 days
+  recent: PurchaseLine[];       // backlog ≤14 days
+  futureBacklog: PurchaseLine[]; // not yet overdue but flagged
 }
 
 export interface ActionItem {

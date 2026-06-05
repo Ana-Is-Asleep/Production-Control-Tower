@@ -101,7 +101,7 @@ export function Dashboard() {
   const hasData = allLines.length > 0;
   const sotDelta = kpis.sotPct !== null ? kpis.sotPct - 90 : null;
   const otifDelta = kpis.otifPct !== null ? kpis.otifPct - 90 : null;
-  const backlogTotal = kpis.backlogSummary.critical.length + kpis.backlogSummary.recent.length + kpis.backlogSummary.atRisk.length;
+  const backlogTotal = kpis.backlogSummary.critical.length + kpis.backlogSummary.recent.length + kpis.backlogSummary.futureBacklog.length;
   const annotatedCount = kpis.failingLines.filter((l) => isAnnotated(`${l.po}-${l.line}`)).length;
   // not booked = unique POs, not lines
   const notBookedPOs = [...new Set(kpis.notBookedLines.map((l) => l.po))];
@@ -246,7 +246,7 @@ export function Dashboard() {
                   {[
                     { label: 'Critical', count: new Set(kpis.backlogSummary.critical.map(l => l.po)).size, color: 'text-fail' },
                     { label: 'Recent',   count: new Set(kpis.backlogSummary.recent.map(l => l.po)).size,   color: 'text-warn' },
-                    { label: 'At Risk',  count: new Set(kpis.backlogSummary.atRisk.map(l => l.po)).size,   color: 'text-brand' },
+                    { label: 'Future',   count: new Set(kpis.backlogSummary.futureBacklog.map(l => l.po)).size, color: 'text-brand' },
                   ].map((item) => (
                     <div key={item.label} className="flex items-baseline justify-between">
                       <span className="text-sm text-[#777]">{item.label}</span>

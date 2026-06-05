@@ -17,7 +17,7 @@ const CATEGORY_COLORS: Record<SKUCategory, string> = {
   'Comps/Other': '#8A8A8A',
 };
 
-type BacklogTab = 'critical' | 'recent' | 'at-risk';
+type BacklogTab = 'critical' | 'recent' | 'future-backlog';
 
 // reusable vendor dropdown, same pattern as dashboard
 function VendorDropdown({ vendors, selected, onChange }: { vendors: string[]; selected: string[]; onChange: (v: string[]) => void }) {
@@ -129,14 +129,14 @@ export default function BacklogPage() {
   const { allLines } = useData();
   const { weeklyLines, accumulatingLines, lastWeek, lastYear } = useFilters(allLines);
   const kpis = useKPIs(weeklyLines, accumulatingLines);
-  const { critical, recent, atRisk } = kpis.backlogSummary;
+  const { critical, recent, futureBacklog } = kpis.backlogSummary;
 
   const [activeTab, setActiveTab] = useState<BacklogTab>('critical');
   const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<SKUCategory[]>([]);
 
-  const allLines_ = [...critical, ...recent, ...atRisk];
-  const allVendors = useMemo(() => [...new Set(allLines_.map((l) => l.supplier))].sort(), [critical, recent, atRisk]);
+  const allLines_ = [...critical, ...recent, ...futureBacklog];
+  const allVendors = useMemo(() => [...new Set(allLines_.map((l) => l.supplier))].sort(), [critical, recent, futureBacklog]);
 
   // count distinct POs, not lines
   const distinctPOs = (lines: PurchaseLine[]) => new Set(lines.map((l) => l.po)).size;
@@ -151,28 +151,28 @@ export default function BacklogPage() {
   const toggleCat = (c: SKUCategory) =>
     setSelectedCategories((prev) => prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]);
 
-  const tabLines = applyFilters(activeTab === 'critical' ? critical : activeTab === 'recent' ? recent : atRisk);
+  const tabLines = applyFilters(activeTab === 'critical' ? critical : activeTab === 'recent' ? recent : futureBacklog);
 
   // bar chart data: backlog by vendor (top 10)
   const chartData = useMemo(() => {
-    const map = new Map<string, { critical: number; recent: number; atRisk: number }>();
-    [...critical, ...recent, ...atRisk].forEach((l) => {
-      if (!map.has(l.supplier)) map.set(l.supplier, { critical: 0, recent: 0, atRisk: 0 });
+    const map = new Map<string, { critical: number; recent: number; futureBacklog: number }>();
+    [...critical, ...recent, ...futureBacklog].forEach((l) => {
+      if (!map.has(l.supplier)) map.set(l.supplier, { critical: 0, recent: 0, futureBacklog: 0 });
       const e = map.get(l.supplier)!;
       if (critical.includes(l)) e.critical++;
       else if (recent.includes(l)) e.recent++;
-      else e.atRisk++;
+      else e.futureBacklog++;
     });
     return [...map.entries()]
-      .map(([vendor, v]) => ({ vendor: vendor.split(' ')[0], ...v, total: v.critical + v.recent + v.atRisk }))
+      .map(([vendor, v]) => ({ vendor: vendor.split(' ')[0], ...v, total: v.critical + v.recent + v.futureBacklog }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 12);
-  }, [critical, recent, atRisk]);
+  }, [critical, recent, futureBacklog]);
 
   const TABS = [
     { key: 'critical' as BacklogTab, label: 'Critical', count: distinctPOs(applyFilters(critical)), total: distinctPOs(critical), color: 'text-fail', dot: 'bg-fail', border: 'border-fail' },
     { key: 'recent'   as BacklogTab, label: 'Recent',   count: distinctPOs(applyFilters(recent)),   total: distinctPOs(recent),   color: 'text-warn', dot: 'bg-warn', border: 'border-warn' },
-    { key: 'at-risk'  as BacklogTab, label: 'At Risk',  count: distinctPOs(applyFilters(atRisk)),   total: distinctPOs(atRisk),   color: 'text-brand', dot: 'bg-brand', border: 'border-brand' },
+    { key: 'future-backlog'  as BacklogTab, label: 'Future Backlog',  count: distinctPOs(applyFilters(futureBacklog)),   total: distinctPOs(futureBacklog),   color: 'text-brand', dot: 'bg-brand', border: 'border-brand' },
   ];
 
   return (
@@ -219,7 +219,7 @@ export default function BacklogPage() {
               <Legend verticalAlign="top" align="right" iconSize={8} formatter={(v) => <span style={{ color: '#555', fontSize: 11 }}>{v}</span>} />
               <Bar dataKey="critical" stackId="a" fill="#DC3545" name="Critical" radius={[0,0,0,0]} />
               <Bar dataKey="recent" stackId="a" fill="#F59E0B" name="Recent" />
-              <Bar dataKey="atRisk" stackId="a" fill="#FF8900" name="At Risk" radius={[3,3,0,0]} />
+              <Bar dataKey="futureBacklog" stackId="a" fill="#FF8900" name="Future Backlog" radius={[3,3,0,0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

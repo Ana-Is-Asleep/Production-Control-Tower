@@ -88,14 +88,14 @@ export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: Purchase
   const backlogSummary = useMemo((): BacklogSummary => {
     const critical: PurchaseLine[] = [];
     const recent: PurchaseLine[] = [];
-    const atRisk: PurchaseLine[] = [];
+    const futureBacklog: PurchaseLine[] = [];
     for (const line of accumulatingLines) {
       const type = classifyBacklog(line, today);
-      if (type === 'critical') critical.push(line);
-      else if (type === 'recent') recent.push(line);
-      else if (type === 'at-risk') atRisk.push(line);
+      if (type === 'backlog-critical') critical.push(line);
+      else if (type === 'backlog-recent') recent.push(line);
+      else if (type === 'future-backlog') futureBacklog.push(line);
     }
-    return { critical, recent, atRisk };
+    return { critical, recent, futureBacklog };
   }, [accumulatingLines, today]);
 
   const notBookedLines = useMemo(

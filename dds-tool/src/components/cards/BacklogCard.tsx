@@ -29,7 +29,7 @@ function BacklogRow({ line, label, color }: { line: PurchaseLine; label: string;
 export function BacklogCard({ backlog }: BacklogCardProps) {
   const [expanded, setExpanded] = useState(false);
 
-  const total = backlog.critical.length + backlog.recent.length + backlog.atRisk.length;
+  const total = backlog.critical.length + backlog.recent.length + backlog.futureBacklog.length;
 
   return (
     <Card className="h-full">
@@ -64,10 +64,10 @@ export function BacklogCard({ backlog }: BacklogCardProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-brand" />
-              <span className="text-sm text-dark">At Risk</span>
+              <span className="text-sm text-dark">Future Backlog</span>
               <span className="text-xs text-muted">ESD &gt; PGRD</span>
             </div>
-            <span className="font-serif text-2xl font-bold text-brand">{backlog.atRisk.length}</span>
+            <span className="font-serif text-2xl font-bold text-brand">{backlog.futureBacklog.length}</span>
           </div>
         </div>
 
@@ -92,10 +92,10 @@ export function BacklogCard({ backlog }: BacklogCardProps) {
               {backlog.recent.map((l) => <BacklogRow key={`${l.po}-${l.line}`} line={l} label="Recent" color="bg-warn" />)}
             </div>
           )}
-          {backlog.atRisk.length > 0 && (
+          {backlog.futureBacklog.length > 0 && (
             <div>
-              <h4 className="text-xs font-semibold text-brand uppercase tracking-widest mb-2">At Risk ({backlog.atRisk.length})</h4>
-              {backlog.atRisk.map((l) => <BacklogRow key={`${l.po}-${l.line}`} line={l} label="At Risk" color="bg-brand" />)}
+              <h4 className="text-xs font-semibold text-brand uppercase tracking-widest mb-2">Future Backlog ({backlog.futureBacklog.length})</h4>
+              {backlog.futureBacklog.map((l) => <BacklogRow key={`${l.po}-${l.line}`} line={l} label="Future Backlog" color="bg-brand" />)}
             </div>
           )}
         </div>

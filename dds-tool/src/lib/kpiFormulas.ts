@@ -1,6 +1,10 @@
-import { differenceInDays, startOfISOWeek } from 'date-fns';
+import { differenceInDays, startOfISOWeek, startOfWeek, addWeeks, startOfDay } from 'date-fns';
 import { getISOWeek, getISOWeekYear } from './dateUtils';
 import type { PurchaseLine, KPIResult, BacklogType } from '../types';
+
+// Europe uses Sunday-aligned weeks
+const SUN_WEEK = { weekStartsOn: 0 as const };
+const weekOf = (d: Date) => startOfWeek(d, SUN_WEEK);
 
 // SOT = Week(ASD) ≤ Week(PGRD) AND CQTY ≥ 0.97 × QTY
 // early shipment counts as SOT — only the lower quantity bound applies
@@ -37,17 +41,53 @@ export function computeKPI(line: PurchaseLine): KPIResult {
   };
 }
 
+// Sunday-aligned backlog classification per Europe spec
+// cw = current week, nw1/nw2 = next 1/2 weeks, cw+3 = 3+ weeks ahead
 export function classifyBacklog(line: PurchaseLine, today: Date): BacklogType {
-  // already shipped, not a backlog item
-  if (line.asd) return 'on-time';
+  if (line.asd) return 'shipped';
   // skip if no date, happens with open POs
-  if (!line.pgrd) return 'on-time';
-  const daysPast = differenceInDays(today, line.pgrd);
-  if (daysPast > 14) return 'critical';
-  if (daysPast > 0) return 'recent';
-  // at-risk = hasn't missed PGRD yet but ESD is already past it
-  if (line.esd && line.pgrd && line.esd > line.pgrd) return 'at-risk';
-  return 'on-time';
+  if (!line.pgrd) return 'on-track';
+
+  const cw  = weekOf(startOfDay(today));
+  const nw1 = addWeeks(cw, 1);
+  const nw2 = addWeeks(cw, 2);
+  const nw3 = addWeeks(cw, 3);
+
+  const pgrdWeek = weekOf(line.pgrd);
+  const esdWeek  = line.esd ? weekOf(line.esd) : null;
+
+  const isThisWeek  = pgrdWeek.getTime() === cw.getTime();
+  const isPastWeek  = pgrdWeek  < cw;
+  const isNw1       = pgrdWeek.getTime() === nw1.getTime();
+  const isNw2       = pgrdWeek.getTime() === nw2.getTime();
+  const isNw3Plus   = pgrdWeek >= nw3;
+
+  const hasEsd           = !!line.esd;
+  const esdIsThisWeek    = esdWeek ? esdWeek.getTime() === cw.getTime() : false;
+  const esdLaterThanPgrd = line.esd && line.pgrd ? line.esd > line.pgrd : false;
+
+  // PGRD before this week + no ASD → Backlog (critical or recent)
+  if (isPastWeek) {
+    const daysPast = differenceInDays(startOfDay(today), line.pgrd);
+    return daysPast > 14 ? 'backlog-critical' : 'backlog-recent';
+  }
+
+  // PGRD this week
+  if (isThisWeek) {
+    if (hasEsd && esdIsThisWeek) return 'on-track'; // grace period — ESD confirms this week
+    return 'future-backlog';                          // no ESD or ESD slipped past this week
+  }
+
+  // PGRD next week or week after + no ESD → Future Backlog
+  if ((isNw1 || isNw2) && !hasEsd) return 'future-backlog';
+
+  // PGRD >= cw+3 + no ESD → On Track
+  if (isNw3Plus && !hasEsd) return 'on-track';
+
+  // PGRD in future + ESD even later than PGRD → Future Backlog
+  if (!isPastWeek && !isThisWeek && esdLaterThanPgrd) return 'future-backlog';
+
+  return 'on-track';
 }
 
 // expected SOT using ESD: Week(ESD) ≤ Week(PGRD) — same logic as actual SOT
