@@ -83,7 +83,8 @@ export function useFilters(allLines: PurchaseLine[]) {
     allD2cLines,
     allSuppliers,
     availableWeeks,
-    lastWeek: activeWeek, // expose active week so header + chart show the right label
+    lastWeek,      // always the real last completed week — used for the default dropdown label
+    activeWeek,    // the week currently being viewed (may differ when user picks a specific week)
     lastYear,
   };
 }

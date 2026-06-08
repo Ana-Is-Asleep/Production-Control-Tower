@@ -71,7 +71,7 @@ export function Dashboard() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [prepareOpen, setPrepareOpen] = useState(false);
 
-  const { filters, setFilters, weeklyLines, accumulatingLines, allD2cLines, allSuppliers, availableWeeks, lastWeek, lastYear } = useFilters(allLines);
+  const { filters, setFilters, weeklyLines, accumulatingLines, allD2cLines, allSuppliers, availableWeeks, lastWeek, activeWeek, lastYear } = useFilters(allLines);
   const kpis = useKPIs(weeklyLines, accumulatingLines, allD2cLines);
 
   const allAnnotated = useMemo(() => {
@@ -116,7 +116,7 @@ export function Dashboard() {
         <span className="text-[#111] text-sm font-semibold shrink-0">DDS · P2W EU D2C</span>
         {hasData && (
           <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${filters.pgrdWeek !== null ? 'bg-brand text-white' : 'bg-[#F0F0F0] text-[#555]'}`}>
-            W{String(lastWeek).padStart(2, '0')} {lastYear}
+            W{String(activeWeek).padStart(2, '0')} {lastYear}
           </span>
         )}
         <div className="flex-1" />
