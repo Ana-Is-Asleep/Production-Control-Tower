@@ -329,33 +329,38 @@ export function Dashboard() {
               </div>
 
               <div onClick={() => router.push('/pickups')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
-                <div className="flex items-center justify-between">
-                  <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Pickups</p>
+                <div className="flex items-center justify-between mb-1">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Pickups</p>
+                    <p className="text-[10px] text-[#CCC]">W{String(lastWeek + 1).padStart(2,'0')} upcoming · avg line</p>
+                  </div>
                   <p className="text-[10px] text-brand font-semibold">Drill down →</p>
                 </div>
-                <ResponsiveContainer width="100%" height={150}>
-                  <BarChart
-                    data={['Mon','Tue','Wed','Thu','Fri'].map((day, i) => ({
-                      day,
-                      // use allD2cLines — pickups can happen for POs whose PGRD is in any week
-                      actual:    new Set(allD2cLines.filter((l) =>  l.asd && l.asd.getDay() === i + 1 && getISOWeek(l.asd) === activeWeek).map(l => l.po)).size,
-                      predicted: new Set(allD2cLines.filter((l) => !l.asd && l.esd && l.esd.getDay() === i + 1 && getISOWeek(l.esd) === activeWeek).map(l => l.po)).size,
-                    }))}
-                    margin={{ top: 16, right: 0, left: -24, bottom: 0 }}
+                <ResponsiveContainer width="100%" height={130}>
+                  <ComposedChart
+                    data={[1,2,3,4,5].map((dow, i) => {
+                      const days = ['Mon','Tue','Wed','Thu','Fri'];
+                      const nextWeek = lastWeek + 1;
+                      // bars: upcoming week ESD bookings (always real next week, vendor-filtered)
+                      const upcoming = new Set(allD2cLines.filter(l => !l.asd && l.esd && l.esd.getDay() === dow && getISOWeek(l.esd) === nextWeek).map(l => l.po)).size;
+                      // line: avg across SOT window past weeks
+                      const pastWeekNums = kpis.weeklyTrend.filter(w => !w.isFuture && w.isCurrent === false).map(w => parseInt(w.weekLabel.replace('W','')));
+                      const avgPerWeek = pastWeekNums.map(w => new Set(accumulatingLines.filter(l => l.asd && l.asd.getDay() === dow && getISOWeek(l.asd) === w).map(l => l.po)).size);
+                      const avg = pastWeekNums.length > 0 ? Math.round(avgPerWeek.reduce((s,n) => s+n, 0) / pastWeekNums.length * 10) / 10 : 0;
+                      return { day: days[i], upcoming, avg };
+                    })}
+                    margin={{ top: 12, right: 0, left: -24, bottom: 0 }}
                   >
                     <XAxis dataKey="day" tick={{ fill: '#AAA', fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#AAA', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: '#AAA', fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
                     <Tooltip contentStyle={{ background: '#111', border: 'none', color: 'white', borderRadius: 8, fontSize: 11 }}
-                      formatter={(v, n) => [`${v} POs`, n === 'actual' ? 'Shipped' : 'Expected']} />
-                    <Bar dataKey="actual" stackId="a" fill="#FF8900" radius={[0,0,0,0]} name="actual">
-                      <LabelList dataKey="actual" position="top" style={{ fill: '#888', fontSize: 10, fontWeight: 600 }}
+                      formatter={(v, n) => [`${v}`, n === 'upcoming' ? 'Upcoming POs' : 'Hist. avg']} />
+                    <Bar dataKey="upcoming" fill="#FF8900" radius={[3,3,0,0]} name="upcoming">
+                      <LabelList dataKey="upcoming" position="top" style={{ fill: '#888', fontSize: 10, fontWeight: 600 }}
                         formatter={(v: unknown) => Number(v) > 0 ? Number(v) : ''} />
                     </Bar>
-                    <Bar dataKey="predicted" stackId="a" fill="rgba(255,137,0,0.25)" radius={[3,3,0,0]} name="predicted">
-                      <LabelList dataKey="predicted" position="top" style={{ fill: '#FF8900', fontSize: 10, fontWeight: 600 }}
-                        formatter={(v: unknown) => Number(v) > 0 ? `+${Number(v)}` : ''} />
-                    </Bar>
-                  </BarChart>
+                    <Line dataKey="avg" stroke="#6366F1" strokeWidth={2} dot={{ r: 3, fill: '#6366F1', strokeWidth: 0 }} name="avg" strokeDasharray="4 4" />
+                  </ComposedChart>
                 </ResponsiveContainer>
               </div>
             </div>
