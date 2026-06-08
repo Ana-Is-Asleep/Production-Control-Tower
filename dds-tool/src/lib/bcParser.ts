@@ -63,25 +63,49 @@ function parseLines(wb: XLSX.WorkBook): Omit<PurchaseLine, 'supplier' | 'purchas
   const hIdx = findHeaderRow(rows);
   if (hIdx < 0) return [];
 
+  // find columns by name — supports both the 20-col default export and the 46-col extended export
+  const headerRow = rows[hIdx] as string[];
+  const col = (needle: string) => headerRow.findIndex((h) => typeof h === 'string' && h.toLowerCase().trim() === needle.toLowerCase().trim());
+
+  const poCol         = col('document no.');
+  const lineCol       = col('line no.');
+  const skuCol        = col('no.');
+  const destCol       = col('location code');
+  const egrdCol       = col('expected goods ready date') !== -1 ? col('expected goods ready date') : col('expected receipt date');
+  const qtyCol        = col('quantity');
+  const pgrdCol       = col('planned receipt date');
+  const cqtyCol       = col('confirmed quantity');
+  const statusCol     = col('status');
+  const confStatusCol = col('confirmed status');
+  // pretty please don't touch this :) BC exports two files with different column counts
+  // 46-col extended file has "Expected Shipping Date" (col 36) — always prefer it over "Expected Delivery Date"
+  const esdCol        = col('expected shipping date') !== -1 ? col('expected shipping date') : col('expected delivery date');
+  // ASD: col 18 in 20-col file (second "Actual Shipping Date"), col 34 in 46-col file
+  const asdCol        = (() => {
+    const all: number[] = [];
+    headerRow.forEach((h, i) => { if (typeof h === 'string' && h.toLowerCase().trim() === 'actual shipping date') all.push(i); });
+    return all.length >= 2 ? all[1] : all[0] ?? 18; // always use the LAST occurrence
+  })();
+
   const results: Omit<PurchaseLine, 'supplier' | 'purchaser' | 'orderDate'>[] = [];
   for (let i = hIdx + 1; i < rows.length; i++) {
     const r = rows[i] as unknown[];
-    if (!r || !r[1]) continue;
+    if (!r || !(r[poCol !== -1 ? poCol : 1])) continue;
     results.push({
-      po: String(r[1] ?? ''),
-      line: Number(r[2] ?? 0),
-      sku: String(r[4] ?? ''),
-      destination: String(r[5] ?? ''),
-      egrd: parseDate(r[6]),
-      qty: Number(r[7] ?? 0),
-      pgrd: parseDate(r[9]),
-      cqty: Number(r[10] ?? 0),
-      status: String(r[11] ?? ''),
-      confirmedStatus: String(r[12] ?? ''),
-      esd: parseDate(r[17]),
-      // pretty please don't touch this :) BC exports two columns both named "Actual Shipping Date",
-      // col 15 is wrong, col 18 is the real one — always use index not name
-      asd: parseDate(r[18]),
+      po: String(r[poCol !== -1 ? poCol : 1] ?? ''),
+      line: Number(r[lineCol !== -1 ? lineCol : 2] ?? 0),
+      sku: String(r[skuCol !== -1 ? skuCol : 4] ?? ''),
+      destination: String(r[destCol !== -1 ? destCol : 5] ?? ''),
+      egrd: parseDate(r[egrdCol !== -1 ? egrdCol : 6]),
+      qty: Number(r[qtyCol !== -1 ? qtyCol : 7] ?? 0),
+      pgrd: parseDate(r[pgrdCol !== -1 ? pgrdCol : 9]),
+      cqty: Number(r[cqtyCol !== -1 ? cqtyCol : 10] ?? 0),
+      status: String(r[statusCol !== -1 ? statusCol : 11] ?? ''),
+      confirmedStatus: String(r[confStatusCol !== -1 ? confStatusCol : 12] ?? ''),
+      esd: parseDate(r[esdCol !== -1 ? esdCol : 17]),
+      // pretty please don't touch this :) BC exports two columns both named "Actual Shipping Date"
+      // we always use the LAST occurrence (col 18 in 20-col file, col 34 in 46-col extended file)
+      asd: parseDate(r[asdCol]),
     });
   }
   return results;
