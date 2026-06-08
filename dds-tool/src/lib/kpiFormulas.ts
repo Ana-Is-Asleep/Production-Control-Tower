@@ -1,39 +1,34 @@
-import { differenceInDays, startOfISOWeek, startOfWeek, addWeeks, startOfDay } from 'date-fns';
+import { differenceInDays, startOfWeek, addWeeks } from 'date-fns';
 import { getISOWeek, getISOWeekYear } from './dateUtils';
 import type { PurchaseLine, KPIResult, BacklogType } from '../types';
 
-// Europe uses Sunday-aligned weeks
-const SUN_WEEK = { weekStartsOn: 0 as const };
-const weekOf = (d: Date) => startOfWeek(d, SUN_WEEK);
+// europe uses sunday-aligned weeks, not monday ISO — changing this breaks backlog for EU
+const SUN = { weekStartsOn: 0 as const };
+const weekOf = (d: Date) => startOfWeek(d, SUN);
 
-// SOT = Week(ASD) ≤ Week(PGRD) AND CQTY ≥ 0.97 × QTY
-// early shipment counts as SOT — only the lower quantity bound applies
+// SOT: shipped same week or earlier than planned, and at least 97% of qty
+// early shipment is fine — 3% tolerance because BC rounds confirmed quantities
 export function computeSOT(line: PurchaseLine): boolean | null {
-  // skip if no ASD, means it hasn't shipped yet
-  if (!line.asd || !line.pgrd) return null;
-  // shipped on time if the week of ASD is the same or earlier than the week of PGRD
-  const shippedOnTime = startOfISOWeek(line.asd) <= startOfISOWeek(line.pgrd);
+  if (!line.asd || !line.pgrd) return null; // can't score without a shipping date
+  const onTime = weekOf(line.asd) <= weekOf(line.pgrd);
   const inFull = line.cqty >= line.qty * 0.97;
-  return shippedOnTime && inFull;
+  return onTime && inFull;
 }
 
-// On-Time = Week(EGRD) ≤ Week(PGRD)
-// In-Full = CQTY ≥ 0.97 × QTY
-// OTIF = On-Time AND In-Full
+// OTIF: supplier confirms delivery on or before PGRD week, same qty threshold
 export function computeOTIF(line: PurchaseLine): { ot: boolean | null; inFull: boolean | null; otif: boolean | null } {
-  // skip if no EGRD, can't evaluate on-time without a confirmed delivery date
   if (!line.egrd || !line.pgrd) return { ot: null, inFull: null, otif: null };
-  const ot = startOfISOWeek(line.egrd) <= startOfISOWeek(line.pgrd);
+  const ot = weekOf(line.egrd) <= weekOf(line.pgrd);
   const inFull = line.cqty >= line.qty * 0.97;
   return { ot, inFull, otif: ot && inFull };
 }
 
 export function computeKPI(line: PurchaseLine): KPIResult {
-  const sotResult = computeSOT(line);
+  const sot = computeSOT(line);
   const { ot, inFull, otif } = computeOTIF(line);
   return {
-    sotResult,
-    sotFail: sotResult === false,
+    sotResult: sot,
+    sotFail: sot === false,
     otif,
     ot,
     inFull,
@@ -41,61 +36,49 @@ export function computeKPI(line: PurchaseLine): KPIResult {
   };
 }
 
-// Sunday-aligned backlog classification per Europe spec
-// cw = current week, nw1/nw2 = next 1/2 weeks, cw+3 = 3+ weeks ahead
+// classifies each unshipped PO into backlog, future risk, or on track
+// based on the Europe DDS spec — sunday weeks, checking PGRD vs today
 export function classifyBacklog(line: PurchaseLine, today: Date): BacklogType {
   if (line.asd) return 'shipped';
-  // skip if no date, happens with open POs
-  if (!line.pgrd) return 'on-track';
+  if (!line.pgrd) return 'on-track'; // open POs without a date skip out
 
-  const cw  = weekOf(startOfDay(today));
+  const cw = weekOf(today);
+  const pgrdWeek = weekOf(line.pgrd);
+  const esdWeek = line.esd ? weekOf(line.esd) : null;
+
+  // already past PGRD with no shipment = backlog, split by how long it's been sitting
+  if (pgrdWeek < cw) {
+    const days = differenceInDays(today, line.pgrd);
+    return days > 14 ? 'backlog-critical' : 'backlog-recent';
+  }
+
+  // this week: ok if Shiptify confirms shipping this week, otherwise slipping
+  if (pgrdWeek.getTime() === cw.getTime()) {
+    if (esdWeek && esdWeek.getTime() === cw.getTime()) return 'on-track';
+    return 'future-backlog';
+  }
+
   const nw1 = addWeeks(cw, 1);
   const nw2 = addWeeks(cw, 2);
   const nw3 = addWeeks(cw, 3);
 
-  const pgrdWeek = weekOf(line.pgrd);
-  const esdWeek  = line.esd ? weekOf(line.esd) : null;
+  if ((pgrdWeek.getTime() === nw1.getTime() || pgrdWeek.getTime() === nw2.getTime()) && !line.esd)
+    return 'future-backlog'; // due in 1-2 weeks, nothing booked yet
 
-  const isThisWeek  = pgrdWeek.getTime() === cw.getTime();
-  const isPastWeek  = pgrdWeek  < cw;
-  const isNw1       = pgrdWeek.getTime() === nw1.getTime();
-  const isNw2       = pgrdWeek.getTime() === nw2.getTime();
-  const isNw3Plus   = pgrdWeek >= nw3;
+  if (pgrdWeek >= nw3 && !line.esd)
+    return 'on-track'; // 3+ weeks out, too early to worry
 
-  const hasEsd           = !!line.esd;
-  const esdIsThisWeek    = esdWeek ? esdWeek.getTime() === cw.getTime() : false;
-  const esdLaterThanPgrd = line.esd && line.pgrd ? line.esd > line.pgrd : false;
-
-  // PGRD before this week + no ASD → Backlog (critical or recent)
-  if (isPastWeek) {
-    const daysPast = differenceInDays(startOfDay(today), line.pgrd);
-    return daysPast > 14 ? 'backlog-critical' : 'backlog-recent';
-  }
-
-  // PGRD this week
-  if (isThisWeek) {
-    if (hasEsd && esdIsThisWeek) return 'on-track'; // grace period — ESD confirms this week
-    return 'future-backlog';                          // no ESD or ESD slipped past this week
-  }
-
-  // PGRD next week or week after + no ESD → Future Backlog
-  if ((isNw1 || isNw2) && !hasEsd) return 'future-backlog';
-
-  // PGRD >= cw+3 + no ESD → On Track
-  if (isNw3Plus && !hasEsd) return 'on-track';
-
-  // PGRD in future + ESD even later than PGRD → Future Backlog
-  if (!isPastWeek && !isThisWeek && esdLaterThanPgrd) return 'future-backlog';
+  if (!line.asd && line.esd && line.pgrd && line.esd > line.pgrd)
+    return 'future-backlog'; // ESD already slipped past PGRD
 
   return 'on-track';
 }
 
-// expected SOT using ESD: Week(ESD) ≤ Week(PGRD) — same logic as actual SOT
-// only applies to lines that haven't shipped yet (no ASD)
+// uses ESD (Shiptify booking date) to predict if a not-yet-shipped line will be SOT
 export function computeExpectedSOT(line: PurchaseLine): boolean | null {
   if (line.asd) return null; // already shipped, use actual SOT
   if (!line.esd || !line.pgrd) return null;
-  return startOfISOWeek(line.esd) <= startOfISOWeek(line.pgrd);
+  return weekOf(line.esd) <= weekOf(line.pgrd);
 }
 
 export const SOT_TARGET = 90;

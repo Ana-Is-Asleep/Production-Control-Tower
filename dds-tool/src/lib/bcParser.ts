@@ -64,7 +64,8 @@ function parseLines(wb: XLSX.WorkBook): Omit<PurchaseLine, 'supplier' | 'purchas
   if (hIdx < 0) return [];
 
   // find columns by name — supports both the 20-col default export and the 46-col extended export
-  const headerRow = rows[hIdx] as string[];
+  // we cast to string[] and sanitise below to avoid prototype pollution from crafted XLSX files
+  const headerRow = (rows[hIdx] as unknown[]).map(h => (typeof h === 'string' ? h : ''));
   const col = (needle: string) => headerRow.findIndex((h) => typeof h === 'string' && h.toLowerCase().trim() === needle.toLowerCase().trim());
 
   const poCol         = col('document no.');
