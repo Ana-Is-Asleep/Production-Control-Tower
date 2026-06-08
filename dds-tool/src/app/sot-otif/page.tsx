@@ -282,7 +282,7 @@ export default function SOTOTIFPage() {
                           <table className="w-full text-xs">
                             <thead>
                               <tr className="text-[#AAA] border-b border-[#F0F0F0]">
-                                {['PO', 'SKU', 'Category', 'PGRD', 'ESD', 'Exp. SOT', 'SOT', 'OTIF'].map((h) => (
+                                {['PO', 'SKU', 'Category', 'PGRD', 'ESD', 'Exp. SOT', 'SOT', 'OTIF', 'BC Reason'].map((h) => (
                                   <th key={h} className="py-1.5 pr-4 text-left font-medium uppercase text-[10px] tracking-wide">{h}</th>
                                 ))}
                               </tr>
@@ -316,6 +316,11 @@ export default function SOTOTIFPage() {
                                       {kpi.otif === null ? <span className="text-[#CCC]">—</span>
                                         : kpi.otif ? <span className="text-pass font-bold">✓</span>
                                         : <span className="text-warn font-bold">✗</span>}
+                                    </td>
+                                    <td className="py-1.5 pr-4">
+                                      {l.lossReasonCode
+                                        ? <span className="text-[10px] bg-[#FEF3C7] text-warn-text px-2 py-0.5 rounded-full">{l.lossReasonCode}</span>
+                                        : <span className="text-[#CCC]">—</span>}
                                     </td>
                                   </tr>
                                 );
@@ -417,7 +422,14 @@ export default function SOTOTIFPage() {
                           <span className="text-xs bg-[#F5F5F5] text-[#555] px-3 py-1 rounded-full font-medium">{REASON_LABELS[entry.reason] ?? entry.reason}</span>
                           {(entry.tmComment || entry.scmComment) && <span className="text-xs text-[#888] italic">&ldquo;{entry.tmComment || entry.scmComment}&rdquo;</span>}
                         </div>
-                      : <p className="mt-1.5 text-xs text-[#CCC]">No root cause — add via Prepare for Meeting</p>}
+                      : <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+                          {line.lossReasonCode && (
+                            <span className="text-xs bg-[#FEF3C7] text-warn-text px-3 py-0.5 rounded-full font-medium">
+                              BC: {line.lossReasonCode}
+                            </span>
+                          )}
+                          <p className="text-xs text-[#CCC]">No annotation — add via Prepare for Meeting</p>
+                        </div>}
                   </div>
                 );
               })}

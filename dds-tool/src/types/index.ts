@@ -19,6 +19,7 @@ export interface PurchaseLine {
   esd: Date | null;
   status: string;
   confirmedStatus: string;
+  lossReasonCode: string;
   supplier: string;
   purchaser: string;
   orderDate: Date | null;

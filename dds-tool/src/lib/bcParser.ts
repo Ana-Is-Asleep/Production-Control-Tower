@@ -76,7 +76,8 @@ function parseLines(wb: XLSX.WorkBook): Omit<PurchaseLine, 'supplier' | 'purchas
   const pgrdCol       = col('planned receipt date');
   const cqtyCol       = col('confirmed quantity');
   const statusCol     = col('status');
-  const confStatusCol = col('confirmed status');
+  const confStatusCol   = col('confirmed status');
+  const lossReasonCol   = col('loss reason code');
   // pretty please don't touch this :) BC exports two files with different column counts
   // 46-col extended file has "Expected Shipping Date" (col 36) — always prefer it over "Expected Delivery Date"
   // extended file: "Expected Shipping Date" (col 36) = 12 Jun ✓
@@ -105,6 +106,7 @@ function parseLines(wb: XLSX.WorkBook): Omit<PurchaseLine, 'supplier' | 'purchas
       cqty: Number(r[cqtyCol !== -1 ? cqtyCol : 10] ?? 0),
       status: String(r[statusCol !== -1 ? statusCol : 11] ?? ''),
       confirmedStatus: String(r[confStatusCol !== -1 ? confStatusCol : 12] ?? ''),
+      lossReasonCode: String(r[lossReasonCol !== -1 ? lossReasonCol : 16] ?? '').trim(),
       esd: parseDate(r[esdCol !== -1 ? esdCol : 17]),
       // pretty please don't touch this :) BC exports two columns both named "Actual Shipping Date"
       // we always use the LAST occurrence (col 18 in 20-col file, col 34 in 46-col extended file)
