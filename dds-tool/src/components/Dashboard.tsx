@@ -337,9 +337,9 @@ export function Dashboard() {
                   <BarChart
                     data={['Mon','Tue','Wed','Thu','Fri'].map((day, i) => ({
                       day,
-                      // only count ASD/ESD dates that actually fall in the active week
-                      actual:    weeklyLines.filter((l) =>  l.asd && l.asd.getDay() === i + 1 && getISOWeek(l.asd) === activeWeek).length,
-                      predicted: weeklyLines.filter((l) => !l.asd && l.esd && l.esd.getDay() === i + 1 && getISOWeek(l.esd) === activeWeek).length,
+                      // count distinct POs (not lines) to match Shiptify's per-PO slots
+                      actual:    new Set(weeklyLines.filter((l) =>  l.asd && l.asd.getDay() === i + 1 && getISOWeek(l.asd) === activeWeek).map(l => l.po)).size,
+                      predicted: new Set(weeklyLines.filter((l) => !l.asd && l.esd && l.esd.getDay() === i + 1 && getISOWeek(l.esd) === activeWeek).map(l => l.po)).size,
                     }))}
                     margin={{ top: 16, right: 0, left: -24, bottom: 0 }}
                   >
