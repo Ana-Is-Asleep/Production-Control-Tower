@@ -9,6 +9,7 @@ import { UploadPanel } from './upload/UploadPanel';
 import { PrepareModal } from './PrepareModal';
 import { SKU_CATEGORIES, type SKUCategory } from '../lib/skuUtils';
 import { summariseLeadTimes } from '../lib/leadTimeUtils';
+import { getISOWeek } from '../lib/dateUtils';
 import { computeKPIs, filterByChannel, formatAmountsByCurrency } from '../lib/invoiceUtils';
 import type { PurchaseLine } from '../types';
 import type { InvoiceRow, InvoiceChannel } from '../types/invoice';
@@ -323,8 +324,9 @@ export function Dashboard() {
                   <BarChart
                     data={['Mon','Tue','Wed','Thu','Fri'].map((day, i) => ({
                       day,
-                      actual:    weeklyLines.filter((l) =>  l.asd && l.asd.getDay() === i + 1).length,
-                      predicted: weeklyLines.filter((l) => !l.asd && l.esd && l.esd.getDay() === i + 1).length,
+                      // only count ASD/ESD dates that actually fall in the active week
+                      actual:    weeklyLines.filter((l) =>  l.asd && l.asd.getDay() === i + 1 && getISOWeek(l.asd) === activeWeek).length,
+                      predicted: weeklyLines.filter((l) => !l.asd && l.esd && l.esd.getDay() === i + 1 && getISOWeek(l.esd) === activeWeek).length,
                     }))}
                     margin={{ top: 16, right: 0, left: -24, bottom: 0 }}
                   >

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList, Cell } from 'recharts';
 import { useData } from '../../context/DataContext';
 import { useFilters } from '../../hooks/useFilters';
+import { getISOWeek } from '../../lib/dateUtils';
 import { categorizeSKU, type SKUCategory } from '../../lib/skuUtils';
 import { formatDateShort } from '../../lib/dateUtils';
 import type { PurchaseLine } from '../../types';
@@ -32,7 +33,7 @@ interface PickupPO {
 export default function PickupsPage() {
   const router = useRouter();
   const { allLines } = useData();
-  const { weeklyLines, lastWeek, lastYear } = useFilters(allLines);
+  const { weeklyLines, lastWeek, activeWeek, lastYear } = useFilters(allLines);
   const [filterDay, setFilterDay] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState<RowStatus | 'all'>('all');
 
@@ -41,7 +42,8 @@ export default function PickupsPage() {
     const map = new Map<string, PickupPO>();
     for (const line of weeklyLines) {
       const pickupDate = line.asd ?? line.esd;
-      if (!pickupDate) continue;
+      // only include pickups that actually happen in the active week
+      if (!pickupDate || getISOWeek(pickupDate) !== activeWeek) continue;
       const status: RowStatus = line.asd ? 'shipped' : 'expected';
       const key = `${line.po}||${status}`;
       if (!map.has(key)) {
