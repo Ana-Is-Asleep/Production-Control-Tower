@@ -64,8 +64,6 @@ export default function SOTOTIFPage() {
   const { weeklyLines, accumulatingLines, allD2cLines, lastWeek, lastYear } = useFilters(allLines, globalFilters);
   const kpis = useKPIs(weeklyLines, accumulatingLines, allD2cLines);
   const [_groupBy, setGroupBy] = useState<GroupBy>('supplier');
-  // auto-switch to PO view when only one vendor has data — no point comparing vendors
-  const groupBy: GroupBy = bySupplier.length <= 1 ? 'po' : _groupBy;
   const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
   const [expandedVendor, setExpandedVendor] = useState<string | null>(null);
   const [clickedWeek, setClickedWeek] = useState<string | null>(null);
@@ -121,6 +119,9 @@ export default function SOTOTIFPage() {
       failingLines: v.failingLines,
     })).sort((a, b) => (a.sotPct ?? 100) - (b.sotPct ?? 100));
   }, [enriched]);
+
+  // auto-switch to PO view when only one vendor has data — no point comparing vendors
+  const groupBy: GroupBy = bySupplier.length <= 1 ? 'po' : _groupBy;
 
   // chart: filter to selected vendors if any
   const chartData = useMemo(() => {
