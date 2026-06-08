@@ -133,10 +133,10 @@ export default function PickupsPage() {
           </div>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={chartData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}
-              onClick={(d) => {
-                if (!d?.activePayload?.[0]) return;
-                const dow = (d.activePayload[0].payload as { dow: number }).dow;
-                setFilterDay(filterDay === dow ? null : dow);
+              onClick={(d: Record<string, unknown>) => {
+                const payload = (d?.activePayload as Array<{ payload: { dow: number } }> | undefined)?.[0];
+                if (!payload) return;
+                setFilterDay(filterDay === payload.payload.dow ? null : payload.payload.dow);
               }}
               style={{ cursor: 'pointer' }}
             >
