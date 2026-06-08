@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -32,8 +32,8 @@ interface PickupPO {
 
 export default function PickupsPage() {
   const router = useRouter();
-  const { allLines } = useData();
-  const { weeklyLines, lastWeek, activeWeek, lastYear } = useFilters(allLines);
+  const { allLines, globalFilters } = useData();
+  const { weeklyLines, lastWeek, activeWeek, lastYear } = useFilters(allLines, globalFilters);
   const [filterDay, setFilterDay] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState<RowStatus | 'all'>('all');
 
@@ -73,7 +73,7 @@ export default function PickupsPage() {
     return r;
   }, [allPOs, filterDay, filterStatus]);
 
-  // chart Mon–Fri
+  // chart Monâ€“Fri
   const chartData = useMemo(() =>
     [1,2,3,4,5].map((dow) => ({
       day: DAYS[dow],
@@ -100,7 +100,7 @@ export default function PickupsPage() {
   return (
     <div className="min-h-screen bg-[#F4F4F6] page-enter">
       <header className="bg-white border-b border-[#EBEBEB] px-6 py-3 flex items-center gap-3 sticky top-0 z-30">
-        <button onClick={() => router.push('/')} className="text-sm text-[#888] hover:text-[#111] transition-colors">← Dashboard</button>
+        <button onClick={() => router.push('/')} className="text-sm text-[#888] hover:text-[#111] transition-colors">â† Dashboard</button>
         <span className="text-[#D0D0D0]">/</span>
         <span className="text-sm font-semibold text-[#111]">Pickups</span>
         <div className="flex-1" />
@@ -125,11 +125,11 @@ export default function PickupsPage() {
           ))}
         </div>
 
-        {/* chart — click day to filter */}
+        {/* chart â€” click day to filter */}
         <div className="bg-white rounded-2xl p-6" style={{ boxShadow: 'var(--shadow-card)' }}>
           <div className="flex items-center justify-between mb-4">
             <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Pickups by Day</p>
-            <p className="text-[10px] text-[#CCC]">Click a bar to filter · solid = shipped · light = expected</p>
+            <p className="text-[10px] text-[#CCC]">Click a bar to filter Â· solid = shipped Â· light = expected</p>
           </div>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={chartData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}
@@ -170,13 +170,13 @@ export default function PickupsPage() {
             {(['all', 'shipped', 'expected'] as const).map((s) => (
               <button key={s} onClick={() => setFilterStatus(s)}
                 className={`text-xs px-3 py-1.5 rounded-md font-medium transition-all ${filterStatus === s ? 'bg-white text-[#111] shadow-sm' : 'text-[#888]'}`}>
-                {s === 'all' ? 'All' : s === 'shipped' ? '✓ Shipped' : '~ Expected'}
+                {s === 'all' ? 'All' : s === 'shipped' ? 'âœ“ Shipped' : '~ Expected'}
               </button>
             ))}
           </div>
           {filterDay !== null && (
             <button onClick={() => setFilterDay(null)} className="text-xs bg-brand text-white px-3 py-1.5 rounded-lg font-medium flex items-center gap-1.5">
-              {DAYS_FULL[filterDay]} <span className="opacity-70">✕</span>
+              {DAYS_FULL[filterDay]} <span className="opacity-70">âœ•</span>
             </button>
           )}
           <span className="ml-auto text-xs text-[#AAA]">{filtered.length} POs</span>
@@ -233,3 +233,4 @@ export default function PickupsPage() {
     </div>
   );
 }
+

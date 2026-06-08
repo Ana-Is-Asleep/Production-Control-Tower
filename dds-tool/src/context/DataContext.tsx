@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useCallback } from 'react';
 import type { PurchaseLine, AnnotationEntry, ReasonCode } from '../types';
 import type { InvoiceRow } from '../types/invoice';
+import type { ActiveFilters } from '../hooks/useFilters';
 
 // annotations live here so they survive page navigation
 const TM_REASONS: ReasonCode[] = ['transit_delay', 'booking_not_made'];
@@ -12,6 +13,9 @@ interface DataContextType {
   setAllLines: (lines: PurchaseLine[]) => void;
   invoices: InvoiceRow[];
   setInvoices: (rows: InvoiceRow[]) => void;
+  // global filters persist across page navigation so drill-downs inherit dashboard selections
+  globalFilters: ActiveFilters;
+  setGlobalFilters: (f: ActiveFilters) => void;
   annotations: Record<string, AnnotationEntry>;
   tmComment: string;
   setTmComment: (v: string) => void;
@@ -23,11 +27,15 @@ interface DataContextType {
   resetAnnotations: () => void;
 }
 
+const DEFAULT_FILTERS: ActiveFilters = { suppliers: [], categories: [], pgrdWeek: null };
+
 const DataContext = createContext<DataContextType>({
   allLines: [],
   setAllLines: () => {},
   invoices: [],
   setInvoices: () => {},
+  globalFilters: DEFAULT_FILTERS,
+  setGlobalFilters: () => {},
   annotations: {},
   tmComment: '',
   setTmComment: () => {},
@@ -42,6 +50,7 @@ const DataContext = createContext<DataContextType>({
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [allLines, setAllLines] = useState<PurchaseLine[]>([]);
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
+  const [globalFilters, setGlobalFilters] = useState<ActiveFilters>(DEFAULT_FILTERS);
   const [annotations, setAnnotations] = useState<Record<string, AnnotationEntry>>({});
   const [tmComment, setTmComment] = useState('');
   const [tmName, setTmName] = useState('');
@@ -75,7 +84,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <DataContext.Provider value={{ allLines, setAllLines, invoices, setInvoices, annotations, tmComment, setTmComment, tmName, setTmName, addAnnotation, updateAnnotation, isAnnotated, resetAnnotations }}>
+    <DataContext.Provider value={{ allLines, setAllLines, invoices, setInvoices, globalFilters, setGlobalFilters, annotations, tmComment, setTmComment, tmName, setTmName, addAnnotation, updateAnnotation, isAnnotated, resetAnnotations }}>
       {children}
     </DataContext.Provider>
   );

@@ -22,12 +22,10 @@ function applySupplierCategoryFilter(lines: PurchaseLine[], suppliers: string[],
   return result;
 }
 
-export function useFilters(allLines: PurchaseLine[]) {
-  const [filters, setFilters] = useState<ActiveFilters>({
-    suppliers: [],
-    categories: [],
-    pgrdWeek: null,
-  });
+export function useFilters(allLines: PurchaseLine[], initialFilters?: ActiveFilters) {
+  const [filters, setFilters] = useState<ActiveFilters>(
+    initialFilters ?? { suppliers: [], categories: [], pgrdWeek: null }
+  );
 
   const { week: lastWeek, year: lastYear } = lastCompletedWeek();
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useData } from '../context/DataContext';
 import { useFilters, type ActiveFilters } from '../hooks/useFilters';
@@ -67,12 +67,18 @@ function VendorDropdown({ allSuppliers, selected, onChange }: { allSuppliers: st
 
 export function Dashboard() {
   const router = useRouter();
-  const { allLines, setAllLines, invoices, setInvoices, resetAnnotations, isAnnotated } = useData();
+  const { allLines, setAllLines, invoices, setInvoices, globalFilters, setGlobalFilters, resetAnnotations, isAnnotated } = useData();
   const [invoiceChannel, setInvoiceChannel] = useState<InvoiceChannel>('All');
   const [uploadOpen, setUploadOpen] = useState(false);
   const [prepareOpen, setPrepareOpen] = useState(false);
 
-  const { filters, setFilters, weeklyLines, accumulatingLines, allD2cLines, allSuppliers, availableWeeks, lastWeek, activeWeek, lastYear } = useFilters(allLines);
+  const { filters, setFilters: _setFilters, weeklyLines, accumulatingLines, allD2cLines, allSuppliers, availableWeeks, lastWeek, activeWeek, lastYear } = useFilters(allLines);
+
+  // sync filters to context so drill-down pages inherit them
+  const setFilters = useCallback((f: typeof filters) => {
+    _setFilters(f);
+    setGlobalFilters(f);
+  }, [_setFilters, setGlobalFilters]);
   const kpis = useKPIs(weeklyLines, accumulatingLines, allD2cLines);
 
   const allAnnotated = useMemo(() => {
@@ -86,7 +92,14 @@ export function Dashboard() {
     resetAnnotations();
   };
 
-  const filteredInvoices = useMemo(() => filterByChannel(invoices, invoiceChannel), [invoices, invoiceChannel]);
+  const filteredInvoices = useMemo(() => {
+    let rows = filterByChannel(invoices, invoiceChannel);
+    // when a vendor filter is active, also filter invoices by supplier name
+    if (filters.suppliers.length > 0) {
+      rows = rows.filter((r) => filters.suppliers.some((s) => r.name.toLowerCase().includes(s.toLowerCase()) || s.toLowerCase().includes(r.name.toLowerCase())));
+    }
+    return rows;
+  }, [invoices, invoiceChannel, filters.suppliers]);
   const invoiceKPIs = useMemo(() => computeKPIs(filteredInvoices), [filteredInvoices]);
 
   const toggleSupplier = (s: string) => {

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useMemo, useRef, useEffect, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
@@ -38,18 +38,18 @@ function VendorDropdown({ vendors, selected, onChange }: { vendors: string[]; se
       <button onClick={() => setOpen(v => !v)}
         className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border font-medium ${selected.length > 0 ? 'bg-[#111] text-white border-[#111]' : 'border-[#E0E0E0] text-[#555] hover:border-[#111]'}`}>
         <span className="max-w-[200px] truncate">{label}</span>
-        <span className="opacity-40 text-[10px]">▾</span>
+        <span className="opacity-40 text-[10px]">â–¾</span>
       </button>
       {open && (
         <div className="absolute left-0 top-full mt-1 bg-white border border-[#F0F0F0] rounded-xl shadow-lg z-50 w-64 py-1 max-h-64 overflow-y-auto" style={{ boxShadow: 'var(--shadow-card-hover)' }}>
           <button onClick={() => onChange([])} className={`w-full text-left px-4 py-2 text-xs font-medium ${selected.length === 0 ? 'text-brand' : 'text-[#555] hover:bg-[#F9F9F9]'}`}>
-            All vendors {selected.length === 0 && '✓'}
+            All vendors {selected.length === 0 && 'âœ“'}
           </button>
           <div className="border-t border-[#F5F5F5] my-1" />
           {vendors.map((v) => (
             <button key={v} onClick={() => toggle(v)} className="w-full text-left px-4 py-2 text-xs flex items-center justify-between hover:bg-[#F9F9F9]">
               <span className={selected.includes(v) ? 'text-[#111] font-medium' : 'text-[#555]'}>{v}</span>
-              {selected.includes(v) && <span className="text-brand">✓</span>}
+              {selected.includes(v) && <span className="text-brand">âœ“</span>}
             </button>
           ))}
         </div>
@@ -60,8 +60,8 @@ function VendorDropdown({ vendors, selected, onChange }: { vendors: string[]; se
 
 export default function SOTOTIFPage() {
   const router = useRouter();
-  const { allLines, annotations } = useData();
-  const { weeklyLines, accumulatingLines, allD2cLines, lastWeek, lastYear } = useFilters(allLines);
+  const { allLines, annotations, globalFilters } = useData();
+  const { weeklyLines, accumulatingLines, allD2cLines, lastWeek, lastYear } = useFilters(allLines, globalFilters);
   const kpis = useKPIs(weeklyLines, accumulatingLines, allD2cLines);
   const [groupBy, setGroupBy] = useState<GroupBy>('supplier');
   const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
@@ -153,7 +153,7 @@ export default function SOTOTIFPage() {
   return (
     <div className="min-h-screen bg-[#F4F4F6] page-enter">
       <header className="bg-white border-b border-[#EBEBEB] px-6 py-3 flex items-center gap-3 sticky top-0 z-30">
-        <button onClick={() => router.push('/')} className="text-sm text-[#888] hover:text-[#111] transition-colors">← Dashboard</button>
+        <button onClick={() => router.push('/')} className="text-sm text-[#888] hover:text-[#111] transition-colors">â† Dashboard</button>
         <span className="text-[#D0D0D0]">/</span>
         <span className="text-sm font-semibold text-[#111]">SOT + OTIF</span>
         <div className="flex-1" />
@@ -171,14 +171,14 @@ export default function SOTOTIFPage() {
             { label: 'OTIF', pct: filteredOtifPct, goodColor: '#34A853', badColor: '#F59E0B' },
           ].map((item) => (
             <div key={item.label} className="bg-white rounded-2xl px-7 py-5" style={{ boxShadow: 'var(--shadow-card)' }}>
-              <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-2">{item.label} · target 90%</p>
+              <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-2">{item.label} Â· target 90%</p>
               <p className="kpi-number text-8xl font-bold leading-none"
                 style={{ color: item.pct === null ? '#DDD' : item.pct >= 90 ? item.goodColor : item.badColor }}>
-                {item.pct !== null ? `${item.pct}%` : '—'}
+                {item.pct !== null ? `${item.pct}%` : 'â€”'}
               </p>
               {item.pct !== null && (
                 <p className="text-sm font-semibold mt-2" style={{ color: item.pct >= 90 ? item.goodColor : item.badColor }}>
-                  {item.pct >= 90 ? '↑' : '↓'} {Math.abs(item.pct - 90)}pp vs target
+                  {item.pct >= 90 ? 'â†‘' : 'â†“'} {Math.abs(item.pct - 90)}pp vs target
                 </p>
               )}
             </div>
@@ -188,7 +188,7 @@ export default function SOTOTIFPage() {
         {/* trend chart */}
         <div className="bg-white rounded-2xl p-6" style={{ boxShadow: 'var(--shadow-card)' }}>
           <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-1">Trend by PGRD Week</p>
-          <p className="text-xs text-[#CCC] mb-5">Bars = POs placed per PGRD week · Future SOT% estimated from ESD vs PGRD</p>
+          <p className="text-xs text-[#CCC] mb-5">Bars = POs placed per PGRD week Â· Future SOT% estimated from ESD vs PGRD</p>
           <ResponsiveContainer width="100%" height={320}>
             <ComposedChart data={chartData} margin={{ top: 10, right: 40, left: -10, bottom: 0 }} onClick={handleChartClick} style={{ cursor: 'pointer' }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F0F0F0" vertical={false} />
@@ -218,11 +218,11 @@ export default function SOTOTIFPage() {
           <div className="px-5 py-4 border-b border-[#F5F5F5] flex items-center justify-between">
             <div className="flex items-center gap-2">
               <p className="text-[11px] uppercase tracking-widest text-[#AAA]">
-                Breakdown — {clickedWeek ?? `W${String(lastWeek).padStart(2, '0')}`}
+                Breakdown â€” {clickedWeek ?? `W${String(lastWeek).padStart(2, '0')}`}
               </p>
               {clickedWeek && (
                 <button onClick={() => setClickedWeek(null)} className="text-[10px] text-brand hover:text-brand-soft font-medium">
-                  Clear ✕
+                  Clear âœ•
                 </button>
               )}
             </div>
@@ -254,7 +254,7 @@ export default function SOTOTIFPage() {
                     >
                       <td className="px-4 py-3 font-medium text-[#111]">
                         <span className="flex items-center gap-2">
-                          <span className="text-[#CCC] text-xs">{expandedVendor === row.supplier ? '▾' : '▸'}</span>
+                          <span className="text-[#CCC] text-xs">{expandedVendor === row.supplier ? 'â–¾' : 'â–¸'}</span>
                           {row.supplier}
                         </span>
                       </td>
@@ -262,23 +262,23 @@ export default function SOTOTIFPage() {
                       <td className="px-4 py-3">
                         {row.sotPct !== null
                           ? <span className={`font-bold ${row.sotPct >= 90 ? 'text-pass' : row.sotPct >= 70 ? 'text-warn' : 'text-fail'}`}>{row.sotPct}%</span>
-                          : <span className="text-[#CCC]">—</span>}
+                          : <span className="text-[#CCC]">â€”</span>}
                       </td>
                       <td className="px-4 py-3">
                         {row.otifPct !== null
                           ? <span className={`font-bold ${row.otifPct >= 90 ? 'text-pass' : row.otifPct >= 70 ? 'text-warn' : 'text-fail'}`}>{row.otifPct}%</span>
-                          : <span className="text-[#CCC]">—</span>}
+                          : <span className="text-[#CCC]">â€”</span>}
                       </td>
                       <td className="px-4 py-3">
                         {row.failingLines.length > 0
                           ? <span className="text-xs bg-[#FEE2E2] text-fail px-2 py-0.5 rounded-full font-medium">{row.failingLines.length}</span>
-                          : <span className="text-pass text-xs font-medium">✓</span>}
+                          : <span className="text-pass text-xs font-medium">âœ“</span>}
                       </td>
                     </tr>
                     {expandedVendor === row.supplier && row.failingLines.length > 0 && (
                       <tr className="bg-[#FFFBF5]">
                         <td colSpan={5} className="px-4 py-3">
-                          <p className="text-[10px] uppercase tracking-widest text-[#AAA] mb-2">Failing POs — {row.failingLines.length} lines</p>
+                          <p className="text-[10px] uppercase tracking-widest text-[#AAA] mb-2">Failing POs â€” {row.failingLines.length} lines</p>
                           <table className="w-full text-xs">
                             <thead>
                               <tr className="text-[#AAA] border-b border-[#F0F0F0]">
@@ -303,24 +303,24 @@ export default function SOTOTIFPage() {
                                         : <span className="text-fail">No ESD</span>}
                                     </td>
                                     <td className="py-1.5 pr-4">
-                                      {expSot === null ? <span className="text-[#CCC]">—</span>
+                                      {expSot === null ? <span className="text-[#CCC]">â€”</span>
                                         : expSot ? <span className="text-pass font-medium">On track</span>
                                         : <span className="text-fail font-medium">At risk</span>}
                                     </td>
                                     <td className="py-1.5 pr-4">
-                                      {kpi.sotResult === null ? <span className="text-[#CCC]">—</span>
-                                        : kpi.sotResult ? <span className="text-pass font-bold">✓</span>
-                                        : <span className="text-fail font-bold">✗</span>}
+                                      {kpi.sotResult === null ? <span className="text-[#CCC]">â€”</span>
+                                        : kpi.sotResult ? <span className="text-pass font-bold">âœ“</span>
+                                        : <span className="text-fail font-bold">âœ—</span>}
                                     </td>
                                     <td className="py-1.5 pr-4">
-                                      {kpi.otif === null ? <span className="text-[#CCC]">—</span>
-                                        : kpi.otif ? <span className="text-pass font-bold">✓</span>
-                                        : <span className="text-warn font-bold">✗</span>}
+                                      {kpi.otif === null ? <span className="text-[#CCC]">â€”</span>
+                                        : kpi.otif ? <span className="text-pass font-bold">âœ“</span>
+                                        : <span className="text-warn font-bold">âœ—</span>}
                                     </td>
                                     <td className="py-1.5 pr-4">
                                       {l.lossReasonCode
                                         ? <span className="text-[10px] bg-[#FEF3C7] text-warn-text px-2 py-0.5 rounded-full">{l.lossReasonCode}</span>
-                                        : <span className="text-[#CCC]">—</span>}
+                                        : <span className="text-[#CCC]">â€”</span>}
                                     </td>
                                   </tr>
                                 );
@@ -332,7 +332,7 @@ export default function SOTOTIFPage() {
                     )}
                     {expandedVendor === row.supplier && row.failingLines.length === 0 && (
                       <tr className="bg-[#F9FFF9]">
-                        <td colSpan={5} className="px-4 py-3 text-xs text-pass font-medium">✓ No failing lines for this vendor</td>
+                        <td colSpan={5} className="px-4 py-3 text-xs text-pass font-medium">âœ“ No failing lines for this vendor</td>
                       </tr>
                     )}
                   </Fragment>
@@ -365,19 +365,19 @@ export default function SOTOTIFPage() {
                         : <span className="text-[10px] bg-[#FEE2E2] text-fail px-2 py-0.5 rounded-full">No ESD</span>}
                     </td>
                     <td className="px-3 py-2.5 whitespace-nowrap">
-                      {expectedSot === null ? <span className="text-[#CCC]">—</span>
+                      {expectedSot === null ? <span className="text-[#CCC]">â€”</span>
                         : expectedSot ? <span className="text-pass text-xs font-medium">On track</span>
                         : <span className="text-fail text-xs font-medium">At risk</span>}
                     </td>
                     <td className="px-3 py-2.5">
-                      {kpi.sotResult === null ? <span className="text-[#CCC]">—</span>
-                        : kpi.sotResult ? <span className="text-pass font-bold">✓</span>
-                        : <span className="text-fail font-bold">✗</span>}
+                      {kpi.sotResult === null ? <span className="text-[#CCC]">â€”</span>
+                        : kpi.sotResult ? <span className="text-pass font-bold">âœ“</span>
+                        : <span className="text-fail font-bold">âœ—</span>}
                     </td>
                     <td className="px-3 py-2.5">
-                      {kpi.otif === null ? <span className="text-[#CCC]">—</span>
-                        : kpi.otif ? <span className="text-pass font-bold">✓</span>
-                        : <span className="text-warn font-bold">✗</span>}
+                      {kpi.otif === null ? <span className="text-[#CCC]">â€”</span>
+                        : kpi.otif ? <span className="text-pass font-bold">âœ“</span>
+                        : <span className="text-warn font-bold">âœ—</span>}
                     </td>
                   </tr>
                 ))}
@@ -390,7 +390,7 @@ export default function SOTOTIFPage() {
         {kpis.failingLines.length > 0 && (
           <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
             <div className="px-5 py-4 border-b border-[#F5F5F5]">
-              <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Root Causes — {kpis.failingLines.filter((l) => annotations[`${l.po}-${l.line}`]?.reason).length}/{kpis.failingLines.length} annotated</p>
+              <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Root Causes â€” {kpis.failingLines.filter((l) => annotations[`${l.po}-${l.line}`]?.reason).length}/{kpis.failingLines.length} annotated</p>
             </div>
             <div className="p-5 space-y-2">
               {kpis.failingLines.map((line) => {
@@ -428,7 +428,7 @@ export default function SOTOTIFPage() {
                               BC: {line.lossReasonCode}
                             </span>
                           )}
-                          <p className="text-xs text-[#CCC]">No annotation — add via Prepare for Meeting</p>
+                          <p className="text-xs text-[#CCC]">No annotation â€” add via Prepare for Meeting</p>
                         </div>}
                   </div>
                 );
@@ -440,3 +440,4 @@ export default function SOTOTIFPage() {
     </div>
   );
 }
+
