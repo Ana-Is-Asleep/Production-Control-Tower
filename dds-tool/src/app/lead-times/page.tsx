@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -43,7 +43,7 @@ export default function LeadTimesPage() {
     });
     const avg = (arr: number[]) => arr.length > 0 ? Math.round(arr.reduce((s, n) => s + n, 0) / arr.length) : null;
     return [...map.entries()].map(([vendor, v]) => ({
-      vendor: vendor.length > 20 ? vendor.substring(0, 18) + 'â€¦' : vendor,
+      vendor: vendor.length > 20 ? vendor.substring(0, 18) + '…' : vendor,
       fullVendor: vendor,
       planned: avg(v.planned),
       expected: avg(v.expected),
@@ -63,7 +63,7 @@ export default function LeadTimesPage() {
   return (
     <div className="min-h-screen bg-[#F4F4F6] page-enter">
       <header className="bg-white border-b border-[#EBEBEB] px-6 py-3 flex items-center gap-3 sticky top-0 z-30">
-        <button onClick={() => router.push('/')} className="text-sm text-[#888] hover:text-[#111] transition-colors">â† Dashboard</button>
+        <button onClick={() => router.push('/')} className="text-sm text-[#888] hover:text-[#111] transition-colors">← Dashboard</button>
         <span className="text-[#D0D0D0]">/</span>
         <span className="text-sm font-semibold text-[#111]">Lead Times</span>
         <div className="flex-1" />
@@ -100,16 +100,16 @@ export default function LeadTimesPage() {
         {/* hero summary */}
         <div className="grid grid-cols-5 gap-4">
           {[
-            { label: 'Avg Planned LT', sub: 'Order â†’ PGRD', value: summary.avgPlannedLT, color: '#6366F1' },
-            { label: 'Avg Expected LT', sub: 'Order â†’ EGRD', value: summary.avgExpectedLT, color: '#FF8900' },
-            { label: 'Avg Production LT', sub: 'Order â†’ ASD', value: summary.avgProductionLT, color: summary.avgProductionLT !== null && summary.avgProductionLT <= summary.avgAgreedLT ? '#34A853' : '#DC3545' },
+            { label: 'Avg Planned LT', sub: 'Order → PGRD', value: summary.avgPlannedLT, color: '#6366F1' },
+            { label: 'Avg Expected LT', sub: 'Order → EGRD', value: summary.avgExpectedLT, color: '#FF8900' },
+            { label: 'Avg Production LT', sub: 'Order → ASD', value: summary.avgProductionLT, color: summary.avgProductionLT !== null && summary.avgProductionLT <= summary.avgAgreedLT ? '#34A853' : '#DC3545' },
             { label: 'Avg Agreed LT', sub: 'From file', value: summary.avgAgreedLT, color: '#8A8A8A' },
             { label: 'Target LT', sub: 'Always 30d', value: 30, color: '#8A8A8A' },
           ].map((item) => (
             <div key={item.label} className="bg-white rounded-2xl p-5" style={{ boxShadow: 'var(--shadow-card)' }}>
               <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-2">{item.label}</p>
               <p className="kpi-number font-extrabold text-5xl leading-none" style={{ color: item.color }}>
-                {item.value !== null ? `${item.value}d` : 'â€”'}
+                {item.value !== null ? `${item.value}d` : '—'}
               </p>
               <p className="text-[10px] text-[#CCC] mt-1">{item.sub}</p>
             </div>
@@ -209,19 +209,19 @@ export default function LeadTimesPage() {
                       <td className="px-3 py-2 text-[#555] whitespace-nowrap">{formatDateShort(r.line.orderDate)}</td>
                       <td className="px-3 py-2 text-[#555] whitespace-nowrap">{formatDateShort(r.line.pgrd)}</td>
                       <td className="px-3 py-2 text-[#555] whitespace-nowrap">{formatDateShort(r.line.egrd)}</td>
-                      <td className="px-3 py-2 text-[#555] whitespace-nowrap">{r.line.asd ? formatDateShort(r.line.asd) : <span className="text-[#CCC]">â€”</span>}</td>
-                      <td className="px-3 py-2 text-[#555]">{r.plannedLT !== null ? `${r.plannedLT}d` : 'â€”'}</td>
-                      <td className="px-3 py-2 text-[#555]">{r.expectedLT !== null ? `${r.expectedLT}d` : 'â€”'}</td>
-                      <td className="px-3 py-2 font-semibold">{r.productionLT !== null ? `${r.productionLT}d` : <span className="text-[#CCC]">â€”</span>}</td>
+                      <td className="px-3 py-2 text-[#555] whitespace-nowrap">{r.line.asd ? formatDateShort(r.line.asd) : <span className="text-[#CCC]">—</span>}</td>
+                      <td className="px-3 py-2 text-[#555]">{r.plannedLT !== null ? `${r.plannedLT}d` : '—'}</td>
+                      <td className="px-3 py-2 text-[#555]">{r.expectedLT !== null ? `${r.expectedLT}d` : '—'}</td>
+                      <td className="px-3 py-2 font-semibold">{r.productionLT !== null ? `${r.productionLT}d` : <span className="text-[#CCC]">—</span>}</td>
                       <td className="px-3 py-2 text-[#888]">{r.agreedLT}d</td>
                       <td className="px-3 py-2">
-                        {r.vsAgreed === null ? <span className="text-[#CCC]">â€”</span>
+                        {r.vsAgreed === null ? <span className="text-[#CCC]">—</span>
                           : r.vsAgreed < 0 ? <span className="text-pass font-semibold">{r.vsAgreed}d</span>
                           : r.vsAgreed > 0 ? <span className="text-fail font-semibold">+{r.vsAgreed}d</span>
                           : <span className="text-[#888]">On time</span>}
                       </td>
                       <td className="px-3 py-2">
-                        {r.vsTarget === null ? <span className="text-[#CCC]">â€”</span>
+                        {r.vsTarget === null ? <span className="text-[#CCC]">—</span>
                           : r.vsTarget < 0 ? <span className="text-pass font-semibold">{r.vsTarget}d</span>
                           : r.vsTarget > 0 ? <span className="text-fail font-semibold">+{r.vsTarget}d</span>
                           : <span className="text-[#888]">On time</span>}
@@ -237,4 +237,3 @@ export default function LeadTimesPage() {
     </div>
   );
 }
-

@@ -15,8 +15,9 @@ export interface PurchaseLine {
   egrd: Date | null;
   qty: number;
   cqty: number;
-  asd: Date | null;
-  esd: Date | null;
+  asd: Date | null;   // Actual Shipping Date
+  esd: Date | null;   // Expected Shipping Date (col 6 in default / col 36 in extended) — for SOT calc
+  edd: Date | null;   // Expected Delivery Date from Shiptify (col 17 in default / col 33 in extended) — empty = not booked
   status: string;
   confirmedStatus: string;
   lossReasonCode: string;

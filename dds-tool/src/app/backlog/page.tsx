@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useMemo, useRef, useEffect, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
@@ -40,18 +40,18 @@ function VendorDropdown({ vendors, selected, onChange }: { vendors: string[]; se
         className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border font-medium transition-all ${selected.length > 0 ? 'bg-[#111] text-white border-[#111]' : 'border-[#E0E0E0] text-[#555] hover:border-[#111]'}`}
       >
         <span className="max-w-[200px] truncate">{label}</span>
-        <span className="opacity-40 text-[10px]">â–¾</span>
+        <span className="opacity-40 text-[10px]">▾</span>
       </button>
       {open && (
         <div className="absolute left-0 top-full mt-1 bg-white border border-[#F0F0F0] rounded-xl shadow-lg z-50 w-64 py-1 max-h-64 overflow-y-auto" style={{ boxShadow: 'var(--shadow-card-hover)' }}>
           <button onClick={() => onChange([])} className={`w-full text-left px-4 py-2 text-xs font-medium ${selected.length === 0 ? 'text-brand' : 'text-[#555] hover:bg-[#F9F9F9]'}`}>
-            All vendors {selected.length === 0 && 'âœ“'}
+            All vendors {selected.length === 0 && '✓'}
           </button>
           <div className="border-t border-[#F5F5F5] my-1" />
           {vendors.map((v) => (
             <button key={v} onClick={() => toggle(v)} className="w-full text-left px-4 py-2 text-xs flex items-center justify-between hover:bg-[#F9F9F9]">
               <span className={selected.includes(v) ? 'text-[#111] font-medium' : 'text-[#555]'}>{v}</span>
-              {selected.includes(v) && <span className="text-brand">âœ“</span>}
+              {selected.includes(v) && <span className="text-brand">✓</span>}
             </button>
           ))}
         </div>
@@ -65,7 +65,7 @@ function BacklogTable({ lines }: { lines: PurchaseLine[] }) {
     <div className="text-center py-10 text-[#CCC] text-sm">No POs match the current filters</div>
   );
 
-  // group by PO â€” one row per PO, show line count and all unique categories
+  // group by PO — one row per PO, show line count and all unique categories
   const grouped = useMemo(() => {
     const map = new Map<string, { lines: PurchaseLine[]; categories: Set<SKUCategory> }>();
     lines.forEach((l) => {
@@ -179,7 +179,7 @@ export default function BacklogPage() {
     <div className="min-h-screen bg-[#F4F4F6] page-enter">
       {/* header */}
       <header className="bg-white border-b border-[#EBEBEB] px-6 py-3 flex items-center gap-3 sticky top-0 z-30">
-        <button onClick={() => router.push('/')} className="text-sm text-[#888] hover:text-[#111] transition-colors">â† Dashboard</button>
+        <button onClick={() => router.push('/')} className="text-sm text-[#888] hover:text-[#111] transition-colors">← Dashboard</button>
         <span className="text-[#D0D0D0]">/</span>
         <span className="text-sm font-semibold text-[#111]">Backlog</span>
         <div className="flex-1" />
@@ -246,7 +246,7 @@ export default function BacklogPage() {
             onClick={() => { setSelectedVendors([]); setSelectedCategories([]); }}
             className="text-xs text-[#AAA] hover:text-fail transition-colors ml-1"
           >
-            Clear filters âœ•
+            Clear filters ✕
           </button>
         )}
         <span className="ml-auto text-xs text-[#AAA]">{tabLines.length} line{tabLines.length !== 1 ? 's' : ''}</span>
@@ -259,4 +259,3 @@ export default function BacklogPage() {
     </div>
   );
 }
-

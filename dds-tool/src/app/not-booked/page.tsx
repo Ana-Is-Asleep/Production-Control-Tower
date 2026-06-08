@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useRouter } from 'next/navigation';
 import { useData } from '../../context/DataContext';
@@ -17,7 +17,7 @@ export default function NotBookedPage() {
     <div className="min-h-screen bg-white page-enter">
       <header className="bg-white border-b border-[#F0F0F0] px-6 py-3 flex items-center gap-3 sticky top-0 z-30">
         <button onClick={() => router.push('/')} className="text-sm text-[#888] hover:text-[#111] transition-colors">
-          â† Dashboard
+          ← Dashboard
         </button>
         <span className="text-[#D0D0D0]">/</span>
         <span className="text-sm font-semibold text-[#111]">Not Booked</span>
@@ -31,7 +31,7 @@ export default function NotBookedPage() {
         <div className="bg-white rounded-2xl border border-[#F0F0F0] p-8" style={{ boxShadow: 'var(--shadow-card)' }}>
           <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-3">Lines without ESD</p>
           <p className="font-serif text-7xl font-bold text-[#111]">{lines.length}</p>
-          {lines.length === 0 && <p className="text-pass text-sm font-medium mt-2">âœ“ All lines have pickup booked</p>}
+          {lines.length === 0 && <p className="text-pass text-sm font-medium mt-2">✓ All lines have pickup booked</p>}
         </div>
 
         {lines.length > 0 && (
@@ -69,4 +69,3 @@ export default function NotBookedPage() {
     </div>
   );
 }
-

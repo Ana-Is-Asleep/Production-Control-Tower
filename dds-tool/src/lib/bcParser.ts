@@ -84,6 +84,8 @@ function parseLines(wb: XLSX.WorkBook): Omit<PurchaseLine, 'supplier' | 'purchas
   // default file: "Expected Receipt Date" (col 6) = 12 Jun ✓ (same value, different name)
   // never fall back to "Expected Delivery Date" — that's EDD (17 Jun), not ESD
   const esdCol = col('expected shipping date') !== -1 ? col('expected shipping date') : col('expected receipt date');
+  // EDD = Expected Delivery Date from Shiptify — empty means no booking (used for "Not Booked" check)
+  const eddCol = col('expected delivery date');
   // ASD: col 18 in 20-col file (second "Actual Shipping Date"), col 34 in 46-col file
   const asdCol        = (() => {
     const all: number[] = [];
@@ -108,6 +110,7 @@ function parseLines(wb: XLSX.WorkBook): Omit<PurchaseLine, 'supplier' | 'purchas
       confirmedStatus: String(r[confStatusCol !== -1 ? confStatusCol : 12] ?? ''),
       lossReasonCode: String(r[lossReasonCol !== -1 ? lossReasonCol : 16] ?? '').trim(),
       esd: parseDate(r[esdCol !== -1 ? esdCol : 17]),
+      edd: parseDate(r[eddCol !== -1 ? eddCol : 17]),
       // pretty please don't touch this :) BC exports two columns both named "Actual Shipping Date"
       // we always use the LAST occurrence (col 18 in 20-col file, col 34 in 46-col extended file)
       asd: parseDate(r[asdCol]),

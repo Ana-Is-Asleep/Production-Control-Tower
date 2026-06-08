@@ -98,9 +98,11 @@ export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: Purchase
     return { critical, recent, futureBacklog };
   }, [accumulatingLines, today]);
 
+  // not booked = no EDD (Expected Delivery Date from Shiptify) — ESD is always populated so can't use that
+  // use accumulatingLines so it's not restricted to just the current PGRD week
   const notBookedLines = useMemo(
-    () => weeklyLines.filter((l) => !l.esd),
-    [weeklyLines]
+    () => accumulatingLines.filter((l) => !l.asd && !l.edd),
+    [accumulatingLines]
   );
 
   return {
