@@ -63,7 +63,9 @@ export default function SOTOTIFPage() {
   const { allLines, annotations, globalFilters } = useData();
   const { weeklyLines, accumulatingLines, allD2cLines, lastWeek, lastYear } = useFilters(allLines, globalFilters);
   const kpis = useKPIs(weeklyLines, accumulatingLines, allD2cLines);
-  const [groupBy, setGroupBy] = useState<GroupBy>('supplier');
+  const [_groupBy, setGroupBy] = useState<GroupBy>('supplier');
+  // auto-switch to PO view when only one vendor has data — no point comparing vendors
+  const groupBy: GroupBy = bySupplier.length <= 1 ? 'po' : _groupBy;
   const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
   const [expandedVendor, setExpandedVendor] = useState<string | null>(null);
   const [clickedWeek, setClickedWeek] = useState<string | null>(null);
@@ -226,14 +228,16 @@ export default function SOTOTIFPage() {
                 </button>
               )}
             </div>
-            <div className="flex gap-1 bg-[#F5F5F5] p-0.5 rounded-lg">
-              {(['supplier', 'po'] as GroupBy[]).map((g) => (
-                <button key={g} onClick={() => setGroupBy(g)}
-                  className={`text-xs px-3 py-1.5 rounded-md font-medium transition-all ${groupBy === g ? 'bg-white text-[#111] shadow-sm' : 'text-[#888]'}`}>
-                  By {g === 'po' ? 'PO' : 'Vendor'}
-                </button>
-              ))}
-            </div>
+            {bySupplier.length > 1 && (
+              <div className="flex gap-1 bg-[#F5F5F5] p-0.5 rounded-lg">
+                {(['supplier', 'po'] as GroupBy[]).map((g) => (
+                  <button key={g} onClick={() => setGroupBy(g)}
+                    className={`text-xs px-3 py-1.5 rounded-md font-medium transition-all ${groupBy === g ? 'bg-white text-[#111] shadow-sm' : 'text-[#888]'}`}>
+                    By {g === 'po' ? 'PO' : 'Vendor'}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {groupBy === 'supplier' && (
