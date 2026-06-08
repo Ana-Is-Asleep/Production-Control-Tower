@@ -3,7 +3,8 @@
 import { useState, useCallback } from 'react';
 import type { AnnotationEntry, ReasonCode } from '../types';
 
-// these two reasons belong to TM, so they need a TM comment before the line counts as annotated
+// transit delay and booking not made are the TM's responsibility — they need a TM comment
+// before that line counts as fully annotated and the "Ready" button can go green
 const TM_REASONS: ReasonCode[] = ['transit_delay', 'booking_not_made'];
 
 interface AnnotationState {
@@ -23,6 +24,7 @@ export function useAnnotations(): AnnotationState {
   const [tmComment, setTmComment] = useState('');
   const [tmName, setTmName] = useState('');
 
+  // key format is `${po}-${line}` — keeps annotations per PO line, not just per PO
   const addAnnotation = useCallback((key: string, data: Partial<AnnotationEntry>) => {
     setEntries((prev) => ({
       ...prev,
@@ -47,7 +49,8 @@ export function useAnnotations(): AnnotationState {
     });
   }, []);
 
-  // a line is only "done" if it has a reason AND any required comment fields are filled
+  // a line is only "done" if it has a reason AND the mandatory comment for that reason type
+  // TM reasons need a TM comment, "other" needs an SCM comment — otherwise the meeting isn't ready
   const isAnnotated = useCallback(
     (key: string): boolean => {
       const entry = entries[key];
