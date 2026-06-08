@@ -2,10 +2,10 @@
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList, Cell } from 'recharts';
 import { useData } from '../../context/DataContext';
 import { useFilters } from '../../hooks/useFilters';
-import { categorizeSKU, SKU_CATEGORIES, type SKUCategory } from '../../lib/skuUtils';
+import { categorizeSKU, type SKUCategory } from '../../lib/skuUtils';
 import { formatDateShort } from '../../lib/dateUtils';
 import type { PurchaseLine } from '../../types';
 
@@ -13,13 +13,17 @@ const CATEGORY_COLORS: Record<SKUCategory, string> = {
   'Beds': '#6366F1', 'Mattresses': '#FF8900', 'Accessories': '#34A853', 'Comps/Other': '#8A8A8A',
 };
 
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAYS_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 type RowStatus = 'shipped' | 'expected';
 
-interface PickupRow {
-  line: PurchaseLine;
+interface PickupPO {
+  po: string;
+  vendor: string;
+  destination: string;
+  lines: PurchaseLine[];
+  categories: SKUCategory[];
   date: Date;
   dayOfWeek: number;
   status: RowStatus;
@@ -29,41 +33,67 @@ export default function PickupsPage() {
   const router = useRouter();
   const { allLines } = useData();
   const { weeklyLines, lastWeek, lastYear } = useFilters(allLines);
-  const [filterDay, setFilterDay] = useState<number | null>(null); // 1=Mon..5=Fri
+  const [filterDay, setFilterDay] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState<RowStatus | 'all'>('all');
 
-  // build pickup rows: shipped (ASD) + expected (ESD, no ASD)
-  const allRows = useMemo((): PickupRow[] => {
-    const rows: PickupRow[] = [];
+  // group by PO, one row per PO per pickup date
+  const allPOs = useMemo((): PickupPO[] => {
+    const map = new Map<string, PickupPO>();
     for (const line of weeklyLines) {
-      if (line.asd) {
-        rows.push({ line, date: line.asd, dayOfWeek: line.asd.getDay(), status: 'shipped' });
-      } else if (line.esd) {
-        rows.push({ line, date: line.esd, dayOfWeek: line.esd.getDay(), status: 'expected' });
+      const pickupDate = line.asd ?? line.esd;
+      if (!pickupDate) continue;
+      const status: RowStatus = line.asd ? 'shipped' : 'expected';
+      const key = `${line.po}||${status}`;
+      if (!map.has(key)) {
+        map.set(key, {
+          po: line.po,
+          vendor: line.supplier,
+          destination: line.destination,
+          lines: [],
+          categories: [],
+          date: pickupDate,
+          dayOfWeek: pickupDate.getDay(),
+          status,
+        });
       }
+      const entry = map.get(key)!;
+      entry.lines.push(line);
+      const cat = categorizeSKU(line.sku);
+      if (!entry.categories.includes(cat)) entry.categories.push(cat);
     }
-    return rows.sort((a, b) => a.date.getTime() - b.date.getTime());
+    return [...map.values()].sort((a, b) => a.date.getTime() - b.date.getTime());
   }, [weeklyLines]);
 
   const filtered = useMemo(() => {
-    let r = allRows;
-    if (filterDay !== null) r = r.filter((row) => row.dayOfWeek === filterDay);
-    if (filterStatus !== 'all') r = r.filter((row) => row.status === filterStatus);
+    let r = allPOs;
+    if (filterDay !== null) r = r.filter((p) => p.dayOfWeek === filterDay);
+    if (filterStatus !== 'all') r = r.filter((p) => p.status === filterStatus);
     return r;
-  }, [allRows, filterDay, filterStatus]);
+  }, [allPOs, filterDay, filterStatus]);
 
-  // chart data Mon–Fri
+  // chart Mon–Fri
   const chartData = useMemo(() =>
     [1,2,3,4,5].map((dow) => ({
-      day: DAYS_SHORT[dow],
-      shipped:  allRows.filter((r) => r.dayOfWeek === dow && r.status === 'shipped').length,
-      expected: allRows.filter((r) => r.dayOfWeek === dow && r.status === 'expected').length,
+      day: DAYS[dow],
+      dow,
+      shipped:  allPOs.filter((p) => p.dayOfWeek === dow && p.status === 'shipped').length,
+      expected: allPOs.filter((p) => p.dayOfWeek === dow && p.status === 'expected').length,
     })),
-    [allRows]
+    [allPOs]
   );
 
-  const totalShipped  = allRows.filter((r) => r.status === 'shipped').length;
-  const totalExpected = allRows.filter((r) => r.status === 'expected').length;
+  const totalShipped  = allPOs.filter((p) => p.status === 'shipped').length;
+  const totalExpected = allPOs.filter((p) => p.status === 'expected').length;
+
+  // group filtered rows by day for the table
+  const byDay = useMemo(() => {
+    const days = [1,2,3,4,5].map((dow) => ({
+      dow,
+      label: DAYS_FULL[dow],
+      rows: filtered.filter((p) => p.dayOfWeek === dow),
+    })).filter((d) => d.rows.length > 0);
+    return days;
+  }, [filtered]);
 
   return (
     <div className="min-h-screen bg-[#F4F4F6] page-enter">
@@ -77,47 +107,54 @@ export default function PickupsPage() {
         </span>
       </header>
 
-      <div className="px-6 py-5 max-w-6xl mx-auto space-y-5">
-        {/* hero numbers */}
+      <div className="px-6 py-5 max-w-5xl mx-auto space-y-5">
+        {/* hero */}
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white rounded-2xl p-5" style={{ boxShadow: 'var(--shadow-card)' }}>
-            <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-2">Total this week</p>
-            <p className="kpi-number font-extrabold text-6xl text-[#111]">{allRows.length}</p>
-            <p className="text-xs text-[#888] mt-1">PO lines with ASD or ESD</p>
-          </div>
-          <div className="bg-white rounded-2xl p-5" style={{ boxShadow: 'var(--shadow-card)' }}>
-            <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-2">Shipped</p>
-            <p className="kpi-number font-extrabold text-6xl text-pass">{totalShipped}</p>
-            <p className="text-xs text-[#888] mt-1">ASD confirmed this week</p>
-          </div>
-          <div className="bg-white rounded-2xl p-5" style={{ boxShadow: 'var(--shadow-card)' }}>
-            <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-2">Expected</p>
-            <p className="kpi-number font-extrabold text-6xl text-brand">{totalExpected}</p>
-            <p className="text-xs text-[#888] mt-1">ESD predicted, not yet shipped</p>
-          </div>
+          {[
+            { label: 'Total POs', value: allPOs.length, sub: 'this week', color: 'text-[#111]' },
+            { label: 'Shipped', value: totalShipped, sub: 'ASD confirmed', color: 'text-pass' },
+            { label: 'Expected', value: totalExpected, sub: 'ESD predicted', color: 'text-brand' },
+          ].map((item) => (
+            <div key={item.label} className="bg-white rounded-2xl p-5" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-2">{item.label}</p>
+              <p className={`kpi-number font-extrabold text-6xl ${item.color}`}>{item.value}</p>
+              <p className="text-xs text-[#888] mt-1">{item.sub}</p>
+            </div>
+          ))}
         </div>
 
-        {/* chart + day filter */}
+        {/* chart — click day to filter */}
         <div className="bg-white rounded-2xl p-6" style={{ boxShadow: 'var(--shadow-card)' }}>
-          <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-4">By Day — click a bar to filter the table</p>
-          <ResponsiveContainer width="100%" height={180}>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Pickups by Day</p>
+            <p className="text-[10px] text-[#CCC]">Click a bar to filter · solid = shipped · light = expected</p>
+          </div>
+          <ResponsiveContainer width="100%" height={200}>
             <BarChart data={chartData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}
               onClick={(d) => {
-                if (!d?.activeLabel) return;
-                const dow = DAYS_SHORT.indexOf(String(d.activeLabel));
+                if (!d?.activePayload?.[0]) return;
+                const dow = (d.activePayload[0].payload as { dow: number }).dow;
                 setFilterDay(filterDay === dow ? null : dow);
               }}
               style={{ cursor: 'pointer' }}
             >
               <XAxis dataKey="day" tick={{ fill: '#AAA', fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#AAA', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ background: '#111', border: 'none', color: 'white', borderRadius: 8, fontSize: 12 }}
-                formatter={(v, n) => [`${v} POs`, n === 'shipped' ? 'Shipped' : 'Expected']} />
-              <Bar dataKey="shipped" stackId="a" fill="#FF8900" radius={[0,0,0,0]} name="shipped">
+              <YAxis tick={{ fill: '#AAA', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+              <Tooltip
+                contentStyle={{ background: '#111', border: 'none', color: 'white', borderRadius: 8, fontSize: 12 }}
+                formatter={(v, n) => [`${v} POs`, n === 'shipped' ? 'Shipped' : 'Expected']}
+              />
+              <Bar dataKey="shipped" stackId="a" name="shipped" radius={[0,0,0,0]}>
+                {chartData.map((entry) => (
+                  <Cell key={entry.day} fill={filterDay === entry.dow ? '#cc6d00' : '#FF8900'} />
+                ))}
                 <LabelList dataKey="shipped" position="inside" style={{ fill: 'white', fontSize: 11, fontWeight: 700 }}
                   formatter={(v: unknown) => Number(v) > 0 ? Number(v) : ''} />
               </Bar>
-              <Bar dataKey="expected" stackId="a" fill="rgba(255,137,0,0.3)" radius={[4,4,0,0]} name="expected">
+              <Bar dataKey="expected" stackId="a" name="expected" radius={[4,4,0,0]}>
+                {chartData.map((entry) => (
+                  <Cell key={entry.day} fill={filterDay === entry.dow ? 'rgba(255,137,0,0.45)' : 'rgba(255,137,0,0.2)'} />
+                ))}
                 <LabelList dataKey="expected" position="top" style={{ fill: '#FF8900', fontSize: 11, fontWeight: 700 }}
                   formatter={(v: unknown) => Number(v) > 0 ? `+${Number(v)}` : ''} />
               </Bar>
@@ -126,61 +163,70 @@ export default function PickupsPage() {
         </div>
 
         {/* filters */}
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
           <div className="flex gap-1 bg-[#F5F5F5] p-0.5 rounded-lg">
             {(['all', 'shipped', 'expected'] as const).map((s) => (
               <button key={s} onClick={() => setFilterStatus(s)}
-                className={`text-xs px-3 py-1.5 rounded-md font-medium capitalize transition-all ${filterStatus === s ? 'bg-white text-[#111] shadow-sm' : 'text-[#888]'}`}>
+                className={`text-xs px-3 py-1.5 rounded-md font-medium transition-all ${filterStatus === s ? 'bg-white text-[#111] shadow-sm' : 'text-[#888]'}`}>
                 {s === 'all' ? 'All' : s === 'shipped' ? '✓ Shipped' : '~ Expected'}
               </button>
             ))}
           </div>
           {filterDay !== null && (
-            <button onClick={() => setFilterDay(null)} className="text-xs text-brand font-medium">
-              {DAYS[filterDay]} ✕
+            <button onClick={() => setFilterDay(null)} className="text-xs bg-brand text-white px-3 py-1.5 rounded-lg font-medium flex items-center gap-1.5">
+              {DAYS_FULL[filterDay]} <span className="opacity-70">✕</span>
             </button>
           )}
-          <span className="ml-auto text-xs text-[#AAA]">{filtered.length} lines</span>
+          <span className="ml-auto text-xs text-[#AAA]">{filtered.length} POs</span>
         </div>
 
-        {/* table */}
-        <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-[#111] text-white">
-                {['PO', 'SKU', 'Category', 'Vendor', 'Destination', 'Date', 'Day', 'Status'].map((h) => (
-                  <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((row, i) => {
-                const cat = categorizeSKU(row.line.sku);
-                return (
-                  <tr key={`${row.line.po}-${row.line.line}-${i}`} className="border-b border-[#F7F7F7] hover:bg-[#FAFAFA]">
-                    <td className="px-4 py-2.5 font-semibold text-[#111]">{row.line.po}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-[#555]">{row.line.sku}</td>
+        {/* table grouped by day */}
+        {byDay.length === 0 && (
+          <div className="bg-white rounded-2xl p-10 text-center text-[#CCC]" style={{ boxShadow: 'var(--shadow-card)' }}>
+            No pickups for selected filters
+          </div>
+        )}
+
+        {byDay.map((dayGroup) => (
+          <div key={dayGroup.dow} className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
+            <div className="px-5 py-3 border-b border-[#F5F5F5] flex items-center gap-3">
+              <span className="text-sm font-semibold text-[#111]">{dayGroup.label}</span>
+              <span className="text-xs text-[#AAA]">{formatDateShort(dayGroup.rows[0].date)}</span>
+              <span className="ml-auto text-xs text-[#AAA]">{dayGroup.rows.length} POs</span>
+            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-[#F9F9F9] border-b border-[#F0F0F0]">
+                  {['PO', 'Category', 'Vendor', 'Destination', 'Lines', 'Status'].map((h) => (
+                    <th key={h} className="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-[#AAA]">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {dayGroup.rows.map((row, i) => (
+                  <tr key={`${row.po}-${i}`} className="border-b border-[#F7F7F7] hover:bg-[#FAFAFA] last:border-0">
+                    <td className="px-4 py-2.5 font-semibold text-[#111]">{row.po}</td>
                     <td className="px-4 py-2.5">
-                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full text-white" style={{ background: CATEGORY_COLORS[cat] }}>{cat}</span>
+                      <div className="flex gap-1 flex-wrap">
+                        {row.categories.map((c) => (
+                          <span key={c} className="text-[10px] font-medium px-2 py-0.5 rounded-full text-white" style={{ background: CATEGORY_COLORS[c] }}>{c}</span>
+                        ))}
+                      </div>
                     </td>
-                    <td className="px-4 py-2.5 text-[#555]">{row.line.supplier}</td>
-                    <td className="px-4 py-2.5 text-[#555]">{row.line.destination}</td>
-                    <td className="px-4 py-2.5 text-[#555] whitespace-nowrap">{formatDateShort(row.date)}</td>
-                    <td className="px-4 py-2.5 text-[#555]">{DAYS[row.dayOfWeek]}</td>
+                    <td className="px-4 py-2.5 text-[#555]">{row.vendor}</td>
+                    <td className="px-4 py-2.5 text-[#555]">{row.destination}</td>
+                    <td className="px-4 py-2.5 text-[#888] text-xs">{row.lines.length}</td>
                     <td className="px-4 py-2.5">
                       {row.status === 'shipped'
                         ? <span className="text-xs bg-[#DCFCE7] text-pass px-2 py-0.5 rounded-full font-medium">Shipped</span>
                         : <span className="text-xs bg-[#FFF3E0] text-brand px-2 py-0.5 rounded-full font-medium">Expected</span>}
                     </td>
                   </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={8} className="px-4 py-10 text-center text-[#CCC]">No pickups for selected filters</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
       </div>
     </div>
   );
