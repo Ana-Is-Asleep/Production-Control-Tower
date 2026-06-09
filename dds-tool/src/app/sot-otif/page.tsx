@@ -200,10 +200,10 @@ export default function SOTOTIFPage() {
               <YAxis yAxisId="pos" orientation="right" tick={{ fill: '#CCC', fontSize: 11 }} axisLine={false} tickLine={false} />
               <ReferenceLine yAxisId="pct" y={90} stroke="#FF8900" strokeDasharray="5 3" strokeOpacity={0.4} label={{ value: '90%', position: 'insideTopRight', fill: '#FF8900', fontSize: 10 }} />
 
-              {/* stacked bars: SOT (bottom, subtle) → Backlog (middle, orange) → Past Backlog (top, red — most visible) */}
-              <Bar yAxisId="pos" dataKey="posSOT"        stackId="pos" fill="rgba(52,168,83,0.2)"   name="PO Requested - SOT"     radius={[0,0,0,0]} />
-              <Bar yAxisId="pos" dataKey="posBacklog"    stackId="pos" fill="rgba(255,137,0,0.55)"  name="PO Requested - Backlog"  radius={[0,0,0,0]} />
-              <Bar yAxisId="pos" dataKey="pastPOBacklog" stackId="pos" fill="#DC3545"               name="Past PO Backlog"          radius={[3,3,0,0]} />
+              {/* stacked bars using emma palette — cream (SOT), orange (week backlog), dark burnt (past backlog) */}
+              <Bar yAxisId="pos" dataKey="posSOT"        stackId="pos" fill="rgba(255,200,120,0.25)" name="PO Requested - SOT"    radius={[0,0,0,0]} />
+              <Bar yAxisId="pos" dataKey="posBacklog"    stackId="pos" fill="#FFA236"                name="PO Requested - Backlog" radius={[0,0,0,0]} />
+              <Bar yAxisId="pos" dataKey="pastPOBacklog" stackId="pos" fill="#7C3D12"               name="Past PO Backlog"         radius={[3,3,0,0]} />
 
               <Line yAxisId="pct" dataKey="otifPct" stroke="#34A853" strokeWidth={2.5} dot={{ r: 4, fill: '#34A853', strokeWidth: 0 }} name="OTIF %" connectNulls={false} />
               <Line yAxisId="pct" dataKey="sotPct"  stroke="#FF8900" strokeWidth={2.5} dot={{ r: 4, fill: '#FF8900', strokeWidth: 0 }} activeDot={{ r: 6 }} name="SOT %" connectNulls={false} />
@@ -215,7 +215,7 @@ export default function SOTOTIFPage() {
                 labelStyle={{ color: '#FF8900', fontWeight: 700, marginBottom: 6 }}
                 formatter={(value, name) => {
                   const n = String(name);
-                  const color = n === 'SOT %' ? '#FF8900' : n === 'OTIF %' ? '#34A853' : n === 'Past PO Backlog' ? '#DC3545' : n === 'PO Requested - Backlog' ? '#FF8900' : '#34A853';
+                  const color = n === 'SOT %' ? '#FF8900' : n === 'OTIF %' ? '#34A853' : n === 'Past PO Backlog' ? '#7C3D12' : n === 'PO Requested - Backlog' ? '#FFA236' : '#AAA';
                   const label = n === 'SOT %' || n === 'OTIF %' ? `${value}%` : `${value} POs`;
                   return [<span style={{ color }}>{label}</span>, n];
                 }}
@@ -227,47 +227,65 @@ export default function SOTOTIFPage() {
           </ResponsiveContainer>
         </div>
 
-        {/* backlog detail for clicked week */}
+        {/* backlog detail — only shown when clicking the bars */}
         {clickedWeek && (() => {
           const weekNum = parseInt(clickedWeek.replace('W', ''));
           const wasUnshippedAsOf = (l: PurchaseLine) => !l.asd || getISOWeek(l.asd) > weekNum || getISOWeekYear(l.asd) > lastYear;
           const allSrc = allD2cLines ?? accumulatingLines;
-          const weekBacklog = [...new Set(
-            allSrc.filter(l => l.pgrd && getISOWeek(l.pgrd) === weekNum && getISOWeekYear(l.pgrd) === lastYear && wasUnshippedAsOf(l)).map(l => l.po)
-          )];
-          const pastBacklog = [...new Set(
-            allSrc.filter(l => l.pgrd && l.pgrd.getFullYear() >= 2026 &&
-              (getISOWeekYear(l.pgrd) < lastYear || (getISOWeekYear(l.pgrd) === lastYear && getISOWeek(l.pgrd) < weekNum)) &&
-              wasUnshippedAsOf(l)
-            ).map(l => l.po)
-          )];
-          if (!weekBacklog.length && !pastBacklog.length) return null;
+
+          // group by supplier
+          const groupBySupplier = (lines: PurchaseLine[]) => {
+            const map = new Map<string, Set<string>>();
+            lines.forEach(l => {
+              if (!map.has(l.supplier)) map.set(l.supplier, new Set());
+              map.get(l.supplier)!.add(l.po);
+            });
+            return [...map.entries()].map(([supplier, pos]) => ({ supplier, pos: [...pos] })).sort((a, b) => b.pos.length - a.pos.length);
+          };
+
+          const weekBacklogLines = allSrc.filter(l =>
+            l.pgrd && getISOWeek(l.pgrd) === weekNum && getISOWeekYear(l.pgrd) === lastYear && wasUnshippedAsOf(l)
+          );
+          const pastBacklogLines = allSrc.filter(l =>
+            l.pgrd && l.pgrd.getFullYear() >= 2026 &&
+            (getISOWeekYear(l.pgrd) < lastYear || (getISOWeekYear(l.pgrd) === lastYear && getISOWeek(l.pgrd) < weekNum)) &&
+            wasUnshippedAsOf(l)
+          );
+
+          const weekGroups = groupBySupplier(weekBacklogLines);
+          const pastGroups = groupBySupplier(pastBacklogLines);
+          const totalWeek = new Set(weekBacklogLines.map(l => l.po)).size;
+          const totalPast = new Set(pastBacklogLines.map(l => l.po)).size;
+
+          if (!totalWeek && !totalPast) return null;
+
+          const BacklogGroup = ({ groups, total, title, color, dotColor }: { groups: { supplier: string; pos: string[] }[]; total: number; title: string; color: string; dotColor: string }) => (
+            <div className="bg-white rounded-2xl p-5" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-2.5 h-2.5 rounded-sm" style={{ background: dotColor }} />
+                <p className="text-[11px] uppercase tracking-widest text-[#AAA]">{title}</p>
+              </div>
+              <p className="kpi-number font-extrabold text-5xl mb-4" style={{ color }}>{total}</p>
+              <div className="space-y-3 max-h-52 overflow-y-auto pr-1">
+                {groups.map(g => (
+                  <div key={g.supplier}>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xs font-semibold text-[#333]">{g.supplier}</p>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: dotColor }}>{g.pos.length}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {g.pos.map(po => <span key={po} className="text-[10px] text-[#888] font-mono bg-[#F7F7F7] px-1.5 py-0.5 rounded">{po}</span>)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+
           return (
             <div className="grid grid-cols-2 gap-4">
-              {weekBacklog.length > 0 && (
-                <div className="bg-white rounded-2xl p-5" style={{ boxShadow: 'var(--shadow-card)' }}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="w-2.5 h-2.5 rounded-sm" style={{ background: 'rgba(255,137,0,0.6)' }} />
-                    <p className="text-[11px] uppercase tracking-widest text-[#AAA]">PO Requested - Backlog ({clickedWeek})</p>
-                  </div>
-                  <p className="kpi-number font-extrabold text-5xl text-brand mb-3">{weekBacklog.length}</p>
-                  <div className="space-y-1 max-h-40 overflow-y-auto">
-                    {weekBacklog.map(po => <p key={po} className="text-xs text-[#555] font-mono">{po}</p>)}
-                  </div>
-                </div>
-              )}
-              {pastBacklog.length > 0 && (
-                <div className="bg-white rounded-2xl p-5" style={{ boxShadow: 'var(--shadow-card)' }}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="w-2.5 h-2.5 rounded-sm bg-fail" />
-                    <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Past PO Backlog (accumulated by {clickedWeek})</p>
-                  </div>
-                  <p className="kpi-number font-extrabold text-5xl text-fail mb-3">{pastBacklog.length}</p>
-                  <div className="space-y-1 max-h-40 overflow-y-auto">
-                    {pastBacklog.map(po => <p key={po} className="text-xs text-[#555] font-mono">{po}</p>)}
-                  </div>
-                </div>
-              )}
+              {totalWeek > 0 && <BacklogGroup groups={weekGroups} total={totalWeek} title={`PO Requested - Backlog (${clickedWeek})`} color="#FFA236" dotColor="#FFA236" />}
+              {totalPast > 0 && <BacklogGroup groups={pastGroups} total={totalPast} title={`Past PO Backlog (by ${clickedWeek})`} color="#7C3D12" dotColor="#7C3D12" />}
             </div>
           );
         })()}
