@@ -64,6 +64,9 @@ export interface WeeklyKPIPoint {
   sotOutOfTarget: number;
   totalLines: number;
   totalPOs: number;
+  posSOT: number;          // POs with PGRD=W that shipped on time
+  posBacklog: number;      // POs with PGRD=W not yet shipped as of week W
+  pastPOBacklog: number;   // POs from earlier weeks still unshipped as of week W
   isCurrent: boolean;
   isFuture: boolean;
 }

@@ -191,26 +191,37 @@ export default function SOTOTIFPage() {
         {/* trend chart */}
         <div className="bg-white rounded-2xl p-6" style={{ boxShadow: 'var(--shadow-card)' }}>
           <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-1">Trend by PGRD Week</p>
-          <p className="text-xs text-[#CCC] mb-5">Bars = POs placed per PGRD week · Future SOT% estimated from ESD vs PGRD</p>
-          <ResponsiveContainer width="100%" height={320}>
-            <ComposedChart data={chartData} margin={{ top: 10, right: 40, left: -10, bottom: 0 }} onClick={handleChartClick} style={{ cursor: 'pointer' }}>
+          <p className="text-xs text-[#CCC] mb-5">Future SOT% estimated from ESD vs PGRD · click a week to filter breakdown</p>
+          <ResponsiveContainer width="100%" height={360}>
+            <ComposedChart data={chartData} margin={{ top: 20, right: 40, left: -10, bottom: 0 }} onClick={handleChartClick} style={{ cursor: 'pointer' }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F0F0F0" vertical={false} />
               <XAxis dataKey="weekLabel" tick={{ fill: '#AAA', fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="pct" domain={[0, 100]} tick={{ fill: '#AAA', fontSize: 12 }} unit="%" axisLine={false} tickLine={false} />
-              <YAxis yAxisId="pos" orientation="right" tick={{ fill: '#CCC', fontSize: 11 }} axisLine={false} tickLine={false} label={{ value: 'POs', angle: -90, position: 'insideRight', fill: '#CCC', fontSize: 11 }} />
-              <ReferenceLine yAxisId="pct" y={90} stroke="#E0E0E0" strokeDasharray="4 4" label={{ value: '90%', position: 'insideTopRight', fill: '#CCC', fontSize: 11 }} />
-              <Bar yAxisId="pos" dataKey="totalPOs" fill="rgba(100,116,239,0.12)" radius={[3, 3, 0, 0]} name="POs placed" />
+              <YAxis yAxisId="pos" orientation="right" tick={{ fill: '#CCC', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <ReferenceLine yAxisId="pct" y={90} stroke="#FF8900" strokeDasharray="5 3" strokeOpacity={0.5} label={{ value: 'Target 90%', position: 'insideTopRight', fill: '#FF8900', fontSize: 10 }} />
+
+              {/* stacked bars: Past PO Backlog (bottom) → PO Requested Backlog → PO Requested SOT (top) */}
+              <Bar yAxisId="pos" dataKey="pastPOBacklog" stackId="pos" fill="rgba(99,102,241,0.55)" name="Past PO Backlog" radius={[0,0,0,0]} />
+              <Bar yAxisId="pos" dataKey="posBacklog"    stackId="pos" fill="rgba(220,53,69,0.35)"  name="PO Requested - Backlog" radius={[0,0,0,0]} />
+              <Bar yAxisId="pos" dataKey="posSOT"        stackId="pos" fill="rgba(52,168,83,0.25)"  name="PO Requested - SOT" radius={[3,3,0,0]} />
+
+              {/* KPI lines on top */}
               <Line yAxisId="pct" dataKey="otifPct" stroke="#34A853" strokeWidth={2.5} dot={{ r: 4, fill: '#34A853', strokeWidth: 0 }} name="OTIF %" connectNulls={false} />
-              <Line yAxisId="pct" dataKey="sotPct" stroke="#FF8900" strokeWidth={2.5} dot={{ r: 4, fill: '#FF8900', strokeWidth: 0 }} activeDot={{ r: 6 }} name="SOT %" connectNulls={false} />
-              <Legend verticalAlign="bottom" align="center" iconType="circle" iconSize={8} wrapperStyle={{ paddingTop: 16 }}
-                formatter={(value) => <span style={{ color: '#555', fontSize: 12 }}>{value}</span>} />
+              <Line yAxisId="pct" dataKey="sotPct"  stroke="#FF8900" strokeWidth={2.5} dot={{ r: 4, fill: '#FF8900', strokeWidth: 0 }} activeDot={{ r: 6 }} name="SOT %" connectNulls={false} />
+
+              <Legend verticalAlign="bottom" align="center" iconType="square" iconSize={8} wrapperStyle={{ paddingTop: 16 }}
+                formatter={(value) => <span style={{ color: '#555', fontSize: 11 }}>{value}</span>} />
               <Tooltip
                 contentStyle={{ background: '#111', border: 'none', color: 'white', borderRadius: 10, fontSize: 12, padding: '8px 14px' }}
                 labelStyle={{ color: '#FF8900', fontWeight: 700, marginBottom: 4 }}
-                formatter={(value, name) => [String(name) === 'POs placed' ? `${value} POs` : `${value}%`, name]}
+                formatter={(value, name) => {
+                  const n = String(name);
+                  if (n === 'SOT %' || n === 'OTIF %') return [`${value}%`, n];
+                  return [`${value} POs`, n];
+                }}
               />
               {clickedWeek && (
-                <ReferenceArea yAxisId="pct" x1={clickedWeek} x2={clickedWeek} fill="rgba(255,137,0,0.12)" stroke="#FF8900" strokeOpacity={0.4} />
+                <ReferenceArea yAxisId="pct" x1={clickedWeek} x2={clickedWeek} fill="rgba(255,137,0,0.10)" stroke="#FF8900" strokeOpacity={0.4} />
               )}
             </ComposedChart>
           </ResponsiveContainer>

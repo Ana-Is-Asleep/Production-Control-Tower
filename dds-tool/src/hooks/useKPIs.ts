@@ -45,7 +45,7 @@ export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: Purchase
       const year = raw <= 0 ? lastYear - 1 : raw > 52 ? lastYear + 1 : lastYear;
       const isFuture = offset > 0;
 
-      const src = isFuture && allD2cLines ? allD2cLines : accumulatingLines;
+      const src = isFuture && allD2cLines ? allD2cLines : (allD2cLines ?? accumulatingLines);
       const wLines = src.filter(l => l.pgrd && getISOWeek(l.pgrd) === week && getISOWeekYear(l.pgrd) === year);
       const kpis = wLines.map(computeKPI);
 
@@ -58,6 +58,27 @@ export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: Purchase
       const expLines = isFuture ? wLines.filter(l => computeExpectedSOT(l) !== null) : [];
       const expSot   = expLines.length ? Math.round(expLines.filter(l => computeExpectedSOT(l)).length / expLines.length * 100) : null;
 
+      // stacked bar values — using distinct POs
+      // a PO counts as unshipped "as of week W" if it has no ASD or its ASD came after week W
+      const wasUnshippedAsOf = (l: PurchaseLine) => !l.asd || (getISOWeek(l.asd) > week || getISOWeekYear(l.asd) > year);
+      const allSrc = allD2cLines ?? accumulatingLines;
+
+      // POs with PGRD = this week
+      const thisWeekPOs = new Set(wLines.map(l => l.po));
+      const posSOT     = new Set(wLines.filter(l => l.asd && !wasUnshippedAsOf(l) && computeKPI(l).sotResult).map(l => l.po)).size;
+      const posBacklog = new Set(wLines.filter(l => wasUnshippedAsOf(l)).map(l => l.po)).size;
+
+      // POs from earlier weeks (2026+) still unshipped as of this week
+      const pastPOBacklog = new Set(
+        allSrc.filter(l =>
+          l.pgrd &&
+          l.pgrd.getFullYear() >= 2026 &&
+          (getISOWeekYear(l.pgrd) < year || (getISOWeekYear(l.pgrd) === year && getISOWeek(l.pgrd) < week)) &&
+          wasUnshippedAsOf(l) &&
+          !thisWeekPOs.has(l.po)
+        ).map(l => l.po)
+      ).size;
+
       points.push({
         isoWeek:        `${year}-W${String(week).padStart(2, '0')}`,
         weekLabel:      `W${String(week).padStart(2, '0')}`,
@@ -66,6 +87,9 @@ export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: Purchase
         sotOutOfTarget: kpis.filter(k => k.sotFail).length,
         totalLines:     wLines.length,
         totalPOs:       new Set(wLines.map(l => l.po)).size,
+        posSOT,
+        posBacklog,
+        pastPOBacklog,
         isCurrent:      offset === 0,
         isFuture,
       });
