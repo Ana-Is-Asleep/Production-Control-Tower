@@ -70,6 +70,8 @@ export function summariseLeadTimes(lines: PurchaseLine[]): LeadTimeSummary {
   const early   = shipped.filter(r => r.vsAgreed != null && r.vsAgreed < 0);
   const late    = shipped.filter(r => r.vsAgreed != null && r.vsAgreed > 0);
   const onTime  = shipped.filter(r => r.vsAgreed === 0);
+  // count distinct POs not lines — one PO often has multiple lines with the same LT
+  const distinctPOs = (arr: typeof shipped) => new Set(arr.map(r => r.line.po)).size;
 
   return {
     avgPlannedLT:         avg(results.map(r => r.plannedLT)),
@@ -77,13 +79,13 @@ export function summariseLeadTimes(lines: PurchaseLine[]): LeadTimeSummary {
     avgProductionLT:      avg(shipped.map(r => r.productionLT)),
     avgAgreedLT:          Math.round(results.reduce((s, r) => s + r.agreedLT, 0) / Math.max(results.length, 1)),
     targetLT:             TARGET_LT,
-    earlyCount:           early.length,
+    earlyCount:           distinctPOs(early),
     avgDaysEarly:         early.length ? Math.round(early.reduce((s, r) => s + Math.abs(r.vsAgreed!), 0) / early.length) : null,
     avgDaysEarlyVsTarget: early.length ? avg(early.map(r => r.vsTarget)) : null,
-    lateCount:            late.length,
+    lateCount:            distinctPOs(late),
     avgDaysLate:          late.length  ? Math.round(late.reduce((s, r) => s + r.vsAgreed!, 0) / late.length) : null,
     avgDaysLateVsTarget:  late.length  ? avg(late.map(r => r.vsTarget)) : null,
-    onTimeCount:          onTime.length,
-    totalEvaluable:       shipped.length,
+    onTimeCount:          distinctPOs(onTime),
+    totalEvaluable:       distinctPOs(shipped),
   };
 }

@@ -54,11 +54,27 @@ export default function LeadTimesPage() {
     })).filter((r) => r.actual !== null && r.actual > 0).sort((a, b) => (b.vsAgreed ?? 0) - (a.vsAgreed ?? 0));
   }, [filtered]);
 
-  // detail table
-  const detailRows = useMemo(() =>
-    filtered.map(computeLeadTime).filter((r) => r.productionLT !== null || r.plannedLT !== null),
-    [filtered]
-  );
+  // group by PO for detail table — one row per PO, average LTs across lines
+  const detailByPO = useMemo(() => {
+    const map = new Map<string, { po: string; vendor: string; category: SKUCategory; orderDate: Date | null; pgrd: Date | null; asd: Date | null; lts: ReturnType<typeof computeLeadTime>[] }>();
+    filtered.forEach(l => {
+      const r = computeLeadTime(l);
+      if (!map.has(l.po)) map.set(l.po, { po: l.po, vendor: l.supplier, category: categorizeSKU(l.sku), orderDate: l.orderDate, pgrd: l.pgrd, asd: l.asd, lts: [] });
+      map.get(l.po)!.lts.push(r);
+    });
+    const avgN = (arr: (number | null)[]) => { const v = arr.filter((n): n is number => n != null); return v.length ? Math.round(v.reduce((s,n)=>s+n,0)/v.length) : null; };
+    return [...map.values()].map(g => ({
+      po: g.po, vendor: g.vendor, category: g.category,
+      orderDate: g.orderDate, pgrd: g.pgrd, asd: g.asd,
+      plannedLT:    avgN(g.lts.map(r => r.plannedLT)),
+      expectedLT:   avgN(g.lts.map(r => r.expectedLT)),
+      productionLT: avgN(g.lts.map(r => r.productionLT)),
+      agreedLT:     g.lts[0]?.agreedLT ?? TARGET_LT,
+      vsAgreed:     avgN(g.lts.map(r => r.vsAgreed)),
+      vsTarget:     avgN(g.lts.map(r => r.vsTarget)),
+      lineCount:    g.lts.length,
+    })).filter(g => g.productionLT != null || g.plannedLT != null);
+  }, [filtered]);
 
   return (
     <div className="min-h-screen bg-[#F4F4F6] page-enter">
@@ -184,51 +200,46 @@ export default function LeadTimesPage() {
           </div>
         )}
 
-        {/* detail table */}
+        {/* detail table — one row per PO */}
         {view === 'detail' && (
           <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-[#111] text-white">
-                  {['PO', 'SKU', 'Category', 'Vendor', 'Order Date', 'PGRD', 'EGRD', 'ASD', 'Planned LT', 'Expected LT', 'Production LT', 'Agreed LT', 'vs Agreed', 'vs Target'].map((h) => (
+                  {['PO', 'Category', 'Vendor', 'Order Date', 'PGRD', 'ASD', 'Planned LT', 'Production LT', 'Agreed LT', 'vs Agreed', 'vs Target', 'Lines'].map((h) => (
                     <th key={h} className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {detailRows.map((r) => {
-                  const cat = categorizeSKU(r.line.sku);
-                  return (
-                    <tr key={`${r.line.po}-${r.line.line}`} className="border-b border-[#F7F7F7] hover:bg-[#FAFAFA]">
-                      <td className="px-3 py-2 font-semibold text-[#111] whitespace-nowrap">{r.line.po}</td>
-                      <td className="px-3 py-2 font-mono text-xs text-[#555]">{r.line.sku}</td>
-                      <td className="px-3 py-2">
-                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full text-white" style={{ background: CATEGORY_COLORS[cat] }}>{cat}</span>
-                      </td>
-                      <td className="px-3 py-2 text-[#555]">{r.line.supplier}</td>
-                      <td className="px-3 py-2 text-[#555] whitespace-nowrap">{formatDateShort(r.line.orderDate)}</td>
-                      <td className="px-3 py-2 text-[#555] whitespace-nowrap">{formatDateShort(r.line.pgrd)}</td>
-                      <td className="px-3 py-2 text-[#555] whitespace-nowrap">{formatDateShort(r.line.egrd)}</td>
-                      <td className="px-3 py-2 text-[#555] whitespace-nowrap">{r.line.asd ? formatDateShort(r.line.asd) : <span className="text-[#CCC]">—</span>}</td>
-                      <td className="px-3 py-2 text-[#555]">{r.plannedLT !== null ? `${r.plannedLT}d` : '—'}</td>
-                      <td className="px-3 py-2 text-[#555]">{r.expectedLT !== null ? `${r.expectedLT}d` : '—'}</td>
-                      <td className="px-3 py-2 font-semibold">{r.productionLT !== null ? `${r.productionLT}d` : <span className="text-[#CCC]">—</span>}</td>
-                      <td className="px-3 py-2 text-[#888]">{r.agreedLT}d</td>
-                      <td className="px-3 py-2">
-                        {r.vsAgreed === null ? <span className="text-[#CCC]">—</span>
-                          : r.vsAgreed < 0 ? <span className="text-pass font-semibold">{r.vsAgreed}d</span>
-                          : r.vsAgreed > 0 ? <span className="text-fail font-semibold">+{r.vsAgreed}d</span>
-                          : <span className="text-[#888]">On time</span>}
-                      </td>
-                      <td className="px-3 py-2">
-                        {r.vsTarget === null ? <span className="text-[#CCC]">—</span>
-                          : r.vsTarget < 0 ? <span className="text-pass font-semibold">{r.vsTarget}d</span>
-                          : r.vsTarget > 0 ? <span className="text-fail font-semibold">+{r.vsTarget}d</span>
-                          : <span className="text-[#888]">On time</span>}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {detailByPO.map((r) => (
+                  <tr key={r.po} className="border-b border-[#F7F7F7] hover:bg-[#FAFAFA]">
+                    <td className="px-3 py-2.5 font-semibold text-[#111] whitespace-nowrap">{r.po}</td>
+                    <td className="px-3 py-2.5">
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full text-white" style={{ background: CATEGORY_COLORS[r.category] }}>{r.category}</span>
+                    </td>
+                    <td className="px-3 py-2.5 text-[#555]">{r.vendor}</td>
+                    <td className="px-3 py-2.5 text-[#555] whitespace-nowrap">{formatDateShort(r.orderDate)}</td>
+                    <td className="px-3 py-2.5 text-[#555] whitespace-nowrap">{formatDateShort(r.pgrd)}</td>
+                    <td className="px-3 py-2.5 text-[#555] whitespace-nowrap">{r.asd ? formatDateShort(r.asd) : <span className="text-[#CCC]">—</span>}</td>
+                    <td className="px-3 py-2.5 text-[#555]">{r.plannedLT != null ? `${r.plannedLT}d` : '—'}</td>
+                    <td className="px-3 py-2.5 font-semibold text-[#111]">{r.productionLT != null ? `${r.productionLT}d` : <span className="text-[#CCC]">—</span>}</td>
+                    <td className="px-3 py-2.5 text-[#888]">{r.agreedLT}d</td>
+                    <td className="px-3 py-2.5">
+                      {r.vsAgreed == null ? <span className="text-[#CCC]">—</span>
+                        : r.vsAgreed < 0 ? <span className="text-pass font-semibold">{r.vsAgreed}d</span>
+                        : r.vsAgreed > 0 ? <span className="text-fail font-semibold">+{r.vsAgreed}d</span>
+                        : <span className="text-[#888]">On time</span>}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      {r.vsTarget == null ? <span className="text-[#CCC]">—</span>
+                        : r.vsTarget < 0 ? <span className="text-pass font-semibold">{r.vsTarget}d</span>
+                        : r.vsTarget > 0 ? <span className="text-fail font-semibold">+{r.vsTarget}d</span>
+                        : <span className="text-[#888]">On time</span>}
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-[#CCC]">{r.lineCount}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

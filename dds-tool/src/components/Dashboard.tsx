@@ -242,15 +242,19 @@ export function Dashboard() {
                 </div>
                 <div className="flex-1">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={kpis.weeklyTrend} margin={{ top: 8, right: 16, left: -10, bottom: 0 }}>
+                    <ComposedChart data={kpis.weeklyTrend} margin={{ top: 8, right: 16, left: -10, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="2 4" stroke="#F0F0F0" vertical={false} />
                       <XAxis dataKey="weekLabel" tick={{ fill: '#CCC', fontSize: 11 }} axisLine={false} tickLine={false} />
-                      <YAxis domain={[0, 100]} tick={{ fill: '#CCC', fontSize: 11 }} unit="%" axisLine={false} tickLine={false} />
-                      <ReferenceLine y={90} stroke="#E5E5E5" strokeDasharray="3 3" />
-                      <Line dataKey="otifPct" stroke="#34A853" strokeWidth={2.5} dot={{ r: 3, fill: '#34A853', strokeWidth: 0 }} name="OTIF %" connectNulls={false} />
-                      <Line dataKey="sotPct" stroke="#FF8900" strokeWidth={2.5} dot={{ r: 3, fill: '#FF8900', strokeWidth: 0 }} activeDot={{ r: 5 }} name="SOT %" connectNulls={false} />
-                      <Tooltip contentStyle={{ background: '#111', border: 'none', color: 'white', borderRadius: 8, fontSize: 12 }} labelStyle={{ color: '#FF8900', fontWeight: 700 }} formatter={(v) => [`${v}%`]} />
-                    </LineChart>
+                      <YAxis yAxisId="pct" domain={[0, 100]} tick={{ fill: '#CCC', fontSize: 11 }} unit="%" axisLine={false} tickLine={false} />
+                      <YAxis yAxisId="pos" orientation="right" hide />
+                      <ReferenceLine yAxisId="pct" y={90} stroke="#E5E5E5" strokeDasharray="3 3" />
+                      <Bar yAxisId="pos" dataKey="posSOT"        stackId="s" fill="rgba(52,168,83,0.18)"  radius={[0,0,0,0]} />
+                      <Bar yAxisId="pos" dataKey="posBacklog"    stackId="s" fill="rgba(255,137,0,0.45)"  radius={[0,0,0,0]} />
+                      <Bar yAxisId="pos" dataKey="pastPOBacklog" stackId="s" fill="#DC3545"               radius={[2,2,0,0]} />
+                      <Line yAxisId="pct" dataKey="otifPct" stroke="#34A853" strokeWidth={2} dot={{ r: 3, fill: '#34A853', strokeWidth: 0 }} name="OTIF %" connectNulls={false} />
+                      <Line yAxisId="pct" dataKey="sotPct"  stroke="#FF8900" strokeWidth={2} dot={{ r: 3, fill: '#FF8900', strokeWidth: 0 }} activeDot={{ r: 4 }} name="SOT %" connectNulls={false} />
+                      <Tooltip contentStyle={{ background: 'white', border: '1px solid #F0F0F0', borderRadius: 8, fontSize: 11, padding: '6px 10px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} labelStyle={{ color: '#FF8900', fontWeight: 700 }} formatter={(v, n) => { const s = String(n); return [s.includes('%') ? `${v}%` : `${v} POs`, s]; }} />
+                    </ComposedChart>
                   </ResponsiveContainer>
                 </div>
               </div>

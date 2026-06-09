@@ -198,26 +198,26 @@ export default function SOTOTIFPage() {
               <XAxis dataKey="weekLabel" tick={{ fill: '#AAA', fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="pct" domain={[0, 100]} tick={{ fill: '#AAA', fontSize: 12 }} unit="%" axisLine={false} tickLine={false} />
               <YAxis yAxisId="pos" orientation="right" tick={{ fill: '#CCC', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <ReferenceLine yAxisId="pct" y={90} stroke="#FF8900" strokeDasharray="5 3" strokeOpacity={0.5} label={{ value: 'Target 90%', position: 'insideTopRight', fill: '#FF8900', fontSize: 10 }} />
+              <ReferenceLine yAxisId="pct" y={90} stroke="#FF8900" strokeDasharray="5 3" strokeOpacity={0.4} label={{ value: '90%', position: 'insideTopRight', fill: '#FF8900', fontSize: 10 }} />
 
-              {/* stacked bars: Past PO Backlog (bottom) → PO Requested Backlog → PO Requested SOT (top) */}
-              <Bar yAxisId="pos" dataKey="pastPOBacklog" stackId="pos" fill="rgba(99,102,241,0.55)" name="Past PO Backlog" radius={[0,0,0,0]} />
-              <Bar yAxisId="pos" dataKey="posBacklog"    stackId="pos" fill="rgba(220,53,69,0.35)"  name="PO Requested - Backlog" radius={[0,0,0,0]} />
-              <Bar yAxisId="pos" dataKey="posSOT"        stackId="pos" fill="rgba(52,168,83,0.25)"  name="PO Requested - SOT" radius={[3,3,0,0]} />
+              {/* stacked bars: SOT (bottom, subtle) → Backlog (middle, orange) → Past Backlog (top, red — most visible) */}
+              <Bar yAxisId="pos" dataKey="posSOT"        stackId="pos" fill="rgba(52,168,83,0.2)"   name="PO Requested - SOT"     radius={[0,0,0,0]} />
+              <Bar yAxisId="pos" dataKey="posBacklog"    stackId="pos" fill="rgba(255,137,0,0.55)"  name="PO Requested - Backlog"  radius={[0,0,0,0]} />
+              <Bar yAxisId="pos" dataKey="pastPOBacklog" stackId="pos" fill="#DC3545"               name="Past PO Backlog"          radius={[3,3,0,0]} />
 
-              {/* KPI lines on top */}
               <Line yAxisId="pct" dataKey="otifPct" stroke="#34A853" strokeWidth={2.5} dot={{ r: 4, fill: '#34A853', strokeWidth: 0 }} name="OTIF %" connectNulls={false} />
               <Line yAxisId="pct" dataKey="sotPct"  stroke="#FF8900" strokeWidth={2.5} dot={{ r: 4, fill: '#FF8900', strokeWidth: 0 }} activeDot={{ r: 6 }} name="SOT %" connectNulls={false} />
 
               <Legend verticalAlign="bottom" align="center" iconType="square" iconSize={8} wrapperStyle={{ paddingTop: 16 }}
                 formatter={(value) => <span style={{ color: '#555', fontSize: 11 }}>{value}</span>} />
               <Tooltip
-                contentStyle={{ background: '#111', border: 'none', color: 'white', borderRadius: 10, fontSize: 12, padding: '8px 14px' }}
-                labelStyle={{ color: '#FF8900', fontWeight: 700, marginBottom: 4 }}
+                contentStyle={{ background: 'white', border: '1px solid #F0F0F0', borderRadius: 10, fontSize: 12, padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.10)' }}
+                labelStyle={{ color: '#FF8900', fontWeight: 700, marginBottom: 6 }}
                 formatter={(value, name) => {
                   const n = String(name);
-                  if (n === 'SOT %' || n === 'OTIF %') return [`${value}%`, n];
-                  return [`${value} POs`, n];
+                  const color = n === 'SOT %' ? '#FF8900' : n === 'OTIF %' ? '#34A853' : n === 'Past PO Backlog' ? '#DC3545' : n === 'PO Requested - Backlog' ? '#FF8900' : '#34A853';
+                  const label = n === 'SOT %' || n === 'OTIF %' ? `${value}%` : `${value} POs`;
+                  return [<span style={{ color }}>{label}</span>, n];
                 }}
               />
               {clickedWeek && (
@@ -226,6 +226,51 @@ export default function SOTOTIFPage() {
             </ComposedChart>
           </ResponsiveContainer>
         </div>
+
+        {/* backlog detail for clicked week */}
+        {clickedWeek && (() => {
+          const weekNum = parseInt(clickedWeek.replace('W', ''));
+          const wasUnshippedAsOf = (l: PurchaseLine) => !l.asd || getISOWeek(l.asd) > weekNum || getISOWeekYear(l.asd) > lastYear;
+          const allSrc = allD2cLines ?? accumulatingLines;
+          const weekBacklog = [...new Set(
+            allSrc.filter(l => l.pgrd && getISOWeek(l.pgrd) === weekNum && getISOWeekYear(l.pgrd) === lastYear && wasUnshippedAsOf(l)).map(l => l.po)
+          )];
+          const pastBacklog = [...new Set(
+            allSrc.filter(l => l.pgrd && l.pgrd.getFullYear() >= 2026 &&
+              (getISOWeekYear(l.pgrd) < lastYear || (getISOWeekYear(l.pgrd) === lastYear && getISOWeek(l.pgrd) < weekNum)) &&
+              wasUnshippedAsOf(l)
+            ).map(l => l.po)
+          )];
+          if (!weekBacklog.length && !pastBacklog.length) return null;
+          return (
+            <div className="grid grid-cols-2 gap-4">
+              {weekBacklog.length > 0 && (
+                <div className="bg-white rounded-2xl p-5" style={{ boxShadow: 'var(--shadow-card)' }}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="w-2.5 h-2.5 rounded-sm" style={{ background: 'rgba(255,137,0,0.6)' }} />
+                    <p className="text-[11px] uppercase tracking-widest text-[#AAA]">PO Requested - Backlog ({clickedWeek})</p>
+                  </div>
+                  <p className="kpi-number font-extrabold text-5xl text-brand mb-3">{weekBacklog.length}</p>
+                  <div className="space-y-1 max-h-40 overflow-y-auto">
+                    {weekBacklog.map(po => <p key={po} className="text-xs text-[#555] font-mono">{po}</p>)}
+                  </div>
+                </div>
+              )}
+              {pastBacklog.length > 0 && (
+                <div className="bg-white rounded-2xl p-5" style={{ boxShadow: 'var(--shadow-card)' }}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="w-2.5 h-2.5 rounded-sm bg-fail" />
+                    <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Past PO Backlog (accumulated by {clickedWeek})</p>
+                  </div>
+                  <p className="kpi-number font-extrabold text-5xl text-fail mb-3">{pastBacklog.length}</p>
+                  <div className="space-y-1 max-h-40 overflow-y-auto">
+                    {pastBacklog.map(po => <p key={po} className="text-xs text-[#555] font-mono">{po}</p>)}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* breakdown */}
         <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
