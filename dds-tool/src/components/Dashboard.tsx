@@ -248,9 +248,9 @@ export function Dashboard() {
                       <YAxis yAxisId="pct" domain={[0, 100]} tick={{ fill: '#CCC', fontSize: 11 }} unit="%" axisLine={false} tickLine={false} />
                       <YAxis yAxisId="pos" orientation="right" hide />
                       <ReferenceLine yAxisId="pct" y={90} stroke="#E5E5E5" strokeDasharray="3 3" />
-                      <Bar yAxisId="pos" dataKey="posSOT"        stackId="s" fill="rgba(255,200,120,0.25)" radius={[0,0,0,0]} />
-                      <Bar yAxisId="pos" dataKey="posBacklog"    stackId="s" fill="#FFA236"                radius={[0,0,0,0]} />
-                      <Bar yAxisId="pos" dataKey="pastPOBacklog" stackId="s" fill="#7C3D12"               radius={[2,2,0,0]} />
+                      <Bar yAxisId="pos" dataKey="posSOT"        stackId="s" fill="#f9dcb8" radius={[0,0,0,0]} />
+                      <Bar yAxisId="pos" dataKey="posBacklog"    stackId="s" fill="#ec8d18" radius={[0,0,0,0]} />
+                      <Bar yAxisId="pos" dataKey="pastPOBacklog" stackId="s" fill="#4d52ad" radius={[2,2,0,0]} />
                       <Line yAxisId="pct" dataKey="otifPct" stroke="#34A853" strokeWidth={2} dot={{ r: 3, fill: '#34A853', strokeWidth: 0 }} name="OTIF %" connectNulls={false} />
                       <Line yAxisId="pct" dataKey="sotPct"  stroke="#FF8900" strokeWidth={2} dot={{ r: 3, fill: '#FF8900', strokeWidth: 0 }} activeDot={{ r: 4 }} name="SOT %" connectNulls={false} />
                       <Tooltip contentStyle={{ background: 'white', border: '1px solid #F0F0F0', borderRadius: 8, fontSize: 11, padding: '6px 10px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} labelStyle={{ color: '#FF8900', fontWeight: 700 }} formatter={(v, n) => { const s = String(n); return [s.includes('%') ? `${v}%` : `${v} POs`, s]; }} />

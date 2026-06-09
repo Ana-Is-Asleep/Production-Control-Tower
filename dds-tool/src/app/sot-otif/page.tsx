@@ -201,9 +201,9 @@ export default function SOTOTIFPage() {
               <ReferenceLine yAxisId="pct" y={90} stroke="#FF8900" strokeDasharray="5 3" strokeOpacity={0.4} label={{ value: '90%', position: 'insideTopRight', fill: '#FF8900', fontSize: 10 }} />
 
               {/* stacked bars using emma palette — cream (SOT), orange (week backlog), dark burnt (past backlog) */}
-              <Bar yAxisId="pos" dataKey="posSOT"        stackId="pos" fill="rgba(255,200,120,0.25)" name="PO Requested - SOT"    radius={[0,0,0,0]} />
-              <Bar yAxisId="pos" dataKey="posBacklog"    stackId="pos" fill="#FFA236"                name="PO Requested - Backlog" radius={[0,0,0,0]} />
-              <Bar yAxisId="pos" dataKey="pastPOBacklog" stackId="pos" fill="#7C3D12"               name="Past PO Backlog"         radius={[3,3,0,0]} />
+              <Bar yAxisId="pos" dataKey="posSOT"        stackId="pos" fill="#f9dcb8" name="PO Requested - SOT"    radius={[0,0,0,0]} />
+              <Bar yAxisId="pos" dataKey="posBacklog"    stackId="pos" fill="#ec8d18" name="PO Requested - Backlog" radius={[0,0,0,0]} />
+              <Bar yAxisId="pos" dataKey="pastPOBacklog" stackId="pos" fill="#4d52ad" name="Past PO Backlog"         radius={[3,3,0,0]} />
 
               <Line yAxisId="pct" dataKey="otifPct" stroke="#34A853" strokeWidth={2.5} dot={{ r: 4, fill: '#34A853', strokeWidth: 0 }} name="OTIF %" connectNulls={false} />
               <Line yAxisId="pct" dataKey="sotPct"  stroke="#FF8900" strokeWidth={2.5} dot={{ r: 4, fill: '#FF8900', strokeWidth: 0 }} activeDot={{ r: 6 }} name="SOT %" connectNulls={false} />
@@ -215,7 +215,7 @@ export default function SOTOTIFPage() {
                 labelStyle={{ color: '#FF8900', fontWeight: 700, marginBottom: 6 }}
                 formatter={(value, name) => {
                   const n = String(name);
-                  const color = n === 'SOT %' ? '#FF8900' : n === 'OTIF %' ? '#34A853' : n === 'Past PO Backlog' ? '#7C3D12' : n === 'PO Requested - Backlog' ? '#FFA236' : '#AAA';
+                  const color = n === 'SOT %' ? '#FF8900' : n === 'OTIF %' ? '#34A853' : n === 'Past PO Backlog' ? '#4d52ad' : n === 'PO Requested - Backlog' ? '#ec8d18' : '#AAA';
                   const label = n === 'SOT %' || n === 'OTIF %' ? `${value}%` : `${value} POs`;
                   return [<span style={{ color }}>{label}</span>, n];
                 }}
@@ -284,8 +284,8 @@ export default function SOTOTIFPage() {
 
           return (
             <div className="grid grid-cols-2 gap-4">
-              {totalWeek > 0 && <BacklogGroup groups={weekGroups} total={totalWeek} title={`PO Requested - Backlog (${clickedWeek})`} color="#FFA236" dotColor="#FFA236" />}
-              {totalPast > 0 && <BacklogGroup groups={pastGroups} total={totalPast} title={`Past PO Backlog (by ${clickedWeek})`} color="#7C3D12" dotColor="#7C3D12" />}
+              {totalWeek > 0 && <BacklogGroup groups={weekGroups} total={totalWeek} title={`PO Requested - Backlog (${clickedWeek})`} color="#ec8d18" dotColor="#ec8d18" />}
+              {totalPast > 0 && <BacklogGroup groups={pastGroups} total={totalPast} title={`Past PO Backlog (by ${clickedWeek})`} color="#4d52ad" dotColor="#4d52ad" />}
             </div>
           );
         })()}
