@@ -205,7 +205,7 @@ export default function SOTOTIFPage() {
               <Bar yAxisId="pos" dataKey="posBacklog"    stackId="pos" fill="#ec8d18" name="PO Requested - Backlog" radius={[0,0,0,0]} />
               <Bar yAxisId="pos" dataKey="pastPOBacklog" stackId="pos" fill="#4d52ad" name="Past PO Backlog"         radius={[3,3,0,0]} />
 
-              <Line yAxisId="pct" dataKey="otifPct" stroke="#34A853" strokeWidth={2.5} dot={{ r: 4, fill: '#34A853', strokeWidth: 0 }} name="OTIF %" connectNulls={false} />
+              <Line yAxisId="pct" dataKey="otifPct" stroke="#34A853" strokeWidth={2.5} strokeDasharray="6 3" dot={{ r: 4, fill: '#34A853', strokeWidth: 0 }} name="OTIF %" connectNulls={false} />
               <Line yAxisId="pct" dataKey="sotPct"  stroke="#FF8900" strokeWidth={2.5} dot={{ r: 4, fill: '#FF8900', strokeWidth: 0 }} activeDot={{ r: 6 }} name="SOT %" connectNulls={false} />
 
               <Legend verticalAlign="bottom" align="center" iconType="square" iconSize={8} wrapperStyle={{ paddingTop: 16 }}
