@@ -11,7 +11,7 @@ import { useFilters } from '../../hooks/useFilters';
 import { useKPIs } from '../../hooks/useKPIs';
 import { computeKPI, computeExpectedSOT } from '../../lib/kpiFormulas';
 import { categorizeSKU } from '../../lib/skuUtils';
-import { formatDateShort, getISOWeek, isoWeekLabel } from '../../lib/dateUtils';
+import { formatDateShort, getISOWeek, getISOWeekYear } from '../../lib/dateUtils';
 import type { PurchaseLine } from '../../types';
 
 const REASON_LABELS: Record<string, string> = {
