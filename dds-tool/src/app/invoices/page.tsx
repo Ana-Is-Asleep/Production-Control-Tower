@@ -102,37 +102,27 @@ export default function InvoicesPage() {
               <div
                 key={card.id}
                 onClick={() => setExpandedCard(expandedCard === card.id ? null : card.id)}
-                className={`bg-white rounded-2xl border-2 p-5 cursor-pointer transition-all ${expandedCard === card.id ? card.border : 'border-[#F0F0F0] hover:border-[#E0E0E0]'}`}
+                className={`bg-white rounded-xl border-2 p-4 cursor-pointer transition-all ${expandedCard === card.id ? card.border : 'border-[#F0F0F0] hover:border-[#E0E0E0]'}`}
                 style={{ boxShadow: 'var(--shadow-card)' }}
               >
-                <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-3">{card.label}</p>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-[#AAA] mb-2">{card.label}</p>
 
                 {card.id === 4 && card.split ? (
-                  <div className="space-y-2">
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-xs text-[#888]">Overdue</span>
-                      <span className="kpi-number font-extrabold text-3xl text-fail">{card.split.overdue.length}</span>
+                  <div>
+                    <p className={`text-[26px] font-bold leading-none tracking-tight ${card.color}`}>{card.rows.length}</p>
+                    <div className="mt-1.5 flex gap-3 text-[12px] font-semibold">
+                      <span className="text-fail">{card.split.overdue.length} overdue</span>
+                      <span className="text-pass">{card.split.notYetDue.length} not yet due</span>
                     </div>
-                    <AmountPill rows={card.split.overdue} className="block text-right -mt-1" />
-                    <div className="flex items-baseline justify-between mt-2">
-                      <span className="text-xs text-[#888]">Not yet due</span>
-                      <span className="kpi-number font-extrabold text-3xl text-pass">{card.split.notYetDue.length}</span>
-                    </div>
-                    <AmountPill rows={card.split.notYetDue} className="block text-right -mt-1" />
-                    <div className="border-t border-[#F0F0F0] pt-2 mt-2 flex items-baseline justify-between">
-                      <span className="text-xs font-semibold text-[#555]">Total</span>
-                      <span className={`kpi-number font-extrabold text-4xl ${card.color}`}>{card.rows.length}</span>
-                    </div>
+                    <AmountPill rows={card.rows} className="block mt-1" />
                   </div>
                 ) : (
                   <>
-                    <p className={`kpi-number font-extrabold text-6xl leading-none ${card.color}`}>{card.rows.length}</p>
-                    <AmountPill rows={card.rows} className="block mt-2" />
+                    <p className={`text-[26px] font-bold leading-none tracking-tight ${card.color}`}>{card.rows.length}</p>
+                    <AmountPill rows={card.rows} className="block mt-1.5" />
+                    <p className="text-[12px] font-semibold mt-1 text-[#AAA]">{expandedCard === card.id ? 'click to hide' : 'click to expand'}</p>
                   </>
                 )}
-
-                <p className="text-[10px] text-[#CCC] mt-3">{card.sub}</p>
-                <p className="text-[10px] text-[#CCC] mt-0.5">{expandedCard === card.id ? '▲ hide rows' : '▾ show rows'}</p>
               </div>
             ))}
           </div>

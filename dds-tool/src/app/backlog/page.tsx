@@ -189,23 +189,41 @@ export default function BacklogPage() {
       </header>
 
       {/* summary cards */}
-      <div className="px-6 pt-6 grid grid-cols-3 gap-4 max-w-4xl">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setActiveTab(t.key)}
-            className={`text-left bg-white rounded-2xl border-2 p-5 transition-all ${activeTab === t.key ? t.border : 'border-[#F0F0F0] hover:border-[#E0E0E0]'}`}
-            style={{ boxShadow: 'var(--shadow-card)' }}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <span className={`w-2 h-2 rounded-full ${t.dot}`} />
-              <span className="text-[11px] uppercase tracking-widest text-[#AAA]">{t.label}</span>
+      {(() => {
+        const noEsdLines = [...critical, ...recent, ...futureBacklog].filter(l => !l.esd);
+        const noEsdPOs = new Set(noEsdLines.map(l => l.po)).size;
+        return (
+          <div className="px-6 pt-5 grid grid-cols-4 gap-4">
+            {TABS.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setActiveTab(t.key)}
+                className={`text-left bg-white rounded-xl border-2 p-4 transition-all ${activeTab === t.key ? t.border : 'border-[#F0F0F0] hover:border-[#E0E0E0]'}`}
+                style={{ boxShadow: 'var(--shadow-card)' }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`w-2 h-2 rounded-full ${t.dot}`} />
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-[#AAA]">{t.label}</p>
+                </div>
+                <p className={`text-[26px] font-bold leading-none tracking-tight ${t.color}`}>{t.count}</p>
+                <p className="text-[12px] font-semibold mt-1.5 text-[#AAA]">
+                  {t.count !== t.total ? `of ${t.total} total POs` : 'POs'}
+                </p>
+              </button>
+            ))}
+            <div className="bg-white rounded-xl border border-[#F0F0F0] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-2 h-2 rounded-full bg-[#CCC]" />
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-[#AAA]">No ESD</p>
+              </div>
+              <p className={`text-[26px] font-bold leading-none tracking-tight ${noEsdPOs > 0 ? 'text-fail' : 'text-pass'}`}>{noEsdPOs}</p>
+              <p className={`text-[12px] font-semibold mt-1.5 ${noEsdPOs > 0 ? 'text-fail' : 'text-pass'}`}>
+                {noEsdPOs > 0 ? 'POs missing pickup booking' : 'all POs have ESD'}
+              </p>
             </div>
-            <p className={`font-serif text-5xl font-bold ${t.color}`}>{t.count}</p>
-            {t.count !== t.total && <p className="text-xs text-[#AAA] mt-1">of {t.total} total</p>}
-          </button>
-        ))}
-      </div>
+          </div>
+        );
+      })()}
 
       {/* backlog by vendor chart */}
       {chartData.length > 0 && (

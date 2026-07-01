@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
+import { SKU_CATEGORIES, type SKUCategory } from '../../lib/skuUtils';
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ReferenceLine, ReferenceArea, ResponsiveContainer, Legend,
@@ -65,6 +66,7 @@ export default function SOTOTIFPage() {
   const kpis = useKPIs(weeklyLines, accumulatingLines, allD2cLines);
   const [_groupBy, setGroupBy] = useState<GroupBy>('supplier');
   const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
+  const [selectedCat, setSelectedCat] = useState<SKUCategory | 'All'>('All');
   const [expandedVendor, setExpandedVendor] = useState<string | null>(null);
   const [clickedWeek, setClickedWeek] = useState<string | null>(null);
 
@@ -87,10 +89,11 @@ export default function SOTOTIFPage() {
     return weeklyLines;
   }, [weeklyLines, allD2cLines, clickedWeek]);
 
-  const filteredLines = useMemo(() =>
-    selectedVendors.length === 0 ? sourceLines : sourceLines.filter((l) => selectedVendors.includes(l.supplier)),
-    [sourceLines, selectedVendors]
-  );
+  const filteredLines = useMemo(() => {
+    let lines = selectedVendors.length === 0 ? sourceLines : sourceLines.filter((l) => selectedVendors.includes(l.supplier));
+    if (selectedCat !== 'All') lines = lines.filter((l) => categorizeSKU(l.sku) === selectedCat);
+    return lines;
+  }, [sourceLines, selectedVendors, selectedCat]);
 
   const enriched = useMemo(() => filteredLines.map((l) => ({ line: l, kpi: computeKPI(l), expectedSot: computeExpectedSOT(l) })), [filteredLines]);
 
@@ -167,26 +170,63 @@ export default function SOTOTIFPage() {
       </header>
 
       <div className="px-6 py-5 space-y-4 max-w-6xl mx-auto">
-        {/* hero numbers */}
-        <div className="grid grid-cols-2 gap-4">
-          {[
-            { label: 'SOT', pct: filteredSotPct, goodColor: '#34A853', badColor: '#DC3545' },
-            { label: 'OTIF', pct: filteredOtifPct, goodColor: '#34A853', badColor: '#F59E0B' },
-          ].map((item) => (
-            <div key={item.label} className="bg-white rounded-2xl px-7 py-5" style={{ boxShadow: 'var(--shadow-card)' }}>
-              <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-2">{item.label} · target 90%</p>
-              <p className="kpi-number text-8xl font-bold leading-none"
-                style={{ color: item.pct === null ? '#DDD' : item.pct >= 90 ? item.goodColor : item.badColor }}>
-                {item.pct !== null ? `${item.pct}%` : '—'}
-              </p>
-              {item.pct !== null && (
-                <p className="text-sm font-semibold mt-2" style={{ color: item.pct >= 90 ? item.goodColor : item.badColor }}>
-                  {item.pct >= 90 ? '↑' : '↓'} {Math.abs(item.pct - 90)}pp vs target
-                </p>
-              )}
-            </div>
+        {/* category filter */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setSelectedCat('All')}
+            className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-all ${selectedCat === 'All' ? 'bg-[#111] text-white border-[#111]' : 'border-[#E0E0E0] text-[#555] hover:border-[#111]'}`}>
+            All categories
+          </button>
+          {SKU_CATEGORIES.map((c) => (
+            <button key={c}
+              onClick={() => setSelectedCat(c)}
+              className="text-xs px-3 py-1.5 rounded-lg border font-medium transition-all"
+              style={selectedCat === c
+                ? { background: { Beds: '#6366F1', Mattresses: '#FF8900', Accessories: '#34A853', 'Comps/Other': '#8A8A8A' }[c], color: 'white', borderColor: { Beds: '#6366F1', Mattresses: '#FF8900', Accessories: '#34A853', 'Comps/Other': '#8A8A8A' }[c] }
+                : { borderColor: '#E0E0E0', color: '#555' }}>
+              {c}
+            </button>
           ))}
         </div>
+
+        {/* hero numbers — 4 KPI cards */}
+        {(() => {
+          const evalLines = enriched.filter((r) => r.kpi.sotResult !== null);
+          const failingCount = enriched.filter((r) => r.kpi.sotFail || r.kpi.otifFail).length;
+          return (
+            <div className="grid grid-cols-4 gap-4">
+              {[
+                { label: 'SOT · target 90%', pct: filteredSotPct, goodColor: '#34A853', badColor: '#DC3545' },
+                { label: 'OTIF · target 90%', pct: filteredOtifPct, goodColor: '#34A853', badColor: '#F59E0B' },
+              ].map((item) => (
+                <div key={item.label} className="bg-white rounded-xl border border-[#F0F0F0] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-[#AAA] mb-2">{item.label}</p>
+                  <p className="text-[26px] font-bold leading-none tracking-tight"
+                    style={{ color: item.pct === null ? '#DDD' : item.pct >= 90 ? item.goodColor : item.badColor }}>
+                    {item.pct !== null ? `${item.pct}%` : '—'}
+                  </p>
+                  {item.pct !== null && (
+                    <p className="text-[12px] font-semibold mt-1.5" style={{ color: item.pct >= 90 ? item.goodColor : item.badColor }}>
+                      {item.pct >= 90 ? '↑' : '↓'} {Math.abs(item.pct - 90)}pp vs target
+                    </p>
+                  )}
+                </div>
+              ))}
+              <div className="bg-white rounded-xl border border-[#F0F0F0] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-[#AAA] mb-2">Lines evaluated</p>
+                <p className="text-[26px] font-bold leading-none text-[#111] tracking-tight">{evalLines.length}</p>
+                <p className="text-[12px] font-semibold mt-1.5 text-[#888]">with ASD in period</p>
+              </div>
+              <div className="bg-white rounded-xl border border-[#F0F0F0] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-[#AAA] mb-2">Failing lines</p>
+                <p className={`text-[26px] font-bold leading-none tracking-tight ${failingCount === 0 ? 'text-pass' : 'text-fail'}`}>{failingCount}</p>
+                <p className={`text-[12px] font-semibold mt-1.5 ${failingCount === 0 ? 'text-pass' : 'text-fail'}`}>
+                  {failingCount === 0 ? 'all on track' : 'SOT or OTIF miss'}
+                </p>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* trend chart */}
         <div className="bg-white rounded-2xl p-6" style={{ boxShadow: 'var(--shadow-card)' }}>

@@ -91,19 +91,46 @@ export default function PickupsPage() {
       </header>
 
       <div className="px-6 py-5 max-w-5xl mx-auto space-y-5">
-        {/* hero */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-white rounded-2xl p-5" style={{ boxShadow: 'var(--shadow-card)' }}>
-            <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-2">Upcoming W{String(nextWeek).padStart(2,'0')}</p>
-            <p className="kpi-number font-extrabold text-6xl text-brand">{totalUpcoming}</p>
-            <p className="text-xs text-[#888] mt-1">POs with ESD next week</p>
-          </div>
-          <div className="bg-white rounded-2xl p-5" style={{ boxShadow: 'var(--shadow-card)' }}>
-            <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-2">Historical avg / day</p>
-            <p className="kpi-number font-extrabold text-6xl text-[#6366F1]">{overallAvg}</p>
-            <p className="text-xs text-[#888] mt-1">Avg POs per day across {pastWeekNums.length} past weeks</p>
-          </div>
-        </div>
+        {/* KPI cards */}
+        {(() => {
+          const totalExpected = Math.round(overallAvg * 5);
+          const delta = totalUpcoming - totalExpected;
+          const busiestDay = chartData.reduce((a, b) => a.upcoming >= b.upcoming ? a : b, chartData[0]);
+          return (
+            <div className="grid grid-cols-4 gap-4">
+              <div className="bg-white rounded-xl border border-[#F0F0F0] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-[#AAA] mb-2">Upcoming W{String(nextWeek).padStart(2,'0')}</p>
+                <p className="text-[26px] font-bold leading-none text-[#111] tracking-tight">
+                  {totalUpcoming}<span className="text-[13px] font-semibold text-[#AAA] ml-1">POs</span>
+                </p>
+                <p className="text-[12px] font-semibold mt-1.5 text-[#888]">ESD bookings next week</p>
+              </div>
+              <div className="bg-white rounded-xl border border-[#F0F0F0] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-[#AAA] mb-2">Historical avg / week</p>
+                <p className="text-[26px] font-bold leading-none text-[#111] tracking-tight">
+                  {totalExpected}<span className="text-[13px] font-semibold text-[#AAA] ml-1">POs</span>
+                </p>
+                <p className="text-[12px] font-semibold mt-1.5 text-[#888]">{overallAvg}/day · {pastWeekNums.length} weeks avg</p>
+              </div>
+              <div className="bg-white rounded-xl border border-[#F0F0F0] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-[#AAA] mb-2">vs average</p>
+                <p className={`text-[26px] font-bold leading-none tracking-tight ${delta === 0 ? 'text-[#111]' : delta > 0 ? 'text-fail' : 'text-pass'}`}>
+                  {delta > 0 ? '+' : ''}{delta}<span className="text-[13px] font-semibold text-[#AAA] ml-1">POs</span>
+                </p>
+                <p className={`text-[12px] font-semibold mt-1.5 ${delta > 0 ? 'text-fail' : delta < 0 ? 'text-pass' : 'text-[#888]'}`}>
+                  {delta > 0 ? 'busier than avg week' : delta < 0 ? 'quieter than avg week' : 'same as avg week'}
+                </p>
+              </div>
+              <div className="bg-white rounded-xl border border-[#F0F0F0] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-[#AAA] mb-2">Busiest day</p>
+                <p className="text-[26px] font-bold leading-none text-[#111] tracking-tight">
+                  {busiestDay?.upcoming > 0 ? busiestDay.day : '—'}<span className="text-[13px] font-semibold text-[#AAA] ml-1">{busiestDay?.upcoming > 0 ? `${busiestDay.upcoming} POs` : ''}</span>
+                </p>
+                <p className="text-[12px] font-semibold mt-1.5 text-[#888]">{busiestDay?.upcoming > 0 ? 'highest pickup day' : 'no bookings yet'}</p>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* main chart */}
         <div className="bg-white rounded-2xl p-6" style={{ boxShadow: 'var(--shadow-card)' }}>
