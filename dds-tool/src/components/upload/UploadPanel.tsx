@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { SlideOver } from '../shared/SlideOver';
 import { Button } from '../shared/Button';
-import { parseFiles, type ParseResult } from '../../lib/bcParser';
+import { parseFiles, parseSingleFile, type ParseResult } from '../../lib/bcParser';
 import { parseInvoiceFile } from '../../lib/invoiceParser';
 import type { PurchaseLine } from '../../types';
 import type { InvoiceRow } from '../../types/invoice';
@@ -32,8 +32,8 @@ export function UploadPanel({ open, onClose, onLoad }: UploadPanelProps) {
 
   const handleFiles = useCallback(async (newFiles: File[]) => {
     const xlsxFiles = newFiles.filter((f) => f.name.endsWith('.xlsx'));
-    if (xlsxFiles.length < 2) {
-      setError('Upload at least 2 XLSX files: Purchase Header + Purchase Lines (+ optionally Invoices)');
+    if (xlsxFiles.length < 1) {
+      setError('Upload at least 1 XLSX file — the Purchase Order Lines export from BC (+ optionally Invoices)');
       return;
     }
     setError(null);
@@ -43,14 +43,19 @@ export function UploadPanel({ open, onClose, onLoad }: UploadPanelProps) {
       const invoiceFile = xlsxFiles.find(looksLikeInvoiceFile);
       const bcFiles = xlsxFiles.filter((f) => !looksLikeInvoiceFile(f));
 
-      if (bcFiles.length < 2) {
-        setError('Could not identify Purchase Header and Lines files. Make sure their filenames don\'t contain "invoice".');
+      if (bcFiles.length === 0) {
+        setError('Could not find a Purchase Order Lines file. Make sure the filename doesn\'t contain "invoice".');
         setLoading(false);
         return;
       }
 
+      // single BC file (new format) or two files (old header+lines format)
+      const bcParsePromise = bcFiles.length === 1
+        ? parseSingleFile(bcFiles[0])
+        : parseFiles(bcFiles[0], bcFiles[1]);
+
       const [bcResult, parsedInvoices] = await Promise.all([
-        parseFiles(bcFiles[0], bcFiles[1]),
+        bcParsePromise,
         invoiceFile ? parseInvoiceFile(invoiceFile) : Promise.resolve([]),
       ]);
 
@@ -86,7 +91,7 @@ export function UploadPanel({ open, onClose, onLoad }: UploadPanelProps) {
         >
           <div className="text-3xl mb-3">📂</div>
           <p className="text-sm text-dark font-medium">Drag & drop your XLSX files here</p>
-          <p className="text-xs text-muted mt-1">Purchase Header + Lines (required) · Invoices (optional)</p>
+          <p className="text-xs text-muted mt-1">Purchase Order Lines (required) · Invoices (optional)</p>
           <input id="file-input" type="file" accept=".xlsx" multiple className="hidden"
             onChange={(e) => handleFiles(Array.from(e.target.files ?? []))} />
         </div>
@@ -97,10 +102,12 @@ export function UploadPanel({ open, onClose, onLoad }: UploadPanelProps) {
         {result && !loading && (
           <div className="space-y-3">
             <div className="border border-border rounded-lg divide-y divide-border">
-              <div className="flex items-center justify-between px-4 py-2.5">
-                <div className="flex items-center gap-2"><span className="text-green-600">✓</span><span className="text-sm text-dark">Purchase Header</span></div>
-                <span className="text-xs text-muted">{result.headerCount} rows</span>
-              </div>
+              {result.headerCount > 0 && (
+                <div className="flex items-center justify-between px-4 py-2.5">
+                  <div className="flex items-center gap-2"><span className="text-green-600">✓</span><span className="text-sm text-dark">Purchase Header</span></div>
+                  <span className="text-xs text-muted">{result.headerCount} rows</span>
+                </div>
+              )}
               <div className="flex items-center justify-between px-4 py-2.5">
                 <div className="flex items-center gap-2"><span className="text-green-600">✓</span><span className="text-sm text-dark">Purchase Lines</span></div>
                 <span className="text-xs text-muted">{result.lineCount} rows</span>
@@ -114,8 +121,12 @@ export function UploadPanel({ open, onClose, onLoad }: UploadPanelProps) {
             </div>
 
             <div className="text-xs text-muted space-y-1">
-              <div className="flex justify-between"><span>Lines matched</span><span className="font-medium text-dark">{result.matchedCount} / {result.lineCount}</span></div>
-              {result.unmatchedCount > 0 && <div className="flex justify-between"><span>Unmatched</span><span className="text-warn font-medium">{result.unmatchedCount}</span></div>}
+              {result.headerCount > 0 && (
+                <>
+                  <div className="flex justify-between"><span>Lines matched</span><span className="font-medium text-dark">{result.matchedCount} / {result.lineCount}</span></div>
+                  {result.unmatchedCount > 0 && <div className="flex justify-between"><span>Unmatched</span><span className="text-warn font-medium">{result.unmatchedCount}</span></div>}
+                </>
+              )}
               <div className="flex justify-between"><span>Vendors</span><span className="font-medium text-dark">{result.suppliers.length}</span></div>
               <div className="flex justify-between"><span>D2C lines after filter</span><span className="font-medium text-brand">{d2cCount}</span></div>
             </div>
