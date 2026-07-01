@@ -108,7 +108,10 @@ export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: Purchase
     const recent: PurchaseLine[]   = [];
     const futureBacklog: PurchaseLine[] = [];
 
-    for (const line of accumulatingLines) {
+    // use allD2cLines when available so future-PGRD POs (next 1-3 weeks) also show in future backlog
+    // accumulatingLines only goes up to lastWeek so it misses upcoming POs with no ESD booked
+    const src = allD2cLines ?? accumulatingLines;
+    for (const line of src) {
       const type = classifyBacklog(line, today);
       if      (type === 'backlog-critical') critical.push(line);
       else if (type === 'backlog-recent')   recent.push(line);
@@ -116,7 +119,7 @@ export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: Purchase
     }
 
     return { critical, recent, futureBacklog };
-  }, [accumulatingLines, today]);
+  }, [accumulatingLines, allD2cLines, today]);
 
   // EDD (not ESD) is the Shiptify booking indicator — ESD is Expected Receipt Date which is always filled
   const notBookedLines = useMemo(

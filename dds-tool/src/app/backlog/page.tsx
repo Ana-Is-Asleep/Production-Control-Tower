@@ -127,8 +127,8 @@ function BacklogTable({ lines }: { lines: PurchaseLine[] }) {
 export default function BacklogPage() {
   const router = useRouter();
   const { allLines, globalFilters } = useData();
-  const { weeklyLines, accumulatingLines, lastWeek, lastYear } = useFilters(allLines, globalFilters);
-  const kpis = useKPIs(weeklyLines, accumulatingLines);
+  const { weeklyLines, accumulatingLines, allD2cLines, lastWeek, lastYear } = useFilters(allLines, globalFilters);
+  const kpis = useKPIs(weeklyLines, accumulatingLines, allD2cLines);
   const { critical, recent, futureBacklog } = kpis.backlogSummary;
 
   const [activeTab, setActiveTab] = useState<BacklogTab>('critical');
