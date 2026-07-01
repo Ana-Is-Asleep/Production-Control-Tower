@@ -1,6 +1,7 @@
 import { differenceInDays } from 'date-fns';
 import type { PurchaseLine } from '../types';
-import { categorizeSKU } from './skuUtils';
+import { categorizeSKU, type SKUCategory } from './skuUtils';
+import { getISOWeek, getISOWeekYear } from './dateUtils';
 import { TARGET_LT, avgAgreedLTByCategory } from '../data/leadTimeData';
 
 // Production LT = order date → actual ship date
@@ -57,6 +58,55 @@ export interface LeadTimeSummary {
   avgDaysLateVsTarget: number | null;
   onTimeCount: number;
   totalEvaluable: number;
+}
+
+export interface WeeklyLTPoint {
+  weekLabel: string;
+  isoWeek: number;
+  isoYear: number;
+  Beds: number | null;
+  Mattresses: number | null;
+  Accessories: number | null;
+  'Comps/Other': number | null;
+  overall: number | null;
+}
+
+// groups shipped lines by week of ASD, computes avg production LT per category
+// used for the dashboard mini chart and the full lead-times trend view
+export function computeWeeklyLT(lines: PurchaseLine[]): WeeklyLTPoint[] {
+  const byKey = new Map<string, { week: number; year: number; cats: Record<SKUCategory, number[]>; all: number[] }>();
+
+  for (const line of lines) {
+    if (!line.asd || !line.orderDate || !canScore(line)) continue;
+    const r = computeLeadTime(line);
+    if (r.productionLT == null) continue;
+
+    const week = getISOWeek(line.asd);
+    const year = getISOWeekYear(line.asd);
+    const key  = `${year}-${String(week).padStart(2, '0')}`;
+
+    if (!byKey.has(key)) {
+      byKey.set(key, { week, year, cats: { Beds: [], Mattresses: [], Accessories: [], 'Comps/Other': [] }, all: [] });
+    }
+    const entry = byKey.get(key)!;
+    entry.cats[categorizeSKU(line.sku)].push(r.productionLT);
+    entry.all.push(r.productionLT);
+  }
+
+  const avg = (arr: number[]) => arr.length ? Math.round(arr.reduce((s, n) => s + n, 0) / arr.length) : null;
+
+  return [...byKey.entries()]
+    .sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)
+    .map(([, d]) => ({
+      weekLabel: `W${String(d.week).padStart(2, '0')}`,
+      isoWeek: d.week,
+      isoYear: d.year,
+      Beds:          avg(d.cats.Beds),
+      Mattresses:    avg(d.cats.Mattresses),
+      Accessories:   avg(d.cats.Accessories),
+      'Comps/Other': avg(d.cats['Comps/Other']),
+      overall:       avg(d.all),
+    }));
 }
 
 export function summariseLeadTimes(lines: PurchaseLine[]): LeadTimeSummary {

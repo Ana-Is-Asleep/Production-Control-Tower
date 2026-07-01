@@ -8,14 +8,14 @@ import { useKPIs } from '../hooks/useKPIs';
 import { UploadPanel } from './upload/UploadPanel';
 import { PrepareModal } from './PrepareModal';
 import { SKU_CATEGORIES, type SKUCategory } from '../lib/skuUtils';
-import { summariseLeadTimes } from '../lib/leadTimeUtils';
+import { summariseLeadTimes, computeWeeklyLT } from '../lib/leadTimeUtils';
 import { getISOWeek } from '../lib/dateUtils';
 import { computeKPIs, filterByChannel, formatAmountsByCurrency } from '../lib/invoiceUtils';
 import type { PurchaseLine } from '../types';
 import type { InvoiceRow, InvoiceChannel } from '../types/invoice';
 import {
   ComposedChart, LineChart, BarChart, Bar, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, ReferenceLine, ResponsiveContainer, LabelList,
+  Tooltip, ReferenceLine, ResponsiveContainer, LabelList, Legend,
 } from 'recharts';
 
 const CATEGORY_COLORS: Record<SKUCategory, string> = {
@@ -119,7 +119,11 @@ export function Dashboard() {
   const annotatedCount = kpis.failingLines.filter((l) => isAnnotated(`${l.po}-${l.line}`)).length;
   // not booked = unique POs, not lines
   const notBookedPOs = [...new Set(kpis.notBookedLines.map((l) => l.po))];
-  const ltSummary = useMemo(() => summariseLeadTimes(weeklyLines), [weeklyLines]);
+  const ltSummary  = useMemo(() => summariseLeadTimes(weeklyLines), [weeklyLines]);
+  const [ltCat, setLtCat] = useState<SKUCategory | 'All'>('All');
+  const weeklyLT   = useMemo(() => computeWeeklyLT(accumulatingLines), [accumulatingLines]);
+  // last 10 weeks for the mini chart
+  const ltChartData = useMemo(() => weeklyLT.slice(-10), [weeklyLT]);
 
   return (
     <div className="min-h-screen w-full bg-[#F4F4F6]">
@@ -369,46 +373,63 @@ export function Dashboard() {
               </div>
             </div>
 
-            {/* row 3: lead times */}
-            <div onClick={() => router.push('/lead-times')} className="kpi-card bg-white rounded-xl border border-[#F0F0F0] p-5 cursor-pointer" style={{ boxShadow: 'var(--shadow-card)' }}>
-              <div className="flex items-stretch gap-6 h-full">
-                <div className="shrink-0 flex flex-col justify-between pr-2">
-                  <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Lead Times</p>
-                  <p className="text-xs text-brand font-semibold">Drill down →</p>
+            {/* row 3: lead times — weekly bar chart, click to drill down */}
+            <div className="bg-white rounded-xl border border-[#F0F0F0] p-5" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Production Lead Time</p>
+                  {ltSummary.avgProductionLT !== null && (
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${ltSummary.avgProductionLT <= 30 ? 'bg-[#DCFCE7] text-pass' : 'bg-[#FEE2E2] text-fail'}`}>
+                      {ltSummary.avgProductionLT}d avg this week
+                    </span>
+                  )}
                 </div>
-                <div className="w-px bg-[#F0F0F0] shrink-0" />
-
-                <div className="flex gap-8 flex-1 items-center">
-                  {[
-                    { label: 'Planned LT', sub: 'Order → PGRD', value: ltSummary.avgPlannedLT, color: '#6366F1' },
-                    { label: 'Expected LT', sub: 'Order → EGRD', value: ltSummary.avgExpectedLT, color: '#FF8900' },
-                    { label: 'Production LT', sub: 'Order → ASD', value: ltSummary.avgProductionLT, color: ltSummary.avgProductionLT !== null && ltSummary.avgProductionLT <= ltSummary.avgAgreedLT ? '#34A853' : '#DC3545' },
-                    { label: 'Agreed LT', sub: 'From file', value: ltSummary.avgAgreedLT, color: '#AAA' },
-                    { label: 'Target LT', sub: 'Always 30d', value: 30, color: '#AAA' },
-                  ].map((item) => (
-                    <div key={item.label} className="flex flex-col">
-                      <span className="kpi-number font-extrabold text-4xl leading-none" style={{ color: item.color }}>
-                        {item.value !== null ? `${item.value}d` : '—'}
-                      </span>
-                      <p className="text-xs font-semibold text-[#555] mt-1.5">{item.label}</p>
-                      <p className="text-[10px] text-[#CCC]">{item.sub}</p>
-                    </div>
+                <div className="flex items-center gap-2">
+                  {/* category filter pills — stop propagation so they don't trigger navigation */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setLtCat('All'); }}
+                    className={`text-[11px] px-2.5 py-1 rounded-full border font-medium transition-all ${ltCat === 'All' ? 'bg-[#111] text-white border-[#111]' : 'border-[#E0E0E0] text-[#888]'}`}>
+                    All
+                  </button>
+                  {SKU_CATEGORIES.filter(c => c !== 'Comps/Other').map((c) => (
+                    <button key={c}
+                      onClick={(e) => { e.stopPropagation(); setLtCat(c); }}
+                      className="text-[11px] px-2.5 py-1 rounded-full border font-medium transition-all"
+                      style={ltCat === c ? { background: CATEGORY_COLORS[c], color: 'white', borderColor: CATEGORY_COLORS[c] } : { borderColor: '#E0E0E0', color: '#888' }}>
+                      {c}
+                    </button>
                   ))}
-                </div>
-                <div className="w-px bg-[#F0F0F0] shrink-0" />
-                <div className="flex gap-4 shrink-0 items-center">
-                  <div className={`rounded-xl px-5 py-3 flex flex-col items-center ${ltSummary.earlyCount > 0 ? 'bg-[#F0FFF4]' : 'bg-[#F7F7F7]'}`}>
-                    <span className="kpi-number font-extrabold text-4xl text-pass">{ltSummary.earlyCount}</span>
-                    <p className="text-xs font-semibold text-pass mt-1">Early</p>
-                    {ltSummary.avgDaysEarly !== null && <p className="text-[10px] text-pass">{ltSummary.avgDaysEarly}d avg vs agreed</p>}
-                  </div>
-                  <div className={`rounded-xl px-5 py-3 flex flex-col items-center ${ltSummary.lateCount > 0 ? 'bg-[#FFF5F5]' : 'bg-[#F7F7F7]'}`}>
-                    <span className="kpi-number font-extrabold text-4xl text-fail">{ltSummary.lateCount}</span>
-                    <p className="text-xs font-semibold text-fail mt-1">Late</p>
-                    {ltSummary.avgDaysLate !== null && <p className="text-[10px] text-fail">+{ltSummary.avgDaysLate}d avg vs agreed</p>}
-                  </div>
+                  <span className="w-px h-4 bg-[#E0E0E0] mx-1" />
+                  <button
+                    onClick={() => router.push('/lead-times')}
+                    className="text-[11px] text-brand font-semibold hover:underline">
+                    View all →
+                  </button>
                 </div>
               </div>
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={ltChartData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }} barCategoryGap="30%">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F0F0F0" vertical={false} />
+                  <XAxis dataKey="weekLabel" tick={{ fill: '#AAA', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: '#AAA', fontSize: 10 }} axisLine={false} tickLine={false} unit="d" domain={[0, 'auto']} />
+                  <ReferenceLine y={30} stroke="#DC3545" strokeDasharray="4 4" strokeWidth={1.5} label={{ value: '30d', position: 'right', fill: '#DC3545', fontSize: 10 }} />
+                  <Tooltip
+                    contentStyle={{ background: '#111', border: 'none', borderRadius: 8, fontSize: 11 }}
+                    labelStyle={{ color: '#FF8900', fontWeight: 700 }}
+                    itemStyle={{ color: 'white' }}
+                    formatter={(v: unknown) => [`${Number(v)}d`, '']}
+                  />
+                  {ltCat === 'All' ? (
+                    <>
+                      <Bar dataKey="Mattresses"  fill={CATEGORY_COLORS.Mattresses}  radius={[3,3,0,0]} maxBarSize={20} />
+                      <Bar dataKey="Beds"        fill={CATEGORY_COLORS.Beds}        radius={[3,3,0,0]} maxBarSize={20} />
+                      <Bar dataKey="Accessories" fill={CATEGORY_COLORS.Accessories} radius={[3,3,0,0]} maxBarSize={20} />
+                    </>
+                  ) : (
+                    <Bar dataKey={ltCat} fill={CATEGORY_COLORS[ltCat as SKUCategory]} radius={[3,3,0,0]} maxBarSize={30} />
+                  )}
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>

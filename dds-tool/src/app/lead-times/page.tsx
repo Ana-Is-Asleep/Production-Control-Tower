@@ -2,10 +2,10 @@
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Legend, CartesianGrid } from 'recharts';
 import { useData } from '../../context/DataContext';
 import { useFilters } from '../../hooks/useFilters';
-import { computeLeadTime, summariseLeadTimes } from '../../lib/leadTimeUtils';
+import { computeLeadTime, summariseLeadTimes, computeWeeklyLT } from '../../lib/leadTimeUtils';
 import { categorizeSKU, SKU_CATEGORIES, type SKUCategory } from '../../lib/skuUtils';
 import { formatDateShort } from '../../lib/dateUtils';
 import { TARGET_LT } from '../../data/leadTimeData';
@@ -21,12 +21,15 @@ export default function LeadTimesPage() {
   const [selectedCat, setSelectedCat] = useState<SKUCategory | 'All'>('All');
   const [view, setView] = useState<'summary' | 'detail'>('summary');
 
-  const scopeLines = accumulatingLines; // use accumulating so we have more shipped data
+  const scopeLines = accumulatingLines;
 
   const filtered = useMemo(() =>
     selectedCat === 'All' ? scopeLines : scopeLines.filter((l) => categorizeSKU(l.sku) === selectedCat),
     [scopeLines, selectedCat]
   );
+
+  // weekly trend — all categories so the chart always shows all bars even when a cat filter is active
+  const weeklyLT = useMemo(() => computeWeeklyLT(accumulatingLines), [accumulatingLines]);
 
   const summary = useMemo(() => summariseLeadTimes(filtered), [filtered]);
 
@@ -182,16 +185,60 @@ export default function LeadTimesPage() {
           </div>
         </div>
 
+        {/* weekly trend by category — main chart, matches HTML design */}
+        {weeklyLT.length > 0 && (
+          <div className="bg-white rounded-2xl p-6" style={{ boxShadow: 'var(--shadow-card)' }}>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[11px] uppercase tracking-widest text-[#AAA]">Production Lead Time by Week</p>
+              <div className="flex items-center gap-2">
+                {[{k:'Mattresses',c:'#FF8900'},{k:'Beds',c:'#6366F1'},{k:'Accessories',c:'#34A853'}].map(({k,c}) => (
+                  <span key={k} className="flex items-center gap-1.5 text-[11px] text-[#555]">
+                    <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: c }} />
+                    {k}
+                  </span>
+                ))}
+                <span className="flex items-center gap-1.5 text-[11px] text-[#DC3545] ml-2">
+                  <span className="inline-block w-5 border-t-2 border-dashed border-[#DC3545]" />
+                  30d target
+                </span>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={selectedCat === 'All' ? weeklyLT : weeklyLT} margin={{ top: 4, right: 24, left: -10, bottom: 0 }} barCategoryGap="25%">
+                <CartesianGrid strokeDasharray="3 3" stroke="#F0F0F0" vertical={false} />
+                <XAxis dataKey="weekLabel" tick={{ fill: '#AAA', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: '#AAA', fontSize: 11 }} axisLine={false} tickLine={false} unit="d" domain={[0, 'auto']} />
+                <ReferenceLine y={TARGET_LT} stroke="#DC3545" strokeDasharray="5 4" strokeWidth={1.5} />
+                <Tooltip
+                  contentStyle={{ background: '#111', border: 'none', borderRadius: 8, fontSize: 12 }}
+                  labelStyle={{ color: '#FF8900', fontWeight: 700 }}
+                  itemStyle={{ color: 'white' }}
+                  formatter={(v: unknown, n: unknown) => [`${Number(v)}d`, String(n)]}
+                />
+                {selectedCat === 'All' ? (
+                  <>
+                    <Bar dataKey="Mattresses"  fill="#FF8900" radius={[3,3,0,0]} maxBarSize={22} name="Mattresses" />
+                    <Bar dataKey="Beds"        fill="#6366F1" radius={[3,3,0,0]} maxBarSize={22} name="Beds" />
+                    <Bar dataKey="Accessories" fill="#34A853" radius={[3,3,0,0]} maxBarSize={22} name="Accessories" />
+                  </>
+                ) : (
+                  <Bar dataKey={selectedCat} fill={CATEGORY_COLORS[selectedCat]} radius={[3,3,0,0]} maxBarSize={30} name={selectedCat} />
+                )}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
         {/* by vendor chart */}
         {view === 'summary' && byVendor.length > 0 && (
           <div className="bg-white rounded-2xl p-6" style={{ boxShadow: 'var(--shadow-card)' }}>
             <p className="text-[11px] uppercase tracking-widest text-[#AAA] mb-5">Avg Lead Time by Vendor</p>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={280}>
               <BarChart data={byVendor} margin={{ top: 4, right: 20, left: -10, bottom: 60 }}>
                 <XAxis dataKey="vendor" tick={{ fill: '#AAA', fontSize: 11 }} angle={-40} textAnchor="end" axisLine={false} tickLine={false} interval={0} />
                 <YAxis tick={{ fill: '#AAA', fontSize: 11 }} axisLine={false} tickLine={false} unit="d" />
                 <ReferenceLine y={TARGET_LT} stroke="#F59E0B" strokeDasharray="4 4" label={{ value: '30d target', position: 'right', fill: '#F59E0B', fontSize: 11 }} />
-                <Tooltip contentStyle={{ background: '#111', border: 'none', color: 'white', borderRadius: 8, fontSize: 12 }} formatter={(v, n) => [`${v}d`, n]} />
+                <Tooltip contentStyle={{ background: '#111', border: 'none', color: 'white', borderRadius: 8, fontSize: 12 }} formatter={(v: unknown, n: unknown) => [`${Number(v)}d`, String(n)]} />
                 <Legend verticalAlign="top" align="right" iconSize={8} formatter={(v) => <span style={{ color: '#555', fontSize: 11 }}>{v}</span>} />
                 <Bar dataKey="actual" fill="#FF8900" radius={[3, 3, 0, 0]} name="Production LT" />
                 <Bar dataKey="agreed" fill="rgba(100,116,239,0.3)" radius={[3, 3, 0, 0]} name="Agreed LT" />
