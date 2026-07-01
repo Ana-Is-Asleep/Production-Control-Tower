@@ -6,13 +6,11 @@ import type { PurchaseLine, KPIResult, BacklogType } from '../types';
 const SUN = { weekStartsOn: 0 as const };
 const weekOf = (d: Date) => startOfWeek(d, SUN);
 
-// SOT: shipped same week or earlier than planned, and at least 97% of qty
-// early shipment is fine — 3% tolerance because BC rounds confirmed quantities
+// SOT: shipped same week or earlier than planned — time only, no quantity check
+// (IN FULL is an OTIF dimension, not SOT — verified against BC's own SOT? flag)
 export function computeSOT(line: PurchaseLine): boolean | null {
-  if (!line.asd || !line.pgrd) return null; // can't score without a shipping date
-  const onTime = weekOf(line.asd) <= weekOf(line.pgrd);
-  const inFull = line.cqty >= line.qty * 0.97;
-  return onTime && inFull;
+  if (!line.asd || !line.pgrd) return null; // skip if no shipping date, happens with open POs
+  return weekOf(line.asd) <= weekOf(line.pgrd);
 }
 
 // OTIF: supplier confirms delivery on or before PGRD week, same qty threshold
