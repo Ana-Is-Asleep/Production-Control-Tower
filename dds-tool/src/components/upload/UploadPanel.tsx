@@ -91,7 +91,8 @@ export function UploadPanel({ open, onClose, onLoad }: UploadPanelProps) {
         >
           <div className="text-3xl mb-3">📂</div>
           <p className="text-sm text-dark font-medium">Drag & drop your XLSX files here</p>
-          <p className="text-xs text-muted mt-1">Purchase Order Lines (required) · Invoices (optional)</p>
+          <p className="text-xs text-muted mt-1">Purchase Order Lines (required)</p>
+          <p className="text-xs text-muted">+ Purchase Header (optional, old format) · Invoices (optional)</p>
           <input id="file-input" type="file" accept=".xlsx" multiple className="hidden"
             onChange={(e) => handleFiles(Array.from(e.target.files ?? []))} />
         </div>
