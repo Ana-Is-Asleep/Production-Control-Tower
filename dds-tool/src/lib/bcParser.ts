@@ -18,13 +18,20 @@ function findHeaderRow(rows: unknown[][]): number {
   return -1;
 }
 
-// tries sheet name first, falls back to column count — Lines always has more columns than Header
+// tries sheet name, then row content — Lines always has more columns than Header
+// new single-file export starts with "Document No." (not "Document Type")
 function detectFileRole(wb: XLSX.WorkBook): 'header' | 'lines' | 'unknown' {
   const name = wb.SheetNames[0].toLowerCase();
   if (name.includes('header')) return 'header';
   if (name.includes('line')) return 'lines';
   const sheet = wb.Sheets[wb.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1 });
+  // new single-file format: first row starts with "Document No." → Lines
+  const row0 = rows[0] as unknown[] | undefined;
+  if (Array.isArray(row0) && typeof row0[0] === 'string' && row0[0].toLowerCase().includes('document no')) {
+    return 'lines';
+  }
+  // old format: scan for "Document Type" header row — Lines has >10 cols, Header has ≤10
   const hRow = rows.find((r) => Array.isArray(r) && r[0] === 'Document Type') as unknown[] | undefined;
   if (!hRow) return 'unknown';
   return hRow.length > 10 ? 'lines' : 'header';
