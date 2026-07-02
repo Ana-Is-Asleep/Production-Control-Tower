@@ -87,8 +87,14 @@ function parseHeaders(wb: XLSX.WorkBook): PurchaseHeader[] {
 // or get filled in later via header join (old two-file format)
 function parseLines(wb: XLSX.WorkBook): PurchaseLine[] {
   const sheet = wb.Sheets[wb.SheetNames[0]];
+  const denseCheck = (sheet as any)?.['!data'];
+  console.log('[bcParser] sheet name:', wb.SheetNames[0]);
+  console.log('[bcParser] !ref:', sheet?.['!ref']);
+  console.log('[bcParser] dense !data exists:', !!denseCheck, '— length:', denseCheck?.length ?? 'n/a');
   const rows = sheetToRows(sheet);
+  console.log('[bcParser] rows.length:', rows.length, '— rows[0][0]:', rows[0]?.[0]);
   const hIdx = findHeaderRow(rows);
+  console.log('[bcParser] hIdx:', hIdx);
   if (hIdx < 0) return [];
 
   // find columns by name — supports both the 20-col default export and the 46-col extended export
