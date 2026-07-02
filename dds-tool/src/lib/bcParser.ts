@@ -197,17 +197,36 @@ export function parseFiles(file1: File, file2: File): Promise<ParseResult> {
       let linesWb: XLSX.WorkBook;
 
       if (role1 === 'header' && role2 === 'lines') {
-        headerWb = wb1;
-        linesWb = wb2;
+        headerWb = wb1; linesWb = wb2;
       } else if (role1 === 'lines' && role2 === 'header') {
-        headerWb = wb2;
-        linesWb = wb1;
+        headerWb = wb2; linesWb = wb1;
+      } else if (role1 === 'lines' && role2 === 'unknown') {
+        linesWb = wb1; headerWb = wb2;
+      } else if (role1 === 'unknown' && role2 === 'lines') {
+        linesWb = wb2; headerWb = wb1;
+      } else if (role1 === 'header' && role2 === 'unknown') {
+        headerWb = wb1; linesWb = wb2;
+      } else if (role1 === 'unknown' && role2 === 'header') {
+        headerWb = wb2; linesWb = wb1;
       } else {
-        throw new Error('Could not detect Header/Lines files — check sheet names');
+        // last resort: try both and use whichever produces more lines
+        const lines1 = parseLines(wb1);
+        const lines2 = parseLines(wb2);
+        if (lines1.length >= lines2.length) { linesWb = wb1; headerWb = wb2; }
+        else { linesWb = wb2; headerWb = wb1; }
       }
 
-      const headers = parseHeaders(headerWb);
-      const rawLines = parseLines(linesWb);
+      let headers = parseHeaders(headerWb);
+      let rawLines = parseLines(linesWb);
+
+      // safety net: if roles were detected wrong, swap and retry
+      if (rawLines.length === 0 && headers.length > 50) {
+        const altLines = parseLines(headerWb);
+        if (altLines.length > 0) {
+          rawLines = altLines;
+          headers = parseHeaders(linesWb);
+        }
+      }
 
       // if vendor name is already in the lines file, skip the join
       const hasVendorNames = rawLines.some((l) => !!l.supplier);

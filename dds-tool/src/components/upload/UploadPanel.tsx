@@ -61,7 +61,7 @@ export function UploadPanel({ open, onClose, onLoad }: UploadPanelProps) {
 
       setResult(bcResult);
       setInvoiceRows(parsedInvoices);
-      setInvoiceCount(parsedInvoices.length);
+      setInvoiceCount(invoiceFile ? parsedInvoices.length : null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to parse files — check the format and try again');
     } finally {
