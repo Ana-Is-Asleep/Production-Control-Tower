@@ -2,6 +2,20 @@ import * as XLSX from 'xlsx';
 import type { PurchaseHeader, PurchaseLine } from '../types';
 import { parseDate } from './dateUtils';
 
+// SheetJS dense mode stores cells as {v, t, ...} objects in ws['!data'] (2D array).
+// sheet_to_json in 0.18.x doesn't reliably handle dense sheets — access !data directly when available.
+// This is required for large files (30MB+) where dense:true is needed to avoid silent empty parses.
+function sheetToRows(ws: XLSX.WorkSheet): unknown[][] {
+  type DenseCell = { v: unknown } | null | undefined;
+  const denseData = (ws as unknown as { '!data'?: Array<DenseCell[] | undefined> })['!data'];
+  if (denseData) {
+    return denseData.map(row =>
+      row ? row.map(cell => (cell && typeof cell === 'object' && 'v' in cell ? cell.v : undefined)) : []
+    );
+  }
+  return XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1 });
+}
+
 // BC exports sometimes have metadata rows before the actual headers, so we scan for "Document Type"
 // The newer single-file export starts with "Document No." in row 0 directly
 function findHeaderRow(rows: unknown[][]): number {
@@ -25,7 +39,7 @@ function detectFileRole(wb: XLSX.WorkBook): 'header' | 'lines' | 'unknown' {
   if (name.includes('header')) return 'header';
   if (name.includes('line')) return 'lines';
   const sheet = wb.Sheets[wb.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1 });
+  const rows = sheetToRows(sheet);
   // new single-file format: first row starts with "Document No." → Lines
   const row0 = rows[0] as unknown[] | undefined;
   if (Array.isArray(row0) && typeof row0[0] === 'string' && row0[0].toLowerCase().includes('document no')) {
@@ -39,7 +53,7 @@ function detectFileRole(wb: XLSX.WorkBook): 'header' | 'lines' | 'unknown' {
 
 function parseHeaders(wb: XLSX.WorkBook): PurchaseHeader[] {
   const sheet = wb.Sheets[wb.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1 });
+  const rows = sheetToRows(sheet);
   const hIdx = findHeaderRow(rows);
   if (hIdx < 0) return [];
 
@@ -73,7 +87,7 @@ function parseHeaders(wb: XLSX.WorkBook): PurchaseHeader[] {
 // or get filled in later via header join (old two-file format)
 function parseLines(wb: XLSX.WorkBook): PurchaseLine[] {
   const sheet = wb.Sheets[wb.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1 });
+  const rows = sheetToRows(sheet);
   const hIdx = findHeaderRow(rows);
   if (hIdx < 0) return [];
 
