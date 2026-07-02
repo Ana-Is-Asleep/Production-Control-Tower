@@ -159,7 +159,8 @@ function readWorkbook(f: File): Promise<XLSX.WorkBook> {
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         // cellFormula + cellHTML disabled on purpose, stops formula injection from crafted files
-        const wb = XLSX.read(data, { type: 'array', cellFormula: false, cellHTML: false });
+        // dense: true uses 2D array internals — required for large files (33+ MB) to avoid silent empty parse
+        const wb = XLSX.read(data, { type: 'array', cellFormula: false, cellHTML: false, dense: true });
         res(wb);
       } catch (err) {
         rej(err);
