@@ -84,11 +84,20 @@ export function readXlsxFile(file: File): Promise<XlsxWorkbook> {
       if (m) sheetName = decodeXml(m[1]);
     }
 
-    const sheetKey = Object.keys(unzipped)
-      .sort()
-      .find((k) => /^xl\/worksheets\/sheet\d+\.xml$/.test(k));
-    if (!sheetKey) throw new Error('No worksheet found in XLSX file');
+    const allKeys = Object.keys(unzipped);
+    console.log('[xlsxUtils] unzipped keys:', allKeys);
 
-    return { sheetName, rows: parseWorksheetRows(dec(unzipped[sheetKey]), ss) };
+    const sheetKey = allKeys
+      .sort()
+      .find((k) => k.includes('worksheets/') && k.endsWith('.xml'));
+    if (!sheetKey) throw new Error('No worksheet found in XLSX file — keys: ' + allKeys.join(', '));
+
+    const worksheetXml = dec(unzipped[sheetKey]);
+    console.log('[xlsxUtils] sheetKey:', sheetKey, '— xml length:', worksheetXml.length);
+    console.log('[xlsxUtils] xml[0..500]:', worksheetXml.slice(0, 500));
+
+    const rows = parseWorksheetRows(worksheetXml, ss);
+    console.log('[xlsxUtils] parsed rows:', rows.length, '— row[0]:', rows[0]);
+    return { sheetName, rows };
   });
 }
