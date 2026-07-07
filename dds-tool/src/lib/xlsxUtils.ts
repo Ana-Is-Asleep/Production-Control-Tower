@@ -34,10 +34,9 @@ function colToIndex(col: string): number {
   return n - 1;
 }
 
-// Parses xl/worksheets/sheet*.xml into rows of raw values.
-// Dates remain as Excel serial numbers (handled by parseDate in callers).
-function parseWorksheetRows(xml: string, ss: string[]): unknown[][] {
-  const rows: unknown[][] = [];
+// Parse a chunk of worksheet XML (may be partial — must contain only complete <row>...</row> blocks).
+// Appends to results in-place for streaming efficiency.
+function parseRowsInto(xml: string, ss: string[], results: unknown[][]): void {
   const rowParts = xml.split('<row ');
   for (let ri = 1; ri < rowParts.length; ri++) {
     const row: unknown[] = [];
@@ -53,48 +52,108 @@ function parseWorksheetRows(xml: string, ss: string[]): unknown[][] {
       if (type === 's') val = ss[+raw] ?? '';
       else if (type === 'b') val = raw === '1';
       else if (type === 'str' || type === 'e') val = decodeXml(raw);
-      else if (type === 'inlineStr') val = decodeXml(cell.match(/<t[^>]*>([^<]*)<\/t>/)?.[1] ?? '');
+      else if (type === 'inlineStr') {
+        // <is><t>text</t></is> — text is inside <is> not <v>
+        val = decodeXml(cell.match(/<t[^>]*>([^<]*)<\/t>/)?.[1] ?? '');
+      }
       else if (raw) val = +raw;
       if (val !== undefined) row[colIdx] = val;
     }
-    if (row.length > 0) rows.push(row);
+    if (row.length > 0) results.push(row);
   }
-  return rows;
 }
 
-// Reads any .xlsx file — XLSX is a ZIP, so we unzip with fflate and parse the XML directly.
-// This handles large files (150K+ rows) that SheetJS 0.18.5 fails on silently.
+// Reads any .xlsx file using fflate's STREAMING API so the 500+ MB uncompressed
+// worksheet XML is never held entirely in memory — we parse rows chunk by chunk.
 export function readXlsxFile(file: File): Promise<XlsxWorkbook> {
-  return file.arrayBuffer().then((buf) => {
-    const dec = (u: Uint8Array) => new TextDecoder().decode(u);
-    // No filter — decompress everything so we can diagnose which files have content
-    const unzipped = fflate.unzipSync(new Uint8Array(buf));
+  return file.arrayBuffer().then(
+    (buf) =>
+      new Promise<XlsxWorkbook>((resolve, reject) => {
+        const rows: unknown[][] = [];
+        let ss: string[] = [];
+        let sheetName = 'Sheet1';
 
-    // Log all files + their sizes to see where the data actually lives
-    const allKeys = Object.keys(unzipped);
-    console.log('[xlsxUtils] all files:', allKeys.map(k => `${k}(${unzipped[k].length}b)`).join(', '));
+        // Per-file text buffers (shared strings + workbook are small, fine to buffer)
+        let wbXml = '';
+        let ssXml = '';
+        // For the worksheet we keep only a tiny seam between chunks
+        let worksheetSeam = '';
 
-    const ss = unzipped['xl/sharedStrings.xml']
-      ? parseSharedStrings(dec(unzipped['xl/sharedStrings.xml']))
-      : [];
+        let filesExpected = 0;
+        let filesDone = 0;
+        const checkDone = () => {
+          if (filesDone >= filesExpected) {
+            if (worksheetSeam.length > 0) {
+              parseRowsInto(worksheetSeam, ss, rows);
+              worksheetSeam = '';
+            }
+            resolve({ sheetName, rows });
+          }
+        };
 
-    let sheetName = 'Sheet1';
-    if (unzipped['xl/workbook.xml']) {
-      const m = dec(unzipped['xl/workbook.xml']).match(/<sheet\b[^>]+name="([^"]+)"/);
-      if (m) sheetName = decodeXml(m[1]);
-    }
+        const unzipper = new fflate.Unzip();
+        unzipper.register(fflate.UnzipInflate);
 
-    const sheetKey = allKeys
-      .sort()
-      .find((k) => k.includes('worksheets/') && k.endsWith('.xml'));
-    if (!sheetKey) throw new Error('No worksheet found — files: ' + allKeys.join(', '));
+        unzipper.onfile = (f) => {
+          if (f.name === 'xl/workbook.xml') {
+            filesExpected++;
+            const d = new TextDecoder();
+            f.ondata = (err, chunk, final) => {
+              if (err) return reject(err);
+              wbXml += d.decode(chunk, { stream: !final });
+              if (final) {
+                const m = wbXml.match(/<sheet\b[^>]+name="([^"]+)"/);
+                if (m) sheetName = decodeXml(m[1]);
+                filesDone++;
+                checkDone();
+              }
+            };
+            f.start();
+          } else if (f.name === 'xl/sharedStrings.xml') {
+            filesExpected++;
+            const d = new TextDecoder();
+            f.ondata = (err, chunk, final) => {
+              if (err) return reject(err);
+              ssXml += d.decode(chunk, { stream: !final });
+              if (final) {
+                ss = parseSharedStrings(ssXml);
+                filesDone++;
+                checkDone();
+              }
+            };
+            f.start();
+          } else if (f.name.includes('/worksheets/') && f.name.endsWith('.xml')) {
+            filesExpected++;
+            const d = new TextDecoder();
+            f.ondata = (err, chunk, final) => {
+              if (err) return reject(err);
+              // Decode this chunk and prepend any incomplete row from previous chunk
+              const text = worksheetSeam + d.decode(chunk, { stream: !final });
+              if (final) {
+                parseRowsInto(text, ss, rows);
+                worksheetSeam = '';
+                filesDone++;
+                checkDone();
+              } else {
+                // Only process up to the last complete </row> — keep the rest as seam
+                const end = text.lastIndexOf('</row>');
+                if (end !== -1) {
+                  parseRowsInto(text.slice(0, end + 6), ss, rows);
+                  worksheetSeam = text.slice(end + 6);
+                } else {
+                  worksheetSeam = text;
+                }
+              }
+            };
+            f.start();
+          }
+        };
 
-    const worksheetXml = dec(unzipped[sheetKey]);
-    console.log('[xlsxUtils] sheetKey:', sheetKey, '— length:', worksheetXml.length);
-    console.log('[xlsxUtils] xml[0..500]:', worksheetXml.slice(0, 500));
-
-    const rows = parseWorksheetRows(worksheetXml, ss);
-    console.log('[xlsxUtils] parsed rows:', rows.length, '— row[0]:', rows[0]);
-    return { sheetName, rows };
-  });
+        try {
+          unzipper.push(new Uint8Array(buf), true);
+        } catch (err) {
+          reject(err);
+        }
+      })
+  );
 }
