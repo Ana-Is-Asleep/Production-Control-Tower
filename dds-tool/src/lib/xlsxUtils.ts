@@ -34,8 +34,6 @@ function colToIndex(col: string): number {
   return n - 1;
 }
 
-// Parse a chunk of worksheet XML (may be partial — must contain only complete <row>...</row> blocks).
-// Appends to results in-place for streaming efficiency.
 function parseRowsInto(xml: string, ss: string[], results: unknown[][]): void {
   const rowParts = xml.split('<row ');
   for (let ri = 1; ri < rowParts.length; ri++) {
@@ -47,113 +45,66 @@ function parseRowsInto(xml: string, ss: string[], results: unknown[][]): void {
       if (!rM) continue;
       const colIdx = colToIndex(rM[1]);
       const type = cell.match(/\bt="([^"]+)"/)?.[1] ?? '';
-      const raw = cell.match(/<v>([^<]*)<\/v>/)?.[1] ?? '';
+      const raw  = cell.match(/<v>([^<]*)<\/v>/)?.[1] ?? '';
       let val: unknown;
-      if (type === 's') val = ss[+raw] ?? '';
-      else if (type === 'b') val = raw === '1';
+      if      (type === 's')        val = ss[+raw] ?? '';
+      else if (type === 'b')        val = raw === '1';
       else if (type === 'str' || type === 'e') val = decodeXml(raw);
-      else if (type === 'inlineStr') {
-        // <is><t>text</t></is> — text is inside <is> not <v>
-        val = decodeXml(cell.match(/<t[^>]*>([^<]*)<\/t>/)?.[1] ?? '');
-      }
-      else if (raw) val = +raw;
+      else if (type === 'inlineStr') val = decodeXml(cell.match(/<t[^>]*>([^<]*)<\/t>/)?.[1] ?? '');
+      else if (raw)                 val = +raw;
       if (val !== undefined) row[colIdx] = val;
     }
     if (row.length > 0) results.push(row);
   }
 }
 
-// Reads any .xlsx file using fflate's STREAMING API so the 500+ MB uncompressed
-// worksheet XML is never held entirely in memory — we parse rows chunk by chunk.
+// The worksheet XML can be 500+ MB — TextDecoder fails silently on arrays that large.
+// Fix: decode in 8 MB slices and parse rows as they arrive. Only a tiny seam is kept
+// between chunks (the partial <row> at the boundary, always < 1 row ≈ a few KB).
+function parseWorksheetFromBytes(bytes: Uint8Array, ss: string[]): unknown[][] {
+  const CHUNK = 8 * 1024 * 1024;
+  const dec = new TextDecoder();
+  const results: unknown[][] = [];
+  let seam = '';
+
+  for (let offset = 0; offset < bytes.length; offset += CHUNK) {
+    const chunk = dec.decode(bytes.subarray(offset, Math.min(offset + CHUNK, bytes.length)));
+    const text = seam + chunk;
+    const lastClose = text.lastIndexOf('</row>');
+    if (lastClose === -1) {
+      seam = text;
+      continue;
+    }
+    parseRowsInto(text.slice(0, lastClose + 6), ss, results);
+    seam = text.slice(lastClose + 6);
+  }
+
+  if (seam.length > 0) parseRowsInto(seam, ss, results);
+  return results;
+}
+
 export function readXlsxFile(file: File): Promise<XlsxWorkbook> {
-  return file.arrayBuffer().then(
-    (buf) =>
-      new Promise<XlsxWorkbook>((resolve, reject) => {
-        const rows: unknown[][] = [];
-        let ss: string[] = [];
-        let sheetName = 'Sheet1';
+  return file.arrayBuffer().then((buf) => {
+    const dec = (u: Uint8Array) => new TextDecoder().decode(u);
+    // No filter — fflate's filter silently zeros large entries; decompress everything
+    const unzipped = fflate.unzipSync(new Uint8Array(buf));
 
-        // Per-file text buffers (shared strings + workbook are small, fine to buffer)
-        let wbXml = '';
-        let ssXml = '';
-        // For the worksheet we keep only a tiny seam between chunks
-        let worksheetSeam = '';
+    const ss = unzipped['xl/sharedStrings.xml']
+      ? parseSharedStrings(dec(unzipped['xl/sharedStrings.xml']))
+      : [];
 
-        let filesExpected = 0;
-        let filesDone = 0;
-        const checkDone = () => {
-          if (filesDone >= filesExpected) {
-            if (worksheetSeam.length > 0) {
-              parseRowsInto(worksheetSeam, ss, rows);
-              worksheetSeam = '';
-            }
-            resolve({ sheetName, rows });
-          }
-        };
+    let sheetName = 'Sheet1';
+    if (unzipped['xl/workbook.xml']) {
+      const m = dec(unzipped['xl/workbook.xml']).match(/<sheet\b[^>]+name="([^"]+)"/);
+      if (m) sheetName = decodeXml(m[1]);
+    }
 
-        const unzipper = new fflate.Unzip();
-        unzipper.register(fflate.UnzipInflate);
+    const sheetKey = Object.keys(unzipped)
+      .sort()
+      .find((k) => k.includes('/worksheets/') && k.endsWith('.xml'));
+    if (!sheetKey) throw new Error('No worksheet found in XLSX');
 
-        unzipper.onfile = (f) => {
-          if (f.name === 'xl/workbook.xml') {
-            filesExpected++;
-            const d = new TextDecoder();
-            f.ondata = (err, chunk, final) => {
-              if (err) return reject(err);
-              wbXml += d.decode(chunk, { stream: !final });
-              if (final) {
-                const m = wbXml.match(/<sheet\b[^>]+name="([^"]+)"/);
-                if (m) sheetName = decodeXml(m[1]);
-                filesDone++;
-                checkDone();
-              }
-            };
-            f.start();
-          } else if (f.name === 'xl/sharedStrings.xml') {
-            filesExpected++;
-            const d = new TextDecoder();
-            f.ondata = (err, chunk, final) => {
-              if (err) return reject(err);
-              ssXml += d.decode(chunk, { stream: !final });
-              if (final) {
-                ss = parseSharedStrings(ssXml);
-                filesDone++;
-                checkDone();
-              }
-            };
-            f.start();
-          } else if (f.name.includes('/worksheets/') && f.name.endsWith('.xml')) {
-            filesExpected++;
-            const d = new TextDecoder();
-            f.ondata = (err, chunk, final) => {
-              if (err) return reject(err);
-              // Decode this chunk and prepend any incomplete row from previous chunk
-              const text = worksheetSeam + d.decode(chunk, { stream: !final });
-              if (final) {
-                parseRowsInto(text, ss, rows);
-                worksheetSeam = '';
-                filesDone++;
-                checkDone();
-              } else {
-                // Only process up to the last complete </row> — keep the rest as seam
-                const end = text.lastIndexOf('</row>');
-                if (end !== -1) {
-                  parseRowsInto(text.slice(0, end + 6), ss, rows);
-                  worksheetSeam = text.slice(end + 6);
-                } else {
-                  worksheetSeam = text;
-                }
-              }
-            };
-            f.start();
-          }
-        };
-
-        try {
-          unzipper.push(new Uint8Array(buf), true);
-        } catch (err) {
-          reject(err);
-        }
-      })
-  );
+    const rows = parseWorksheetFromBytes(unzipped[sheetKey], ss);
+    return { sheetName, rows };
+  });
 }
