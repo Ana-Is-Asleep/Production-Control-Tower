@@ -86,25 +86,40 @@ function parseWorksheetFromBytes(bytes: Uint8Array, ss: string[]): unknown[][] {
 export function readXlsxFile(file: File): Promise<XlsxWorkbook> {
   return file.arrayBuffer().then((buf) => {
     const dec = (u: Uint8Array) => new TextDecoder().decode(u);
-    // No filter — fflate's filter silently zeros large entries; decompress everything
-    const unzipped = fflate.unzipSync(new Uint8Array(buf));
 
-    const ss = unzipped['xl/sharedStrings.xml']
-      ? parseSharedStrings(dec(unzipped['xl/sharedStrings.xml']))
-      : [];
-
-    let sheetName = 'Sheet1';
-    if (unzipped['xl/workbook.xml']) {
-      const m = dec(unzipped['xl/workbook.xml']).match(/<sheet\b[^>]+name="([^"]+)"/);
-      if (m) sheetName = decodeXml(m[1]);
+    let unzipped: fflate.Unzipped;
+    try {
+      unzipped = fflate.unzipSync(new Uint8Array(buf));
+      console.log('[xlsxUtils] unzip OK — keys:', Object.keys(unzipped).map(k => `${k}(${unzipped[k].length})`));
+    } catch (e) {
+      console.error('[xlsxUtils] unzipSync threw:', e);
+      throw e;
     }
 
-    const sheetKey = Object.keys(unzipped)
-      .sort()
-      .find((k) => k.includes('/worksheets/') && k.endsWith('.xml'));
+    let ss: string[] = [];
+    try {
+      ss = unzipped['xl/sharedStrings.xml'] ? parseSharedStrings(dec(unzipped['xl/sharedStrings.xml'])) : [];
+    } catch (e) { console.error('[xlsxUtils] sharedStrings threw:', e); throw e; }
+
+    let sheetName = 'Sheet1';
+    try {
+      if (unzipped['xl/workbook.xml']) {
+        const m = dec(unzipped['xl/workbook.xml']).match(/<sheet\b[^>]+name="([^"]+)"/);
+        if (m) sheetName = decodeXml(m[1]);
+      }
+    } catch (e) { console.error('[xlsxUtils] workbook threw:', e); throw e; }
+
+    const sheetKey = Object.keys(unzipped).sort().find((k) => k.includes('/worksheets/') && k.endsWith('.xml'));
     if (!sheetKey) throw new Error('No worksheet found in XLSX');
 
-    const rows = parseWorksheetFromBytes(unzipped[sheetKey], ss);
+    console.log('[xlsxUtils] sheetKey:', sheetKey, 'bytes:', unzipped[sheetKey].length);
+
+    let rows: unknown[][] = [];
+    try {
+      rows = parseWorksheetFromBytes(unzipped[sheetKey], ss);
+      console.log('[xlsxUtils] parsed rows:', rows.length);
+    } catch (e) { console.error('[xlsxUtils] parseWorksheet threw:', e); throw e; }
+
     return { sheetName, rows };
   });
 }
