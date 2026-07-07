@@ -67,12 +67,12 @@ function parseWorksheetRows(xml: string, ss: string[]): unknown[][] {
 export function readXlsxFile(file: File): Promise<XlsxWorkbook> {
   return file.arrayBuffer().then((buf) => {
     const dec = (u: Uint8Array) => new TextDecoder().decode(u);
-    const unzipped = fflate.unzipSync(new Uint8Array(buf), {
-      filter: (f) =>
-        f.name === 'xl/sharedStrings.xml' ||
-        f.name === 'xl/workbook.xml' ||
-        f.name.startsWith('xl/worksheets/'),
-    });
+    // No filter — decompress everything so we can diagnose which files have content
+    const unzipped = fflate.unzipSync(new Uint8Array(buf));
+
+    // Log all files + their sizes to see where the data actually lives
+    const allKeys = Object.keys(unzipped);
+    console.log('[xlsxUtils] all files:', allKeys.map(k => `${k}(${unzipped[k].length}b)`).join(', '));
 
     const ss = unzipped['xl/sharedStrings.xml']
       ? parseSharedStrings(dec(unzipped['xl/sharedStrings.xml']))
@@ -84,16 +84,13 @@ export function readXlsxFile(file: File): Promise<XlsxWorkbook> {
       if (m) sheetName = decodeXml(m[1]);
     }
 
-    const allKeys = Object.keys(unzipped);
-    console.log('[xlsxUtils] unzipped keys:', allKeys);
-
     const sheetKey = allKeys
       .sort()
       .find((k) => k.includes('worksheets/') && k.endsWith('.xml'));
-    if (!sheetKey) throw new Error('No worksheet found in XLSX file — keys: ' + allKeys.join(', '));
+    if (!sheetKey) throw new Error('No worksheet found — files: ' + allKeys.join(', '));
 
     const worksheetXml = dec(unzipped[sheetKey]);
-    console.log('[xlsxUtils] sheetKey:', sheetKey, '— xml length:', worksheetXml.length);
+    console.log('[xlsxUtils] sheetKey:', sheetKey, '— length:', worksheetXml.length);
     console.log('[xlsxUtils] xml[0..500]:', worksheetXml.slice(0, 500));
 
     const rows = parseWorksheetRows(worksheetXml, ss);
