@@ -18,9 +18,9 @@ function decodeXml(s: string): string {
 
 function parseSharedStrings(xml: string): string[] {
   const out: string[] = [];
-  for (const part of xml.split('<si>').slice(1)) {
+  for (const part of xml.split(/<(?:x:)?si>/).slice(1)) {
     const texts: string[] = [];
-    for (const m of part.matchAll(/<t(?:\s[^>]*)?>([^<]*)<\/t>/g)) {
+    for (const m of part.matchAll(/<(?:x:)?t(?:\s[^>]*)?>([^<]*)<\/(?:x:)?t>/g)) {
       texts.push(decodeXml(m[1]));
     }
     out.push(texts.join(''));
@@ -34,23 +34,29 @@ function colToIndex(col: string): number {
   return n - 1;
 }
 
+// Matches both plain <row ...> and namespace-prefixed <x:row ...>
+const ROW_OPEN  = /<(?:x:)?row[ >]/g;
+const CELL_OPEN = /<(?:x:)?c[ >]/g;
+
 function parseRowsInto(xml: string, ss: string[], results: unknown[][]): void {
-  const rowParts = xml.split('<row ');
+  // Split on row open tags (plain or x: prefixed)
+  const rowParts = xml.split(ROW_OPEN);
   for (let ri = 1; ri < rowParts.length; ri++) {
     const row: unknown[] = [];
-    const cellParts = rowParts[ri].split('<c ');
+    const cellParts = rowParts[ri].split(CELL_OPEN);
     for (let ci = 1; ci < cellParts.length; ci++) {
       const cell = cellParts[ci];
       const rM = cell.match(/\br="([A-Z]+)\d+"/);
       if (!rM) continue;
       const colIdx = colToIndex(rM[1]);
       const type = cell.match(/\bt="([^"]+)"/)?.[1] ?? '';
-      const raw  = cell.match(/<v>([^<]*)<\/v>/)?.[1] ?? '';
+      // Match <v> or <x:v>
+      const raw  = cell.match(/<(?:x:)?v>([^<]*)<\/(?:x:)?v>/)?.[1] ?? '';
       let val: unknown;
       if      (type === 's')        val = ss[+raw] ?? '';
       else if (type === 'b')        val = raw === '1';
       else if (type === 'str' || type === 'e') val = decodeXml(raw);
-      else if (type === 'inlineStr') val = decodeXml(cell.match(/<t[^>]*>([^<]*)<\/t>/)?.[1] ?? '');
+      else if (type === 'inlineStr') val = decodeXml(cell.match(/<(?:x:)?t[^>]*>([^<]*)<\/(?:x:)?t>/)?.[1] ?? '');
       else if (raw)                 val = +raw;
       if (val !== undefined) row[colIdx] = val;
     }
@@ -66,17 +72,24 @@ function parseWorksheetFromBytes(bytes: Uint8Array, ss: string[]): unknown[][] {
   const dec = new TextDecoder();
   const results: unknown[][] = [];
   let seam = '';
+  // Matches both </row> and </x:row>
+  const closeTag = '</row>';
+  const closeTagX = '</x:row>';
 
   for (let offset = 0; offset < bytes.length; offset += CHUNK) {
     const chunk = dec.decode(bytes.subarray(offset, Math.min(offset + CHUNK, bytes.length)));
     const text = seam + chunk;
-    const lastClose = text.lastIndexOf('</row>');
+    // Find the last closing row tag (either form)
+    const lastX     = text.lastIndexOf(closeTagX);
+    const lastPlain = text.lastIndexOf(closeTag);
+    const lastClose = Math.max(lastX !== -1 ? lastX + closeTagX.length : -1,
+                               lastPlain !== -1 ? lastPlain + closeTag.length : -1);
     if (lastClose === -1) {
       seam = text;
       continue;
     }
-    parseRowsInto(text.slice(0, lastClose + 6), ss, results);
-    seam = text.slice(lastClose + 6);
+    parseRowsInto(text.slice(0, lastClose), ss, results);
+    seam = text.slice(lastClose);
   }
 
   if (seam.length > 0) parseRowsInto(seam, ss, results);
@@ -87,40 +100,20 @@ export function readXlsxFile(file: File): Promise<XlsxWorkbook> {
   return file.arrayBuffer().then((buf) => {
     const dec = (u: Uint8Array) => new TextDecoder().decode(u);
 
-    let unzipped: fflate.Unzipped;
-    try {
-      unzipped = fflate.unzipSync(new Uint8Array(buf));
-      console.log('[xlsxUtils] unzip OK — keys:', Object.keys(unzipped).map(k => `${k}(${unzipped[k].length})`));
-    } catch (e) {
-      console.error('[xlsxUtils] unzipSync threw:', e);
-      throw e;
-    }
+    const unzipped = fflate.unzipSync(new Uint8Array(buf));
 
-    let ss: string[] = [];
-    try {
-      ss = unzipped['xl/sharedStrings.xml'] ? parseSharedStrings(dec(unzipped['xl/sharedStrings.xml'])) : [];
-    } catch (e) { console.error('[xlsxUtils] sharedStrings threw:', e); throw e; }
+    const ss = unzipped['xl/sharedStrings.xml'] ? parseSharedStrings(dec(unzipped['xl/sharedStrings.xml'])) : [];
 
     let sheetName = 'Sheet1';
-    try {
-      if (unzipped['xl/workbook.xml']) {
-        const m = dec(unzipped['xl/workbook.xml']).match(/<sheet\b[^>]+name="([^"]+)"/);
-        if (m) sheetName = decodeXml(m[1]);
-      }
-    } catch (e) { console.error('[xlsxUtils] workbook threw:', e); throw e; }
+    if (unzipped['xl/workbook.xml']) {
+      const m = dec(unzipped['xl/workbook.xml']).match(/<(?:x:)?sheet\b[^>]+name="([^"]+)"/);
+      if (m) sheetName = decodeXml(m[1]);
+    }
 
     const sheetKey = Object.keys(unzipped).sort().find((k) => k.includes('/worksheets/') && k.endsWith('.xml'));
     if (!sheetKey) throw new Error('No worksheet found in XLSX');
 
-    console.log('[xlsxUtils] sheetKey:', sheetKey, 'bytes:', unzipped[sheetKey].length);
-    // Show first 800 bytes of worksheet XML to see actual element names
-    console.log('[xlsxUtils] sheet xml start:', new TextDecoder().decode(unzipped[sheetKey].subarray(0, 800)));
-
-    let rows: unknown[][] = [];
-    try {
-      rows = parseWorksheetFromBytes(unzipped[sheetKey], ss);
-      console.log('[xlsxUtils] parsed rows:', rows.length);
-    } catch (e) { console.error('[xlsxUtils] parseWorksheet threw:', e); throw e; }
+    const rows = parseWorksheetFromBytes(unzipped[sheetKey], ss);
 
     return { sheetName, rows };
   });
