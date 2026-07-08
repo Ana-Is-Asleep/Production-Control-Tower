@@ -113,6 +113,8 @@ export function readXlsxFile(file: File): Promise<XlsxWorkbook> {
     if (!sheetKey) throw new Error('No worksheet found in XLSX');
 
     console.log('[xlsxUtils] sheetKey:', sheetKey, 'bytes:', unzipped[sheetKey].length);
+    // Show first 800 bytes of worksheet XML to see actual element names
+    console.log('[xlsxUtils] sheet xml start:', new TextDecoder().decode(unzipped[sheetKey].subarray(0, 800)));
 
     let rows: unknown[][] = [];
     try {
