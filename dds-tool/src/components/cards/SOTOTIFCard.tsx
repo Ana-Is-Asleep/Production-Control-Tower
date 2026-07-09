@@ -106,9 +106,23 @@ export function SOTOTIFCard({
             <Bar yAxisId="pos" dataKey="posShipped"      stackId="a" fill="#34A853" name="Shipped"         radius={[3,3,0,0]} />
             <Bar yAxisId="pos" dataKey="posPredictedSOT" stackId="a" fill="#34A85366" name="Pred. on track" radius={[3,3,0,0]} />
 
-            {/* performance lines */}
-            <Line yAxisId="pct" dataKey="otifPct" stroke="#34A853" strokeWidth={2} dot={{ r: 3, fill: '#34A853' }} connectNulls={false} name="OTIF%" />
-            <Line yAxisId="pct" dataKey="sotPct"  stroke="#FF8900" strokeWidth={2.5} dot={{ r: 3, fill: '#FF8900' }} activeDot={{ r: 5 }} connectNulls={false} name="SOT%" />
+            {/* performance lines — dots are hollow for future (predicted) weeks */}
+            <Line
+              yAxisId="pct" dataKey="otifPct" stroke="#34A853" strokeWidth={2} connectNulls={false} name="OTIF%"
+              dot={(p: { cx: number; cy: number; payload: { isFuture: boolean } }) =>
+                p.payload.isFuture
+                  ? <circle key={p.cx} cx={p.cx} cy={p.cy} r={3} fill="white" stroke="#34A853" strokeWidth={2} />
+                  : <circle key={p.cx} cx={p.cx} cy={p.cy} r={3} fill="#34A853" />
+              }
+            />
+            <Line
+              yAxisId="pct" dataKey="sotPct" stroke="#FF8900" strokeWidth={2.5} connectNulls={false} name="SOT%" activeDot={{ r: 5 }}
+              dot={(p: { cx: number; cy: number; payload: { isFuture: boolean } }) =>
+                p.payload.isFuture
+                  ? <circle key={p.cx} cx={p.cx} cy={p.cy} r={3} fill="white" stroke="#FF8900" strokeWidth={2} />
+                  : <circle key={p.cx} cx={p.cx} cy={p.cy} r={3} fill="#FF8900" />
+              }
+            />
 
             <Legend
               verticalAlign="top"

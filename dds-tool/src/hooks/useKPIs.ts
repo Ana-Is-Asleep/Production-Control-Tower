@@ -49,6 +49,7 @@ export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: Purchase
 
       // SOT uses PO-header weighting for WK27+ PGRD, line-count for earlier weeks
       const sotPct_  = isFuture ? null : aggregateSOTRate(wLines);
+      // OTIF: actual for past weeks, predicted for future weeks using EGRD vs PGRD + cqty
       const otif = kpis.filter(k => k.otif !== null);
       const otifPct_ = otif.length ? Math.round(otif.filter(k => k.otif).length / otif.length * 100) : null;
 
@@ -95,8 +96,8 @@ export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: Purchase
       points.push({
         isoWeek:       `${year}-W${String(week).padStart(2, '0')}`,
         weekLabel:     `W${String(week).padStart(2, '0')}`,
-        sotPct:        isFuture ? expSot : sotPct_,
-        otifPct:       isFuture ? null   : otifPct_,
+        sotPct:        isFuture ? expSot  : sotPct_,
+        otifPct:       otifPct_,  // predicted for future weeks (uses EGRD vs PGRD + cqty), actual for past
         totalLines:    wLines.length,
         totalPOs:      new Set(wLines.map(l => l.po)).size,
         posShipped,
