@@ -61,12 +61,12 @@ export interface WeeklyKPIPoint {
   weekLabel: string;
   sotPct: number | null;
   otifPct: number | null;
-  sotOutOfTarget: number;
   totalLines: number;
   totalPOs: number;
-  posSOT: number;          // POs with PGRD=W that shipped on time
-  posBacklog: number;      // POs with PGRD=W not yet shipped as of week W
-  pastPOBacklog: number;   // POs from earlier weeks still unshipped as of week W
+  posShipped: number;        // POs with PGRD=W that have an ASD in week W (SOT YES or NO)
+  posBacklog: number;        // POs with PGRD=W not yet shipped by end of week W
+  pastPOBacklog: number;     // POs from earlier PGRD weeks still unshipped as of week W (accumulated)
+  posPredictedSOT: number;   // future weeks only: POs with PGRD=W and ESD ≤ PGRD (on track)
   isCurrent: boolean;
   isFuture: boolean;
 }

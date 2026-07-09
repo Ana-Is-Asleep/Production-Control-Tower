@@ -57,21 +57,31 @@ export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: Purchase
       const expSot   = expLines.length ? Math.round(expLines.filter(l => computeExpectedSOT(l)).length / expLines.length * 100) : null;
 
       // stacked bar values — using distinct POs
-      // a PO counts as unshipped "as of week W" if it has no ASD or its ASD came after week W
-      const wasUnshippedAsOf = (l: PurchaseLine) => !l.asd || (getISOWeek(l.asd) > week || getISOWeekYear(l.asd) > year);
+      // unshipped "as of week W" = no ASD, or ASD came in a later week
+      const wasUnshippedAsOf = (l: PurchaseLine) => !l.asd || (getISOWeekYear(l.asd) > year || (getISOWeekYear(l.asd) === year && getISOWeek(l.asd) > week));
       const allSrc = allD2cLines ?? accumulatingLines;
 
-      // POs with PGRD = this week
       const thisWeekPOs = new Set(wLines.map(l => l.po));
-      const posSOT     = new Set(wLines.filter(l => l.asd && !wasUnshippedAsOf(l) && computeKPI(l).sotResult).map(l => l.po)).size;
-      // for future weeks: if ESD is in the same week as PGRD, the PO is on track — don't count as backlog
+
+      // Shipped this week (has ASD in week W) — includes SOT YES and NOK, but not backlog
+      const posShipped = isFuture ? 0 : new Set(
+        wLines.filter(l => l.asd && !wasUnshippedAsOf(l)).map(l => l.po)
+      ).size;
+
+      // PGRD = this week, not yet shipped by end of week W
+      // For future weeks: exclude POs predicted on track (ESD ≤ PGRD)
       const posBacklog = new Set(wLines.filter(l => {
         if (!wasUnshippedAsOf(l)) return false;
         if (isFuture && computeExpectedSOT(l) === true) return false;
         return true;
       }).map(l => l.po)).size;
 
-      // POs from earlier weeks (2026+) still unshipped as of this week
+      // Future weeks only: POs predicted to ship on time (ESD ≤ PGRD)
+      const posPredictedSOT = isFuture
+        ? new Set(wLines.filter(l => computeExpectedSOT(l) === true).map(l => l.po)).size
+        : 0;
+
+      // POs from earlier PGRD weeks (2026+) still unshipped as of this week
       const pastPOBacklog = new Set(
         allSrc.filter(l =>
           l.pgrd &&
@@ -83,17 +93,17 @@ export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: Purchase
       ).size;
 
       points.push({
-        isoWeek:        `${year}-W${String(week).padStart(2, '0')}`,
-        weekLabel:      `W${String(week).padStart(2, '0')}`,
-        sotPct:         isFuture ? expSot    : sotPct_,
-        otifPct:        isFuture ? null      : otifPct_,
-        sotOutOfTarget: kpis.filter(k => k.sotFail).length,
-        totalLines:     wLines.length,
-        totalPOs:       new Set(wLines.map(l => l.po)).size,
-        posSOT,
+        isoWeek:       `${year}-W${String(week).padStart(2, '0')}`,
+        weekLabel:     `W${String(week).padStart(2, '0')}`,
+        sotPct:        isFuture ? expSot : sotPct_,
+        otifPct:       isFuture ? null   : otifPct_,
+        totalLines:    wLines.length,
+        totalPOs:      new Set(wLines.map(l => l.po)).size,
+        posShipped,
         posBacklog,
         pastPOBacklog,
-        isCurrent:      offset === 0,
+        posPredictedSOT,
+        isCurrent:     offset === 0,
         isFuture,
       });
     }

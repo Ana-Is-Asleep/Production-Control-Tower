@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, ReferenceLine, ResponsiveContainer,
+  Tooltip, ReferenceLine, ResponsiveContainer, Legend,
 } from 'recharts';
 import { Card } from '../shared/Card';
 import { Badge } from '../shared/Badge';
@@ -90,18 +90,39 @@ export function SOTOTIFCard({
           </div>
         </div>
 
-        <ResponsiveContainer width="100%" height={160}>
-          <ComposedChart data={weeklyTrend} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+        <ResponsiveContainer width="100%" height={200}>
+          <ComposedChart data={weeklyTrend} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E2D8C6" vertical={false} />
             <XAxis dataKey="weekLabel" tick={{ fill: '#8A7E74', fontSize: 11 }} axisLine={false} tickLine={false} />
-            <YAxis domain={[0, 100]} tick={{ fill: '#8A7E74', fontSize: 11 }} unit="%" axisLine={false} tickLine={false} />
-            <ReferenceLine y={90} stroke="#8A7E74" strokeDasharray="4 4" />
-            <Bar dataKey="sotOutOfTarget" fill="rgba(255,137,0,0.12)" radius={[3, 3, 0, 0]} />
-            <Line dataKey="otifPct" stroke="#34A853" strokeWidth={2} dot={{ r: 3, fill: '#34A853' }} connectNulls={false} />
-            <Line dataKey="sotPct" stroke="#FF8900" strokeWidth={2.5} dot={{ r: 3, fill: '#FF8900' }} activeDot={{ r: 5 }} connectNulls={false} />
+            {/* left axis: SOT% / OTIF% lines */}
+            <YAxis yAxisId="pct" domain={[0, 100]} tick={{ fill: '#8A7E74', fontSize: 11 }} unit="%" axisLine={false} tickLine={false} />
+            {/* right axis: PO count bars — hidden ticks, just for scale */}
+            <YAxis yAxisId="pos" orientation="right" tick={false} axisLine={false} tickLine={false} />
+            <ReferenceLine yAxisId="pct" y={90} stroke="#8A7E74" strokeDasharray="4 4" />
+
+            {/* stacked bars: accumulated → backlog → shipped/predicted */}
+            <Bar yAxisId="pos" dataKey="pastPOBacklog"   stackId="a" fill="#DC3545" name="Accumulated"    radius={[0,0,0,0]} />
+            <Bar yAxisId="pos" dataKey="posBacklog"      stackId="a" fill="#F59E0B" name="Backlog"         radius={[0,0,0,0]} />
+            <Bar yAxisId="pos" dataKey="posShipped"      stackId="a" fill="#34A853" name="Shipped"         radius={[3,3,0,0]} />
+            <Bar yAxisId="pos" dataKey="posPredictedSOT" stackId="a" fill="#34A85366" name="Pred. on track" radius={[3,3,0,0]} />
+
+            {/* performance lines */}
+            <Line yAxisId="pct" dataKey="otifPct" stroke="#34A853" strokeWidth={2} dot={{ r: 3, fill: '#34A853' }} connectNulls={false} name="OTIF%" />
+            <Line yAxisId="pct" dataKey="sotPct"  stroke="#FF8900" strokeWidth={2.5} dot={{ r: 3, fill: '#FF8900' }} activeDot={{ r: 5 }} connectNulls={false} name="SOT%" />
+
+            <Legend
+              verticalAlign="top"
+              align="right"
+              iconSize={8}
+              formatter={(v) => <span style={{ color: '#8A7E74', fontSize: 10 }}>{v}</span>}
+            />
             <Tooltip
               contentStyle={{ background: '#1E2A3A', border: 'none', color: 'white', borderRadius: 8, fontSize: 12 }}
               labelStyle={{ color: '#FFA236', fontWeight: 600 }}
+              formatter={(value, name) => {
+                if (name === 'SOT%' || name === 'OTIF%') return [`${value}%`, name];
+                return [value, name];
+              }}
             />
           </ComposedChart>
         </ResponsiveContainer>
