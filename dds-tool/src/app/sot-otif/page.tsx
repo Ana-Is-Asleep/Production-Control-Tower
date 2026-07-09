@@ -11,7 +11,7 @@ import {
 import { useData } from '../../context/DataContext';
 import { useFilters } from '../../hooks/useFilters';
 import { useKPIs } from '../../hooks/useKPIs';
-import { computeKPI, computeExpectedSOT } from '../../lib/kpiFormulas';
+import { computeKPI, computeExpectedSOT, aggregateSOTRate } from '../../lib/kpiFormulas';
 import { categorizeSKU } from '../../lib/skuUtils';
 import { formatDateShort, getISOWeek, getISOWeekYear } from '../../lib/dateUtils';
 import type { PurchaseLine } from '../../types';
@@ -174,10 +174,11 @@ export default function SOTOTIFPage() {
 
   const groupBy: GroupBy = bySupplier.length <= 1 ? 'line' : _groupBy;
 
-  // Chart data — vendor-filtered if needed
+  // Chart data — vendor-filtered if needed, split into solid (past) and dashed (future) series.
+  // The current week (isCurrent) is the shared overlap point — appears in both solid and dashed
+  // so the line transitions seamlessly from solid to dashed at that point.
   const chartData = useMemo(() => {
-    if (selectedVendors.length === 0) return kpis.weeklyTrend;
-    return kpis.weeklyTrend.map(w => {
+    const trend = selectedVendors.length === 0 ? kpis.weeklyTrend : kpis.weeklyTrend.map(w => {
       const wLines = accumulatingLines.filter(l =>
         selectedVendors.includes(l.supplier) && l.pgrd && getISOWeek(l.pgrd) === parseInt(w.weekLabel.replace('W', ''))
       );
@@ -191,13 +192,23 @@ export default function SOTOTIFPage() {
         otifPct: otif.length ? Math.round(otif.filter(k => k.otif).length / otif.length * 100) : null,
       };
     });
+    return trend.map(w => ({
+      ...w,
+      sotPctSolid:  !w.isFuture ? w.sotPct  : null,
+      sotPctDash:   (w.isFuture || w.isCurrent) ? w.sotPct  : null,
+      otifPctSolid: !w.isFuture ? w.otifPct : null,
+      otifPctDash:  (w.isFuture || w.isCurrent) ? w.otifPct : null,
+    }));
   }, [kpis.weeklyTrend, selectedVendors, accumulatingLines]);
 
-  // Overall KPIs for filtered set
-  const filteredSotPct = useMemo(() => {
-    const ev = enriched.filter(r => r.kpi.sotResult !== null);
-    return ev.length > 0 ? Math.round(ev.filter(r => r.kpi.sotResult).length / ev.length * 100) : kpis.sotPct;
-  }, [enriched, kpis.sotPct]);
+  const today = useMemo(() => new Date(), []);
+
+  // Overall KPIs for filtered set — use aggregateSOTRate so unshipped lines with a closed
+  // PGRD week count as failures (same formula as the dashboard headline SOT).
+  const filteredSotPct = useMemo(() =>
+    aggregateSOTRate(filteredLines, today) ?? kpis.sotPct,
+    [filteredLines, today, kpis.sotPct]
+  );
 
   const filteredOtifPct = useMemo(() => {
     const ev = enriched.filter(r => r.kpi.otif !== null);
@@ -337,9 +348,9 @@ export default function SOTOTIFPage() {
               {[
                 { color: '#34A853', label: 'Shipped / Predicted on track' },
                 { color: '#F59E0B', label: 'This-week backlog' },
-                { color: '#DC2626', label: 'Accumulated backlog (past weeks)' },
-                { color: '#FF8900', label: 'SOT %', line: true },
-                { color: '#15803d', label: 'OTIF %', line: true, dashed: true },
+                { color: '#DC2626', label: 'Accumulated backlog' },
+                { color: '#FF8900', label: 'SOT % (past — solid / future — dashed)', line: true },
+                { color: '#15803d', label: 'OTIF % (past — solid / future — dashed)', line: true, dashed: true },
               ].map(item => (
                 <div key={item.label} className="flex items-center gap-1.5">
                   {item.line
@@ -364,17 +375,25 @@ export default function SOTOTIFPage() {
                 <Bar yAxisId="pos" dataKey="pastPOBacklog"   stackId="pos" fill="#DC2626" name="Accumulated past backlog" radius={[0,0,0,0]} />
                 <Bar yAxisId="pos" dataKey="posPredictedSOT" stackId="pos" fill="#34A853" name="Predicted on track"       radius={[3,3,0,0]} />
 
+                {/* Dashed future lines — rendered first so solid past lines sit on top */}
+                <Line yAxisId="pct" dataKey="sotPctDash"  stroke="#FF8900" strokeWidth={2}   strokeDasharray="5 3" name="" connectNulls={false}
+                  dot={(p: { cx?: number; cy?: number; index?: number }) => (
+                    <circle key={`sot-f-${p.index}`} cx={p.cx ?? 0} cy={p.cy ?? 0} r={3} fill="white" stroke="#FF8900" strokeWidth={1.5} />
+                  )} />
+                <Line yAxisId="pct" dataKey="otifPctDash" stroke="#15803d" strokeWidth={1.5} strokeDasharray="5 3" name="" connectNulls={false}
+                  dot={(p: { cx?: number; cy?: number; index?: number }) => (
+                    <circle key={`otif-f-${p.index}`} cx={p.cx ?? 0} cy={p.cy ?? 0} r={3} fill="white" stroke="#15803d" strokeWidth={1.5} />
+                  )} />
+
+                {/* Solid past lines — rendered last so they overlay the dashed lines at the transition point */}
                 <Line
-                  yAxisId="pct" dataKey="sotPct" stroke="#FF8900" strokeWidth={2.5} name="SOT %" connectNulls={false} activeDot={{ r: 5 }}
-                  dot={(p: { cx?: number; cy?: number; index?: number; value?: number; payload: { isFuture?: boolean } }) => {
+                  yAxisId="pct" dataKey="sotPctSolid" stroke="#FF8900" strokeWidth={2.5} name="SOT %" connectNulls={false} activeDot={{ r: 5 }}
+                  dot={(p: { cx?: number; cy?: number; index?: number; value?: number }) => {
                     const cx = p.cx ?? 0; const cy = p.cy ?? 0;
-                    const lastIdx = chartData.reduce((acc: number, d, i) => (d.sotPct != null && !d.isFuture ? i : acc), -1);
+                    const lastIdx = chartData.reduce((acc: number, d, i) => (d.sotPctSolid != null ? i : acc), -1);
                     return (
-                      <g key={`sot-dot-${p.index}`}>
-                        {!p.payload.isFuture
-                          ? <circle cx={cx} cy={cy} r={3} fill="#FF8900" />
-                          : <circle cx={cx} cy={cy} r={3} fill="white" stroke="#FF8900" strokeWidth={2} />
-                        }
+                      <g key={`sot-s-${p.index}`}>
+                        <circle cx={cx} cy={cy} r={3} fill="#FF8900" />
                         {p.index === lastIdx && p.value != null && (
                           <text x={cx + 8} y={cy + 4} fill="#FF8900" fontSize={11} fontWeight={700}>{p.value}%</text>
                         )}
@@ -383,16 +402,13 @@ export default function SOTOTIFPage() {
                   }}
                 />
                 <Line
-                  yAxisId="pct" dataKey="otifPct" stroke="#15803d" strokeWidth={2} strokeDasharray="6 3" name="OTIF %" connectNulls={false}
-                  dot={(p: { cx?: number; cy?: number; index?: number; value?: number; payload: { isFuture?: boolean } }) => {
+                  yAxisId="pct" dataKey="otifPctSolid" stroke="#15803d" strokeWidth={2} name="OTIF %" connectNulls={false}
+                  dot={(p: { cx?: number; cy?: number; index?: number; value?: number }) => {
                     const cx = p.cx ?? 0; const cy = p.cy ?? 0;
-                    const lastIdx = chartData.reduce((acc: number, d, i) => (d.otifPct != null && !d.isFuture ? i : acc), -1);
+                    const lastIdx = chartData.reduce((acc: number, d, i) => (d.otifPctSolid != null ? i : acc), -1);
                     return (
-                      <g key={`otif-dot-${p.index}`}>
-                        {!p.payload.isFuture
-                          ? <circle cx={cx} cy={cy} r={3} fill="#15803d" />
-                          : <circle cx={cx} cy={cy} r={3} fill="white" stroke="#15803d" strokeWidth={2} />
-                        }
+                      <g key={`otif-s-${p.index}`}>
+                        <circle cx={cx} cy={cy} r={3} fill="#15803d" />
                         {p.index === lastIdx && p.value != null && (
                           <text x={cx + 8} y={cy + 4} fill="#15803d" fontSize={11} fontWeight={700}>{p.value}%</text>
                         )}
@@ -407,6 +423,7 @@ export default function SOTOTIFPage() {
                   itemStyle={{ color: '#f9f7f6' }}
                   formatter={(value, name) => {
                     const n = String(name);
+                    if (!n) return [null, null]; // hide dashed-line series from tooltip
                     return [n.includes('%') ? `${value}%` : `${value} POs`, n];
                   }}
                 />

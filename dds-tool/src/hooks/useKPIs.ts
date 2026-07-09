@@ -84,16 +84,25 @@ export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: Purchase
         ? new Set(wLines.filter(l => computeExpectedSOT(l) === true).map(l => l.po)).size
         : 0;
 
-      // Accumulated backlog from earlier PGRD weeks (past/current only — not projected into future weeks,
-      // since today's backlog snapshot doesn't predict which POs will clear before a future week)
-      const pastPOBacklog = isFuture ? 0 : new Set(
-        allSrc.filter(l =>
-          l.pgrd &&
-          l.pgrd.getFullYear() >= 2026 &&
-          (getISOWeekYear(l.pgrd) < year || (getISOWeekYear(l.pgrd) === year && getISOWeek(l.pgrd) < week)) &&
-          wasUnshippedAsOf(l) &&
-          !thisWeekPOs.has(l.po)
-        ).map(l => l.po)
+      // Accumulated backlog from earlier PGRD weeks.
+      // Past weeks: use wasUnshippedAsOf (real historical state).
+      // Future weeks: include POs with no ASD where ESD hasn't passed yet
+      // (ESD = when Shiptify expects shipment — once ESD week < bar week the PO should have cleared).
+      const pastPOBacklog = new Set(
+        allSrc.filter(l => {
+          if (!l.pgrd || l.pgrd.getFullYear() < 2026) return false;
+          if (getISOWeekYear(l.pgrd) > year || (getISOWeekYear(l.pgrd) === year && getISOWeek(l.pgrd) >= week)) return false;
+          if (thisWeekPOs.has(l.po)) return false;
+          if (isFuture) {
+            // For future bar weeks: only count POs still expected to be unshipped
+            if (l.asd) return false; // already shipped
+            if (!l.esd) return true; // no booking — assume still outstanding
+            // Include if ESD is this week or later (clears on ESD week)
+            return getISOWeekYear(l.esd) > year ||
+              (getISOWeekYear(l.esd) === year && getISOWeek(l.esd) >= week);
+          }
+          return wasUnshippedAsOf(l);
+        }).map(l => l.po)
       ).size;
 
       points.push({
