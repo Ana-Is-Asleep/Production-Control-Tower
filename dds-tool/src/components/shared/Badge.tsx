@@ -12,14 +12,14 @@ const variantStyles: Record<BadgeVariant, string> = {
   pass: 'bg-pass-bg text-pass-text',
   fail: 'bg-fail-bg text-fail-text',
   warn: 'bg-warn-bg text-warn-text',
-  neutral: 'bg-gray-100 text-gray-600',
+  neutral: 'bg-[#f4f1ef] text-[#58524e]',
 };
 
 const dotStyles: Record<BadgeVariant, string> = {
   pass: 'bg-pass',
   fail: 'bg-fail',
   warn: 'bg-warn',
-  neutral: 'bg-gray-400',
+  neutral: 'bg-[#9c9794]',
 };
 
 export function Badge({ variant, children, className = '' }: BadgeProps) {

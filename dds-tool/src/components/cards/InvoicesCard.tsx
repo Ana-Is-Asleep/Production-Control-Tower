@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Card } from '../shared/Card';
 
@@ -11,17 +11,17 @@ export function InvoicesCard() {
           <div className="flex items-center justify-between">
             <span className="text-sm text-dark">Overdue</span>
             <div className="text-right">
-              <span className="font-serif text-xl font-bold text-fail">3</span>
+              <span className="font-sans text-xl font-bold text-fail">3</span>
               <span className="text-xs text-muted ml-1">/ €12,450</span>
             </div>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-dark">P2W</span>
-            <span className="font-serif text-xl font-bold text-warn">1</span>
+            <span className="font-sans text-xl font-bold text-warn">1</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-dark">On time</span>
-            <span className="font-serif text-xl font-bold text-pass">14</span>
+            <span className="font-sans text-xl font-bold text-pass">14</span>
           </div>
         </div>
         <div className="mt-3 flex gap-1 items-end h-8">

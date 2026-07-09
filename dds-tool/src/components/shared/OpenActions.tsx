@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import type { ActionItem } from '../../types';
@@ -60,7 +60,7 @@ export function OpenActions() {
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-dark/30" onClick={() => setOpen(false)} />
-          <div className="relative bg-card rounded-xl border border-border w-full max-w-lg mx-4 flex flex-col max-h-[80vh]" style={{ boxShadow: 'var(--shadow-slide)' }}>
+          <div className="relative bg-card rounded-lg border border-border w-full max-w-lg mx-4 flex flex-col max-h-[80vh]" style={{ boxShadow: 'var(--shadow-slide)' }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <h2 className="font-semibold text-navy text-base">Open Actions</h2>
               <button onClick={() => setOpen(false)} className="text-muted hover:text-dark">✕</button>

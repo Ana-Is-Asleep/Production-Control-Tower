@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 
@@ -14,7 +14,7 @@ export function Card({ children, className = '', expandable = false, expandedCon
 
   return (
     <div
-      className={`bg-card rounded-xl border border-border transition-all duration-200 ease-in-out ${className}`}
+      className={`bg-card rounded-lg border border-border transition-all duration-200 ease-in-out ${className}`}
       style={{ boxShadow: 'var(--shadow-card)' }}
       onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--shadow-card-hover)'; }}
       onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--shadow-card)'; }}

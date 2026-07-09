@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useMemo } from 'react';
 import { useData } from '../context/DataContext';
@@ -59,40 +59,40 @@ export function PrepareModal({ onClose, failingLines }: PrepareModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="prepare-modal relative bg-white rounded-2xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden" style={{ boxShadow: '0 24px 64px rgba(0,0,0,0.18)' }}>
+      <div className="prepare-modal relative bg-white rounded-lg w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden" style={{ boxShadow: '0 24px 64px rgba(0,0,0,0.18)' }}>
 
         {/* header */}
-        <div className="px-6 py-5 border-b border-[#F0F0F0] flex items-center justify-between">
+        <div className="px-6 py-5 border-b border-[#e9e3df] flex items-center justify-between">
           <div>
-            <h2 className="font-semibold text-[#111] text-base">Prepare for Meeting</h2>
-            <p className="text-xs text-[#AAA] mt-0.5">{failingLines.length} lines out of target · W22 2026</p>
+            <h2 className="font-semibold text-[#403833] text-base">Prepare for Meeting</h2>
+            <p className="text-xs text-[#9c9794] mt-0.5">{failingLines.length} lines out of target · W22 2026</p>
           </div>
-          <button onClick={onClose} className="text-[#CCC] hover:text-[#111] transition-colors">✕</button>
+          <button onClick={onClose} className="text-[#b5aaa5] hover:text-[#403833] transition-colors">✕</button>
         </div>
 
         {/* step indicator */}
-        <div className="px-6 py-4 border-b border-[#F7F7F7] flex items-center gap-0">
+        <div className="px-6 py-4 border-b border-[#e9e3df] flex items-center gap-0">
           {STEPS.map((s, i) => (
             <div key={s.n} className="flex items-center">
               <button
                 onClick={() => { if (s.n < step || (s.n === 2 && step === 1 && (selectedVendors.length > 0 || true))) setStep(s.n); }}
                 className="flex items-center gap-2"
               >
-                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${step === s.n ? 'bg-[#111] text-white' : step > s.n ? 'bg-pass text-white' : 'bg-[#F0F0F0] text-[#AAA]'}`}>
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${step === s.n ? 'bg-[#403833] text-white' : step > s.n ? 'bg-pass text-white' : 'bg-[#e9e3df] text-[#9c9794]'}`}>
                   {step > s.n ? '✓' : s.n}
                 </span>
-                <span className={`text-xs font-medium ${step === s.n ? 'text-[#111]' : step > s.n ? 'text-pass' : 'text-[#AAA]'}`}>{s.label}</span>
+                <span className={`text-xs font-medium ${step === s.n ? 'text-[#403833]' : step > s.n ? 'text-pass' : 'text-[#9c9794]'}`}>{s.label}</span>
               </button>
-              {i < STEPS.length - 1 && <span className="mx-3 text-[#E0E0E0] text-xs">—</span>}
+              {i < STEPS.length - 1 && <span className="mx-3 text-[#e9e3df] text-xs">—</span>}
             </div>
           ))}
           {/* progress */}
           {step === 2 && (
             <div className="ml-auto flex items-center gap-2">
-              <div className="w-24 bg-[#F5F5F5] rounded-full h-1.5">
+              <div className="w-24 bg-[#f4f1ef] rounded-full h-1.5">
                 <div className={`h-1.5 rounded-full transition-all duration-500 ${allDone ? 'bg-pass' : 'bg-brand'}`} style={{ width: `${progress}%` }} />
               </div>
-              <span className={`text-xs font-semibold ${allDone ? 'text-pass' : 'text-[#888]'}`}>{annotatedCount}/{visibleLines.length}</span>
+              <span className={`text-xs font-semibold ${allDone ? 'text-pass' : 'text-[#7b7571]'}`}>{annotatedCount}/{visibleLines.length}</span>
             </div>
           )}
         </div>
@@ -100,11 +100,11 @@ export function PrepareModal({ onClose, failingLines }: PrepareModalProps) {
         {/* step 1 — select vendors */}
         {step === 1 && (
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
-            <p className="text-sm text-[#555]">Which vendors are you responsible for? Select all that apply.</p>
+            <p className="text-sm text-[#58524e]">Which vendors are you responsible for? Select all that apply.</p>
             <div className="space-y-2">
               <button
                 onClick={() => setSelectedVendors([])}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border text-sm font-medium transition-all ${selectedVendors.length === 0 ? 'border-[#111] bg-[#111] text-white' : 'border-[#F0F0F0] text-[#555] hover:border-[#CCC]'}`}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border text-sm font-medium transition-all ${selectedVendors.length === 0 ? 'border-[#403833] bg-[#403833] text-white' : 'border-[#e9e3df] text-[#58524e] hover:border-[#CCC]'}`}
               >
                 All vendors
                 {selectedVendors.length === 0 && <span>✓</span>}
@@ -113,10 +113,10 @@ export function PrepareModal({ onClose, failingLines }: PrepareModalProps) {
                 <button
                   key={v}
                   onClick={() => toggleVendor(v)}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border text-sm transition-all ${selectedVendors.includes(v) ? 'border-brand bg-[#FFFBF5] text-[#111] font-medium' : 'border-[#F0F0F0] text-[#555] hover:border-[#CCC]'}`}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border text-sm transition-all ${selectedVendors.includes(v) ? 'border-brand bg-[#faf7f3] text-[#403833] font-medium' : 'border-[#e9e3df] text-[#58524e] hover:border-[#CCC]'}`}
                 >
                   <span>{v}</span>
-                  <span className="text-xs text-[#AAA]">{failingLines.filter((l) => l.supplier === v).length} lines</span>
+                  <span className="text-xs text-[#9c9794]">{failingLines.filter((l) => l.supplier === v).length} lines</span>
                 </button>
               ))}
             </div>
@@ -127,7 +127,7 @@ export function PrepareModal({ onClose, failingLines }: PrepareModalProps) {
         {step === 2 && (
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
             {visibleLines.length === 0 && (
-              <p className="text-center text-[#AAA] text-sm py-8">No failing lines for selected vendors.</p>
+              <p className="text-center text-[#9c9794] text-sm py-8">No failing lines for selected vendors.</p>
             )}
             {visibleLines.map((line) => {
               const key = `${line.po}-${line.line}`;
@@ -137,16 +137,16 @@ export function PrepareModal({ onClose, failingLines }: PrepareModalProps) {
               const done = isAnnotated(key);
 
               return (
-                <div key={key} className={`border rounded-xl p-4 transition-all duration-200 ${done ? 'border-[#D1FAE5] bg-[#FAFFFE]' : 'border-[#F0F0F0]'}`}>
+                <div key={key} className={`border rounded-lg p-4 transition-all duration-200 ${done ? 'border-[#D1FAE5] bg-[#FAFFFE]' : 'border-[#e9e3df]'}`}>
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-sm text-[#111]">{line.po}</span>
-                        <span className="text-xs text-[#888]">{line.sku}</span>
-                        <span className="text-[10px] bg-[#F5F5F5] text-[#888] px-1.5 py-0.5 rounded">{categorizeSKU(line.sku)}</span>
-                        <span className="text-xs text-[#AAA]">{line.supplier}</span>
+                        <span className="font-semibold text-sm text-[#403833]">{line.po}</span>
+                        <span className="text-xs text-[#7b7571]">{line.sku}</span>
+                        <span className="text-[10px] bg-[#f4f1ef] text-[#7b7571] px-1.5 py-0.5 rounded">{categorizeSKU(line.sku)}</span>
+                        <span className="text-xs text-[#9c9794]">{line.supplier}</span>
                       </div>
-                      <div className="flex gap-3 text-xs text-[#CCC] mt-1">
+                      <div className="flex gap-3 text-xs text-[#b5aaa5] mt-1">
                         <span>PGRD {formatDateShort(line.pgrd)}</span>
                         {line.asd && <span>ASD {formatDateShort(line.asd)}</span>}
                         {line.esd ? <span>ESD {formatDateShort(line.esd)}</span> : <span className="text-fail">No ESD</span>}
@@ -162,7 +162,7 @@ export function PrepareModal({ onClose, failingLines }: PrepareModalProps) {
                   <select
                     value={reason ?? ''}
                     onChange={(e) => handleAnnotation(key, 'reason', e.target.value)}
-                    className={`w-full text-sm border rounded-lg px-3 py-2 focus:outline-none transition-colors bg-white ${reason ? 'border-[#111] text-[#111]' : 'border-[#E8E8E8] text-[#AAA]'}`}
+                    className={`w-full text-sm border rounded-lg px-3 py-2 focus:outline-none transition-colors bg-white ${reason ? 'border-[#403833] text-[#403833]' : 'border-[#E8E8E8] text-[#9c9794]'}`}
                   >
                     <option value="">Select root cause...</option>
                     {REASON_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -187,21 +187,21 @@ export function PrepareModal({ onClose, failingLines }: PrepareModalProps) {
         )}
 
         {/* footer */}
-        <div className="px-6 py-4 border-t border-[#F0F0F0] flex items-center justify-between gap-3">
+        <div className="px-6 py-4 border-t border-[#e9e3df] flex items-center justify-between gap-3">
           {step > 1 ? (
-            <button onClick={() => setStep(step - 1)} className="text-sm text-[#888] hover:text-[#111] transition-colors">← Back</button>
+            <button onClick={() => setStep(step - 1)} className="text-sm text-[#7b7571] hover:text-[#403833] transition-colors">← Back</button>
           ) : <div />}
           {step < 2 ? (
             <button
               onClick={() => setStep(2)}
-              className="bg-[#111] text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#333] transition-colors"
+              className="bg-[#403833] text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#58524e] transition-colors"
             >
               {`Continue with ${selectedVendors.length === 0 ? 'all' : selectedVendors.length} vendor${selectedVendors.length === 1 ? '' : 's'} →`}
             </button>
           ) : (
             <button
               onClick={onClose}
-              className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${allDone ? 'bg-pass text-white' : 'bg-[#111] text-white hover:bg-[#333]'}`}
+              className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${allDone ? 'bg-pass text-white' : 'bg-[#403833] text-white hover:bg-[#58524e]'}`}
             >
               {allDone ? '✓ All lines annotated — ready for review' : `Save & close (${annotatedCount}/${visibleLines.length} done)`}
             </button>

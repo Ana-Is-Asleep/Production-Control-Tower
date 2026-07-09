@@ -18,8 +18,9 @@ export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: Purchase
   const sotLines  = useMemo(() => scored.filter(r => r.kpi.sotResult !== null), [scored]);
   const otifLines = useMemo(() => scored.filter(r => r.kpi.otif !== null), [scored]);
 
-  // Uses PO-header weighting for PGRD ≥ WK27 2026, line-count for earlier periods
-  const sotPct = useMemo(() => aggregateSOTRate(weeklyLines), [weeklyLines]);
+  // Uses PO-header weighting for PGRD ≥ WK27 2026, line-count for earlier periods.
+  // today passed so unshipped lines in closed PGRD weeks count as SOT failures.
+  const sotPct = useMemo(() => aggregateSOTRate(weeklyLines, today), [weeklyLines, today]);
 
   const otifPct = useMemo(() => {
     if (!otifLines.length) return null;
@@ -47,8 +48,9 @@ export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: Purchase
       const wLines = src.filter(l => l.pgrd && getISOWeek(l.pgrd) === week && getISOWeekYear(l.pgrd) === year);
       const kpis = wLines.map(computeKPI);
 
-      // SOT uses PO-header weighting for WK27+ PGRD, line-count for earlier weeks
-      const sotPct_  = isFuture ? null : aggregateSOTRate(wLines);
+      // SOT uses PO-header weighting for WK27+ PGRD, line-count for earlier weeks.
+      // Pass today so that unshipped lines in closed PGRD weeks count as failures.
+      const sotPct_  = isFuture ? null : aggregateSOTRate(wLines, today);
       // OTIF: actual for past weeks, predicted for future weeks using EGRD vs PGRD + cqty
       const otif = kpis.filter(k => k.otif !== null);
       const otifPct_ = otif.length ? Math.round(otif.filter(k => k.otif).length / otif.length * 100) : null;

@@ -90,15 +90,32 @@ export const OTIF_TARGET = 90;
 // Per-line SOT YES/NO is unchanged — only the aggregation formula changed.
 export const SOT_PO_HEADER_CUTOFF = new Date(2026, 5, 29); // June 29, 2026 = first day of WK27 2026
 
-export function aggregateSOTRate(lines: PurchaseLine[]): number | null {
+// today: used to classify lines with no ASD.
+// — If PGRD week < current week → SOT failure (week closed, line never shipped).
+// — If PGRD week ≥ current week → exclude (still open, not yet determined).
+export function aggregateSOTRate(lines: PurchaseLine[], today?: Date): number | null {
+  const currentWeekStart = today ? weekOf(today) : null;
   let numOld = 0, denOld = 0;
   const byPO = new Map<string, { yes: number; total: number }>();
 
   for (const l of lines) {
-    const result = computeSOT(l);
-    if (result === null) continue; // no asd or pgrd — not scorable
+    if (!l.pgrd) continue; // no PGRD = can't categorize
 
-    if (!l.pgrd || l.pgrd < SOT_PO_HEADER_CUTOFF) {
+    let result: boolean;
+    if (!l.asd) {
+      // No shipment yet: failure if the PGRD week is already closed, otherwise skip.
+      if (currentWeekStart && weekOf(l.pgrd) < currentWeekStart) {
+        result = false;
+      } else {
+        continue;
+      }
+    } else {
+      const r = computeSOT(l);
+      if (r === null) continue;
+      result = r;
+    }
+
+    if (l.pgrd < SOT_PO_HEADER_CUTOFF) {
       // Pre-WK27: line-count weighted
       denOld++;
       if (result) numOld++;

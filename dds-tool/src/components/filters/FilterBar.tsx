@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Button } from '../shared/Button';
 import type { FilterState } from '../../types';
@@ -27,7 +27,7 @@ export function FilterBar({ filters, setFilters, allSuppliers, lastWeek, lastYea
   return (
     <header className="bg-card border-b border-border px-5 py-3 flex items-center gap-4 sticky top-0 z-30">
       <div className="flex items-center gap-2 shrink-0">
-        <span className="font-serif font-bold text-brand text-xl">emma.</span>
+        <span className="font-sans font-bold text-brand text-xl">emma.</span>
         <span className="text-muted text-xs">|</span>
         <span className="text-navy text-sm font-semibold">DDS Meeting Tool · P2W EU D2C</span>
       </div>
@@ -39,7 +39,7 @@ export function FilterBar({ filters, setFilters, allSuppliers, lastWeek, lastYea
           <span className="max-w-[200px] truncate">{displaySuppliers}</span>
           <span className="text-muted text-xs">▾</span>
         </button>
-        <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-lg min-w-[200px] py-1 hidden group-hover:block z-50">
+        <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg min-w-[200px] py-1 hidden group-hover:block z-50">
           <button
             onClick={clearSuppliers}
             className="w-full text-left px-3 py-1.5 text-xs text-muted hover:bg-canvas"

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { Card } from '../shared/Card';
@@ -51,7 +51,7 @@ export function BacklogCard({ backlog }: BacklogCardProps) {
               <span className="text-sm text-dark">Critical</span>
               <span className="text-xs text-muted">&gt;14d no ASD</span>
             </div>
-            <span className="font-serif text-2xl font-bold text-fail">{backlog.critical.length}</span>
+            <span className="font-sans text-2xl font-bold text-fail">{backlog.critical.length}</span>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -59,7 +59,7 @@ export function BacklogCard({ backlog }: BacklogCardProps) {
               <span className="text-sm text-dark">Recent</span>
               <span className="text-xs text-muted">last 14d no ASD</span>
             </div>
-            <span className="font-serif text-2xl font-bold text-warn">{backlog.recent.length}</span>
+            <span className="font-sans text-2xl font-bold text-warn">{backlog.recent.length}</span>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -67,7 +67,7 @@ export function BacklogCard({ backlog }: BacklogCardProps) {
               <span className="text-sm text-dark">Future Backlog</span>
               <span className="text-xs text-muted">ESD &gt; PGRD</span>
             </div>
-            <span className="font-serif text-2xl font-bold text-brand">{backlog.futureBacklog.length}</span>
+            <span className="font-sans text-2xl font-bold text-brand">{backlog.futureBacklog.length}</span>
           </div>
         </div>
 

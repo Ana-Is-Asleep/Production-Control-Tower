@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Card } from '../shared/Card';
 import type { PurchaseLine } from '../../types';
@@ -13,7 +13,7 @@ export function NotBookedCard({ lines }: NotBookedCardProps) {
       <div className="p-4">
         <h3 className="text-xs font-semibold uppercase tracking-widest text-muted mb-3">Not Booked</h3>
         <div className="flex items-end gap-2 mb-3">
-          <span className="font-serif text-3xl font-bold text-fail">{lines.length}</span>
+          <span className="font-sans text-3xl font-bold text-fail">{lines.length}</span>
           <span className="text-xs text-muted pb-1">lines without ESD</span>
         </div>
         <div className="space-y-1 max-h-36 overflow-y-auto">

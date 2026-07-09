@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import {
@@ -64,7 +64,7 @@ export function SOTOTIFCard({
         <div className="flex items-end gap-8 mb-5">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-serif text-4xl font-bold text-dark">
+              <span className="font-sans text-4xl font-bold text-dark">
                 {sotPct !== null ? `${sotPct}%` : '—'}
               </span>
               <Badge variant={sotVariant}>SOT</Badge>
@@ -77,7 +77,7 @@ export function SOTOTIFCard({
           </div>
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-serif text-4xl font-bold text-dark">
+              <span className="font-sans text-4xl font-bold text-dark">
                 {otifPct !== null ? `${otifPct}%` : '—'}
               </span>
               <Badge variant={otifVariant}>OTIF</Badge>
@@ -109,19 +109,21 @@ export function SOTOTIFCard({
             {/* performance lines — dots are hollow for future (predicted) weeks */}
             <Line
               yAxisId="pct" dataKey="otifPct" stroke="#34A853" strokeWidth={2} connectNulls={false} name="OTIF%"
-              dot={(p: { cx: number; cy: number; payload: { isFuture: boolean } }) =>
-                p.payload.isFuture
-                  ? <circle key={p.cx} cx={p.cx} cy={p.cy} r={3} fill="white" stroke="#34A853" strokeWidth={2} />
-                  : <circle key={p.cx} cx={p.cx} cy={p.cy} r={3} fill="#34A853" />
-              }
+              dot={(p: { cx?: number; cy?: number; payload: { isFuture: boolean } }) => {
+                const cx = p.cx ?? 0; const cy = p.cy ?? 0;
+                return p.payload.isFuture
+                  ? <circle key={cx} cx={cx} cy={cy} r={3} fill="white" stroke="#34A853" strokeWidth={2} />
+                  : <circle key={cx} cx={cx} cy={cy} r={3} fill="#34A853" />;
+              }}
             />
             <Line
               yAxisId="pct" dataKey="sotPct" stroke="#FF8900" strokeWidth={2.5} connectNulls={false} name="SOT%" activeDot={{ r: 5 }}
-              dot={(p: { cx: number; cy: number; payload: { isFuture: boolean } }) =>
-                p.payload.isFuture
-                  ? <circle key={p.cx} cx={p.cx} cy={p.cy} r={3} fill="white" stroke="#FF8900" strokeWidth={2} />
-                  : <circle key={p.cx} cx={p.cx} cy={p.cy} r={3} fill="#FF8900" />
-              }
+              dot={(p: { cx?: number; cy?: number; payload: { isFuture: boolean } }) => {
+                const cx = p.cx ?? 0; const cy = p.cy ?? 0;
+                return p.payload.isFuture
+                  ? <circle key={cx} cx={cx} cy={cy} r={3} fill="white" stroke="#FF8900" strokeWidth={2} />
+                  : <circle key={cx} cx={cx} cy={cy} r={3} fill="#FF8900" />;
+              }}
             />
 
             <Legend
@@ -131,7 +133,7 @@ export function SOTOTIFCard({
               formatter={(v) => <span style={{ color: '#8A7E74', fontSize: 10 }}>{v}</span>}
             />
             <Tooltip
-              contentStyle={{ background: '#1E2A3A', border: 'none', color: 'white', borderRadius: 8, fontSize: 12 }}
+              contentStyle={{ background: '#403833', border: 'none', color: '#f9f7f6', borderRadius: 8, fontSize: 12 }}
               labelStyle={{ color: '#FFA236', fontWeight: 600 }}
               formatter={(value, name) => {
                 if (name === 'SOT%' || name === 'OTIF%') return [`${value}%`, name];

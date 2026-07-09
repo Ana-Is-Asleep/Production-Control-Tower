@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { SlideOver } from '../shared/SlideOver';
@@ -73,15 +73,15 @@ export function SKUDeepDive({ lines }: SKUDeepDiveProps) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm text-dark">Total lines</span>
-              <span className="font-serif text-2xl font-bold text-navy">{lines.length}</span>
+              <span className="font-sans text-2xl font-bold text-navy">{lines.length}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-dark">SOT fails</span>
-              <span className="font-serif text-xl font-bold text-fail">{notSotCount}</span>
+              <span className="font-sans text-xl font-bold text-fail">{notSotCount}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-dark">OTIF fails</span>
-              <span className="font-serif text-xl font-bold text-warn">{notOtifCount}</span>
+              <span className="font-sans text-xl font-bold text-warn">{notOtifCount}</span>
             </div>
           </div>
           <p className="text-xs text-brand mt-3">→ Open detail view</p>

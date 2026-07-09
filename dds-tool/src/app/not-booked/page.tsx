@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState, useMemo, Fragment } from 'react';
-import { useRouter } from 'next/navigation';
 import { useData } from '../../context/DataContext';
+import { NavTabs } from '../../components/shared/NavTabs';
 import { useFilters } from '../../hooks/useFilters';
 import { useKPIs } from '../../hooks/useKPIs';
 import { formatDateShort } from '../../lib/dateUtils';
@@ -10,15 +10,15 @@ import { categorizeSKU, SKU_CATEGORIES, type SKUCategory } from '../../lib/skuUt
 import type { PurchaseLine } from '../../types';
 
 const CATEGORY_COLORS: Record<SKUCategory, string> = {
-  'Beds': '#6366F1', 'Mattresses': '#FF8900', 'Accessories': '#34A853', 'Comps/Other': '#8A8A8A',
+  'Beds': '#6469aa', 'Mattresses': '#FF8900', 'Accessories': '#34A853', 'Comps/Other': '#8A8A8A',
 };
 
 function KpiCard({ label, value, unit, delta, deltaGood }: { label: string; value: string | number; unit?: string; delta?: string; deltaGood?: boolean }) {
   return (
-    <div className="bg-white rounded-xl border border-[#F0F0F0] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-[#AAA] mb-2">{label}</p>
-      <p className="text-[26px] font-bold leading-none text-[#111] tracking-tight">
-        {value}{unit && <span className="text-[13px] font-semibold text-[#AAA] ml-1">{unit}</span>}
+    <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-[#9c9794] mb-2">{label}</p>
+      <p className="text-[26px] font-bold leading-none text-[#403833] tracking-tight">
+        {value}{unit && <span className="text-[13px] font-semibold text-[#9c9794] ml-1">{unit}</span>}
       </p>
       {delta && (
         <p className={`text-[12px] font-semibold mt-1.5 ${deltaGood ? 'text-pass' : 'text-fail'}`}>{delta}</p>
@@ -28,7 +28,6 @@ function KpiCard({ label, value, unit, delta, deltaGood }: { label: string; valu
 }
 
 export default function NotBookedPage() {
-  const router = useRouter();
   const { allLines, globalFilters } = useData();
   const { weeklyLines, accumulatingLines, lastWeek, lastYear } = useFilters(allLines, globalFilters);
   const kpis = useKPIs(weeklyLines, accumulatingLines);
@@ -69,15 +68,14 @@ export default function NotBookedPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#F4F4F6] page-enter">
-      <header className="bg-white border-b border-[#EBEBEB] px-6 py-3 flex items-center gap-3 sticky top-0 z-30">
-        <button onClick={() => router.push('/')} className="text-sm text-[#888] hover:text-[#111] transition-colors">
-          &larr; Dashboard
-        </button>
-        <span className="text-[#D0D0D0]">/</span>
-        <span className="text-sm font-semibold text-[#111]">Not Booked</span>
+    <div className="min-h-screen bg-[#f5f2ee] page-enter">
+      <header className="bg-white border-b border-[#e9e3df] px-5 py-2.5 flex items-center gap-3 sticky top-0 z-30">
+        <span className="font-bold text-brand text-xl shrink-0 tracking-tight">emma<span className="text-[#403833]">.</span></span>
+        <span className="text-[#d5cdc6]">|</span>
+        <span className="text-[#403833] text-sm font-semibold shrink-0">DDS</span>
+        <NavTabs className="ml-2" />
         <div className="flex-1" />
-        <span className="text-xs bg-[#F7F7F7] border border-[#EBEBEB] rounded-lg px-3 py-1.5 text-[#555] font-medium">
+        <span className="text-xs bg-[#f4f1ef] border border-[#e9e3df] rounded-lg px-3 py-1.5 text-[#58524e] font-medium shrink-0">
           W{String(lastWeek).padStart(2, '0')} {lastYear}
         </span>
       </header>
@@ -117,7 +115,7 @@ export default function NotBookedPage() {
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setSelectedCat('All')}
-            className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-all ${selectedCat === 'All' ? 'bg-[#111] text-white border-[#111]' : 'border-[#E0E0E0] text-[#555] hover:border-[#111]'}`}>
+            className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-all ${selectedCat === 'All' ? 'bg-[#403833] text-white border-[#403833]' : 'border-[#e9e3df] text-[#58524e] hover:border-[#403833]'}`}>
             All categories
           </button>
           {SKU_CATEGORIES.map((c) => (
@@ -125,26 +123,26 @@ export default function NotBookedPage() {
               onClick={() => setSelectedCat(c)}
               className="text-xs px-3 py-1.5 rounded-lg border font-medium transition-all"
               style={selectedCat === c
-                ? { background: CATEGORY_COLORS[c], color: 'white', borderColor: CATEGORY_COLORS[c] }
-                : { borderColor: '#E0E0E0', color: '#555' }}>
+                ? { background: CATEGORY_COLORS[c], color: '#f9f7f6', borderColor: CATEGORY_COLORS[c] }
+                : { borderColor: '#e9e3df', color: '#58524e' }}>
               {c}
               {catCounts[c].size > 0 && (
                 <span className="ml-1.5 text-[10px] opacity-70">{catCounts[c].size}</span>
               )}
             </button>
           ))}
-          <span className="ml-auto text-xs text-[#AAA]">{filteredPOs.length} PO{filteredPOs.length !== 1 ? 's' : ''}</span>
+          <span className="ml-auto text-xs text-[#9c9794]">{filteredPOs.length} PO{filteredPOs.length !== 1 ? 's' : ''}</span>
         </div>
 
         {/* PO list */}
         {filteredPOs.length > 0 ? (
-          <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
-            <div className="px-5 py-3 border-b border-[#F0F0F0]">
-              <p className="text-[11px] uppercase tracking-widest text-[#AAA]">POs missing pickup booking — click to expand lines</p>
+          <div className="bg-white rounded-lg overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
+            <div className="px-5 py-3 border-b border-[#e9e3df]">
+              <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">POs missing pickup booking — click to expand lines</p>
             </div>
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-[#111] text-white">
+                <tr className="bg-[#403833] text-white">
                   {['PO', 'Vendor', 'Destination', 'PGRD', 'Category', 'Lines'].map((h) => (
                     <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">{h}</th>
                   ))}
@@ -157,16 +155,16 @@ export default function NotBookedPage() {
                     <Fragment key={group.po}>
                       <tr
                         onClick={() => setExpandedPO(expandedPO === group.po ? null : group.po)}
-                        className="border-b border-[#F7F7F7] hover:bg-[#FAFAFA] cursor-pointer transition-colors">
-                        <td className="px-4 py-3 font-semibold text-[#111]">
+                        className="border-b border-[#e9e3df] hover:bg-[#f9f7f6] cursor-pointer transition-colors">
+                        <td className="px-4 py-3 font-semibold text-[#403833]">
                           <span className="flex items-center gap-2">
-                            <span className="text-[#CCC] text-xs">{expandedPO === group.po ? '▾' : '▸'}</span>
+                            <span className="text-[#b5aaa5] text-xs">{expandedPO === group.po ? '▾' : '▸'}</span>
                             {group.po}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-[#555]">{group.vendor}</td>
-                        <td className="px-4 py-3 text-[#555]">{group.destination}</td>
-                        <td className="px-4 py-3 text-[#555] whitespace-nowrap">{formatDateShort(group.pgrd)}</td>
+                        <td className="px-4 py-3 text-[#58524e]">{group.vendor}</td>
+                        <td className="px-4 py-3 text-[#58524e]">{group.destination}</td>
+                        <td className="px-4 py-3 text-[#58524e] whitespace-nowrap">{formatDateShort(group.pgrd)}</td>
                         <td className="px-4 py-3">
                           <div className="flex gap-1 flex-wrap">
                             {cats.map(c => (
@@ -181,11 +179,11 @@ export default function NotBookedPage() {
                         </td>
                       </tr>
                       {expandedPO === group.po && (
-                        <tr className="bg-[#FFFAFA]">
+                        <tr className="bg-[#faf7f3]">
                           <td colSpan={6} className="px-6 py-3">
                             <table className="w-full text-xs">
                               <thead>
-                                <tr className="text-[#AAA] border-b border-[#F0F0F0]">
+                                <tr className="text-[#9c9794] border-b border-[#e9e3df]">
                                   {['Line', 'SKU', 'Category', 'PGRD', 'Qty'].map((h) => (
                                     <th key={h} className="py-1.5 pr-6 text-left font-medium uppercase text-[10px] tracking-wide">{h}</th>
                                   ))}
@@ -195,14 +193,14 @@ export default function NotBookedPage() {
                                 {group.lines.map((l) => {
                                   const cat = categorizeSKU(l.sku);
                                   return (
-                                    <tr key={`${l.po}-${l.line}`} className="border-b border-[#F5F5F5] last:border-0">
-                                      <td className="py-1.5 pr-6 text-[#888]">{l.line}</td>
-                                      <td className="py-1.5 pr-6 font-mono text-[#555]">{l.sku}</td>
+                                    <tr key={`${l.po}-${l.line}`} className="border-b border-[#f4f1ef] last:border-0">
+                                      <td className="py-1.5 pr-6 text-[#7b7571]">{l.line}</td>
+                                      <td className="py-1.5 pr-6 font-mono text-[#58524e]">{l.sku}</td>
                                       <td className="py-1.5 pr-6">
                                         <span className="text-[10px] font-medium px-2 py-0.5 rounded-full text-white" style={{ background: CATEGORY_COLORS[cat] }}>{cat}</span>
                                       </td>
-                                      <td className="py-1.5 pr-6 text-[#888]">{formatDateShort(l.pgrd)}</td>
-                                      <td className="py-1.5 pr-6 text-[#888]">{l.qty}</td>
+                                      <td className="py-1.5 pr-6 text-[#7b7571]">{formatDateShort(l.pgrd)}</td>
+                                      <td className="py-1.5 pr-6 text-[#7b7571]">{l.qty}</td>
                                     </tr>
                                   );
                                 })}
@@ -218,7 +216,7 @@ export default function NotBookedPage() {
             </table>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl p-10 text-center text-[#CCC]" style={{ boxShadow: 'var(--shadow-card)' }}>
+          <div className="bg-white rounded-lg p-10 text-center text-[#b5aaa5]" style={{ boxShadow: 'var(--shadow-card)' }}>
             {totalPOs === 0 ? 'All POs have pickup booked' : 'No POs match the selected category'}
           </div>
         )}

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -34,7 +34,7 @@ export function PickupDistributionCard({ lines }: PickupDistributionCardProps) {
             <XAxis dataKey="day" tick={{ fill: '#8A7E74', fontSize: 11 }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fill: '#8A7E74', fontSize: 11 }} axisLine={false} tickLine={false} />
             <Tooltip
-              contentStyle={{ background: '#1E2A3A', border: 'none', color: 'white', borderRadius: 8, fontSize: 12 }}
+              contentStyle={{ background: '#403833', border: 'none', color: '#f9f7f6', borderRadius: 8, fontSize: 12 }}
             />
             <Bar dataKey="pickups" fill="#FF8900" radius={[3, 3, 0, 0]} />
           </BarChart>

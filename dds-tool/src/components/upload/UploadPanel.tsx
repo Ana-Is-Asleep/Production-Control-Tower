@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useCallback } from 'react';
 import { SlideOver } from '../shared/SlideOver';
@@ -72,7 +72,7 @@ export function UploadPanel({ open, onClose, onLoad }: UploadPanelProps) {
           onDragLeave={() => setDragging(false)}
           onDrop={(e) => { e.preventDefault(); setDragging(false); handleFiles(Array.from(e.dataTransfer.files)); }}
           onClick={() => document.getElementById('file-input')?.click()}
-          className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${dragging ? 'border-brand bg-brand-dim' : 'border-border hover:border-brand-soft'}`}
+          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${dragging ? 'border-brand bg-brand-dim' : 'border-border hover:border-brand-soft'}`}
         >
           <div className="text-3xl mb-3">📂</div>
           <p className="text-sm text-dark font-medium">Drag & drop your XLSX files here</p>
