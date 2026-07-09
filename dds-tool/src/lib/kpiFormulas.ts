@@ -15,10 +15,25 @@ export function computeSOT(line: PurchaseLine): boolean | null {
   return onTime && inFull;
 }
 
-// OTIF: supplier confirms delivery on or before PGRD week, same qty threshold
+// East Asia destinations require EGRD to be at least 1 week BEFORE PGRD (not same week).
+// Standard destinations: EGRD ≤ PGRD week is enough.
+function isEastAsia(destination: string): boolean {
+  const d = (destination ?? '').toLowerCase();
+  return d.includes('east asia') || d.includes('china') || d.includes(' cn') || d === 'cn'
+    || d.includes('japan') || d.includes(' jp') || d === 'jp'
+    || d.includes('korea') || d.includes(' kr') || d === 'kr'
+    || d.includes('vietnam') || d.includes(' vn') || d === 'vn'
+    || d.includes('thailand') || d.includes(' th') || d === 'th'
+    || d.includes('apac') || d.includes('sea') || d.includes('asia');
+}
+
+// OTIF: supplier confirms delivery on or before PGRD week, same qty threshold.
+// East Asia exception: EGRD must be strictly before PGRD (one week lead time required).
 export function computeOTIF(line: PurchaseLine): { ot: boolean | null; inFull: boolean | null; otif: boolean | null } {
   if (!line.egrd || !line.pgrd) return { ot: null, inFull: null, otif: null };
-  const ot = weekOf(line.egrd) <= weekOf(line.pgrd);
+  const egrdW = weekOf(line.egrd);
+  const pgrdW = weekOf(line.pgrd);
+  const ot = isEastAsia(line.destination) ? egrdW < pgrdW : egrdW <= pgrdW;
   const inFull = line.cqty >= line.qty * 0.97;
   return { ot, inFull, otif: ot && inFull };
 }
