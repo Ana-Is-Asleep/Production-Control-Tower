@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { getISOWeek, getISOWeekYear, lastCompletedWeek } from '../lib/dateUtils';
-import { computeKPI, computeExpectedSOT, classifyBacklog, SOT_TARGET, OTIF_TARGET } from '../lib/kpiFormulas';
+import { computeKPI, computeExpectedSOT, classifyBacklog, aggregateSOTRate, SOT_TARGET, OTIF_TARGET } from '../lib/kpiFormulas';
 import type { PurchaseLine, WeeklyKPIPoint, BacklogSummary } from '../types';
 
 export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: PurchaseLine[], allD2cLines?: PurchaseLine[]) {
@@ -18,10 +18,8 @@ export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: Purchase
   const sotLines  = useMemo(() => scored.filter(r => r.kpi.sotResult !== null), [scored]);
   const otifLines = useMemo(() => scored.filter(r => r.kpi.otif !== null), [scored]);
 
-  const sotPct = useMemo(() => {
-    if (!sotLines.length) return null;
-    return Math.round(sotLines.filter(r => r.kpi.sotResult).length / sotLines.length * 100);
-  }, [sotLines]);
+  // Uses PO-header weighting for PGRD ≥ WK27 2026, line-count for earlier periods
+  const sotPct = useMemo(() => aggregateSOTRate(weeklyLines), [weeklyLines]);
 
   const otifPct = useMemo(() => {
     if (!otifLines.length) return null;
@@ -49,10 +47,10 @@ export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: Purchase
       const wLines = src.filter(l => l.pgrd && getISOWeek(l.pgrd) === week && getISOWeekYear(l.pgrd) === year);
       const kpis = wLines.map(computeKPI);
 
-      const sot  = kpis.filter(k => k.sotResult !== null);
+      // SOT uses PO-header weighting for WK27+ PGRD, line-count for earlier weeks
+      const sotPct_  = isFuture ? null : aggregateSOTRate(wLines);
       const otif = kpis.filter(k => k.otif !== null);
-      const sotPct_  = sot.length  ? Math.round(sot.filter(k  => k.sotResult).length / sot.length  * 100) : null;
-      const otifPct_ = otif.length ? Math.round(otif.filter(k => k.otif).length      / otif.length * 100) : null;
+      const otifPct_ = otif.length ? Math.round(otif.filter(k => k.otif).length / otif.length * 100) : null;
 
       // for future weeks, estimate SOT from Shiptify ESD vs PGRD
       const expLines = isFuture ? wLines.filter(l => computeExpectedSOT(l) !== null) : [];

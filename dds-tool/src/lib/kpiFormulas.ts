@@ -2,15 +2,17 @@ import { differenceInDays, startOfWeek, addWeeks } from 'date-fns';
 import { getISOWeek, getISOWeekYear } from './dateUtils';
 import type { PurchaseLine, KPIResult, BacklogType } from '../types';
 
-// europe uses sunday-aligned weeks, not monday ISO — changing this breaks backlog for EU
-const SUN = { weekStartsOn: 0 as const };
-const weekOf = (d: Date) => startOfWeek(d, SUN);
+// Weeks run Monday–Sunday (ISO standard). Sunday is the last day of the week.
+const MON = { weekStartsOn: 1 as const };
+const weekOf = (d: Date) => startOfWeek(d, MON);
 
-// SOT: shipped same week or earlier than planned — time only, no quantity check
-// (IN FULL is an OTIF dimension, not SOT — verified against BC's own SOT? flag)
+// SOT: shipped on time (ASD week ≤ PGRD week) AND in full (cqty = 100% of qty)
+// From WK27 2026 onwards aggregation uses PO-header weighting — see aggregateSOTRate()
 export function computeSOT(line: PurchaseLine): boolean | null {
-  if (!line.asd || !line.pgrd) return null; // skip if no shipping date, happens with open POs
-  return weekOf(line.asd) <= weekOf(line.pgrd);
+  if (!line.asd || !line.pgrd) return null;
+  const onTime = weekOf(line.asd) <= weekOf(line.pgrd);
+  const inFull = line.cqty >= line.qty;
+  return onTime && inFull;
 }
 
 // OTIF: supplier confirms delivery on or before PGRD week, same qty threshold
@@ -81,3 +83,40 @@ export function computeExpectedSOT(line: PurchaseLine): boolean | null {
 
 export const SOT_TARGET = 90;
 export const OTIF_TARGET = 90;
+
+// From WK27 2026 (PGRD ≥ June 29, 2026) the SOT aggregation method changed:
+// — Before WK27: SOT = Σ lines YES / Σ lines  (every PO line counted equally)
+// — WK27 onwards: SOT = Σ(SOT% per PO) / Σ POs  (every PO counted equally regardless of line count)
+// Per-line SOT YES/NO is unchanged — only the aggregation formula changed.
+export const SOT_PO_HEADER_CUTOFF = new Date(2026, 5, 29); // June 29, 2026 = first day of WK27 2026
+
+export function aggregateSOTRate(lines: PurchaseLine[]): number | null {
+  let numOld = 0, denOld = 0;
+  const byPO = new Map<string, { yes: number; total: number }>();
+
+  for (const l of lines) {
+    const result = computeSOT(l);
+    if (result === null) continue; // no asd or pgrd — not scorable
+
+    if (!l.pgrd || l.pgrd < SOT_PO_HEADER_CUTOFF) {
+      // Pre-WK27: line-count weighted
+      denOld++;
+      if (result) numOld++;
+    } else {
+      // WK27+: PO-header weighted — every PO counts equally
+      if (!byPO.has(l.po)) byPO.set(l.po, { yes: 0, total: 0 });
+      const e = byPO.get(l.po)!;
+      e.total++;
+      if (result) e.yes++;
+    }
+  }
+
+  const denNew = byPO.size;
+  if (!denOld && !denNew) return null;
+
+  // Each PO in the new period contributes its SOT rate (0–1) as one "vote"
+  let rateNew = 0;
+  byPO.forEach(e => { rateNew += e.yes / e.total; });
+
+  return Math.round((numOld + rateNew) / (denOld + denNew) * 100);
+}
