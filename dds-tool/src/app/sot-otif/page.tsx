@@ -264,124 +264,163 @@ export default function SOTOTIFPage() {
           onChange={v => setSelectedCat(v as SKUCategory | 'All')}
         />
 
-        {/* compact KPI strip */}
-        <div className="flex gap-3">
-          {[
-            { label: 'SOT', pct: filteredSotPct },
-            { label: 'OTIF', pct: filteredOtifPct },
-          ].map(({ label, pct }) => {
-            const onTarget = pct !== null && pct >= 90;
-            const color = pct === null ? '#c8c0bb' : onTarget ? '#15803d' : '#dc2626';
-            return (
-              <div key={label} className="bg-white rounded-lg border border-[#e9e3df] px-5 py-3 flex items-center gap-4" style={{ boxShadow: 'var(--shadow-card)' }}>
-                <div>
-                  <p className="text-[11px] uppercase tracking-widest font-semibold mb-0.5" style={{ color }}>{label} · target 90%</p>
-                  <p className="kpi-number font-extrabold text-4xl leading-none" style={{ color }}>
-                    {pct !== null ? `${pct}%` : '—'}
-                  </p>
+        {/* hero card: KPI numbers + trend chart fused side-by-side */}
+        <div className="bg-white rounded-xl border border-[#e9e3df] flex" style={{ boxShadow: 'var(--shadow-card)' }}>
+
+          {/* LEFT: headline KPI numbers */}
+          <div className="flex flex-col justify-center gap-6 px-7 py-6 shrink-0" style={{ minWidth: 210 }}>
+            {([
+              { label: 'SOT', pct: filteredSotPct },
+              { label: 'OTIF', pct: filteredOtifPct },
+            ] as const).map(({ label, pct }) => {
+              const onTarget = pct !== null && pct >= 90;
+              const color = pct === null ? '#c8c0bb' : onTarget ? '#15803d' : '#dc2626';
+              return (
+                <div key={label} className="flex items-stretch gap-3">
+                  <div className="w-[3px] rounded-full shrink-0" style={{ background: color }} />
+                  <div>
+                    <p className="text-[11px] uppercase tracking-widest font-semibold mb-0.5" style={{ color }}>{label}</p>
+                    <p className="font-extrabold text-5xl leading-none" style={{ color }}>
+                      {pct !== null ? `${pct}%` : '—'}
+                    </p>
+                    {pct !== null && (
+                      <p className="text-xs font-semibold mt-1.5" style={{ color }}>
+                        {onTarget ? '↑' : '↓'} {Math.abs(pct - 90)}pp vs 90%
+                      </p>
+                    )}
+                  </div>
                 </div>
-                {pct !== null && (
-                  <p className="text-sm font-semibold" style={{ color }}>
-                    {onTarget ? '↑' : '↓'} {Math.abs(pct - 90)}pp vs target
-                  </p>
-                )}
+              );
+            })}
+            <div className="flex gap-5 text-xs text-[#9c9794] pt-3 border-t border-[#e9e3df]">
+              <div>
+                <p className="font-semibold text-[#403833] text-sm">{enriched.filter(r => r.kpi.sotResult !== null).length}</p>
+                <p>lines eval.</p>
               </div>
-            );
-          })}
-          <div className="bg-white rounded-lg border border-[#e9e3df] px-5 py-3 flex items-center gap-4" style={{ boxShadow: 'var(--shadow-card)' }}>
-            <div>
-              <p className="text-[11px] uppercase tracking-widest text-[#9c9794] font-semibold mb-0.5">Lines evaluated</p>
-              <p className="kpi-number font-extrabold text-4xl leading-none text-[#403833]">
-                {enriched.filter(r => r.kpi.sotResult !== null).length}
-              </p>
-            </div>
-            <p className="text-xs text-[#9c9794]">with ASD<br/>in period</p>
-          </div>
-          <div className="bg-white rounded-lg border border-[#e9e3df] px-5 py-3 flex items-center gap-4" style={{ boxShadow: 'var(--shadow-card)' }}>
-            <div>
-              <p className="text-[11px] uppercase tracking-widest text-[#9c9794] font-semibold mb-0.5">Failing lines</p>
               {(() => {
                 const n = enriched.filter(r => r.kpi.sotFail || r.kpi.otifFail).length;
                 return (
-                  <>
-                    <p className={`kpi-number font-extrabold text-4xl leading-none ${n === 0 ? 'text-pass' : 'text-fail'}`}>{n}</p>
-                    <p className={`text-xs font-semibold mt-0.5 ${n === 0 ? 'text-pass' : 'text-fail'}`}>{n === 0 ? 'all on track' : 'SOT or OTIF miss'}</p>
-                  </>
+                  <div>
+                    <p className={`font-semibold text-sm ${n === 0 ? 'text-pass' : 'text-fail'}`}>{n}</p>
+                    <p>failing</p>
+                  </div>
                 );
               })()}
             </div>
           </div>
-        </div>
 
-        {/* trend chart */}
-        <div className="bg-white rounded-lg p-5" style={{ boxShadow: 'var(--shadow-card)' }}>
-          <div className="flex items-start justify-between mb-1">
-            <div>
-              <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">SOT & OTIF Trend by PGRD Week</p>
-              <p className="text-xs text-[#b5aaa5] mt-0.5">
-                Click a week to drill down · Bars = PO status (left axis) · Lines = % performance (right axis)
-              </p>
-            </div>
-            {clickedWeek && (
-              <button onClick={() => setClickedWeek(null)} className="text-xs text-[#9c9794] hover:text-fail transition-colors shrink-0">
-                Clear {clickedWeek} ✕
-              </button>
-            )}
-          </div>
+          {/* vertical divider */}
+          <div className="w-px bg-[#e9e3df] my-4 shrink-0" />
 
-          {/* chart legend key — plain text descriptions */}
-          <div className="flex flex-wrap gap-x-5 gap-y-1 mb-3 mt-2">
-            {[
-              { color: '#34A853', label: 'Shipped on time (POs)' },
-              { color: '#F59E0B', label: 'This-week backlog (POs)' },
-              { color: '#DC2626', label: 'Accumulated past backlog (POs)' },
-              { color: '#86efac', label: 'Expected on track — future (POs)', dashed: false },
-              { color: '#FF8900', label: 'SOT %', line: true },
-              { color: '#15803d', label: 'OTIF %', line: true, dashed: true },
-            ].map(item => (
-              <div key={item.label} className="flex items-center gap-1.5">
-                {item.line
-                  ? <span className="w-5 h-0.5 rounded" style={{ background: item.color, borderTop: item.dashed ? `2px dashed ${item.color}` : undefined }} />
-                  : <span className="w-2.5 h-2.5 rounded-sm" style={{ background: item.color }} />
-                }
-                <span className="text-[10px] text-[#7b7571]">{item.label}</span>
+          {/* RIGHT: trend chart */}
+          <div className="flex-1 p-5 min-w-0">
+            <div className="flex items-center justify-between mb-1">
+              <div>
+                <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">SOT & OTIF Trend — by PGRD Week</p>
+                <p className="text-[10px] text-[#b5aaa5] mt-0.5">↓ Click any bar or week label to drill down</p>
               </div>
-            ))}
-          </div>
-
-          <ResponsiveContainer width="100%" height={300}>
-            <ComposedChart data={chartData} margin={{ top: 8, right: 40, left: -10, bottom: 0 }} onClick={handleChartClick} style={{ cursor: 'pointer' }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e9e3df" vertical={false} />
-              <XAxis dataKey="weekLabel" tick={{ fill: '#9c9794', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis yAxisId="pos" tick={{ fill: '#9c9794', fontSize: 10 }} axisLine={false} tickLine={false} label={{ value: 'POs', angle: -90, position: 'insideLeft', fill: '#c8c0bb', fontSize: 10, dy: 20 }} />
-              <YAxis yAxisId="pct" orientation="right" domain={[0, 100]} tick={{ fill: '#9c9794', fontSize: 10 }} unit="%" axisLine={false} tickLine={false} />
-              <ReferenceLine yAxisId="pct" y={90} stroke="#c8c0bb" strokeDasharray="5 3" label={{ value: '90% target', position: 'insideTopRight', fill: '#c8c0bb', fontSize: 9 }} />
-
-              {/* stacked bars */}
-              <Bar yAxisId="pos" dataKey="posShipped"      stackId="pos" fill="#34A853" name="Shipped on time"        radius={[0,0,0,0]} />
-              <Bar yAxisId="pos" dataKey="posBacklog"      stackId="pos" fill="#F59E0B" name="This-week backlog"      radius={[0,0,0,0]} />
-              <Bar yAxisId="pos" dataKey="pastPOBacklog"   stackId="pos" fill="#DC2626" name="Accumulated past backlog" radius={[0,0,0,0]} />
-              <Bar yAxisId="pos" dataKey="posPredictedSOT" stackId="pos" fill="#86efac" name="Expected on track"      radius={[3,3,0,0]} />
-
-              {/* performance lines */}
-              <Line yAxisId="pct" dataKey="sotPct"  stroke="#FF8900" strokeWidth={2.5} dot={{ r: 3, fill: '#FF8900', strokeWidth: 0 }} activeDot={{ r: 5 }} name="SOT %" connectNulls={false} />
-              <Line yAxisId="pct" dataKey="otifPct" stroke="#15803d" strokeWidth={2}   strokeDasharray="6 3" dot={{ r: 3, fill: '#15803d', strokeWidth: 0 }} name="OTIF %" connectNulls={false} />
-
-              <Tooltip
-                contentStyle={{ background: '#403833', border: 'none', borderRadius: 8, fontSize: 11, padding: '8px 12px' }}
-                labelStyle={{ color: '#ffa236', fontWeight: 700, marginBottom: 4 }}
-                itemStyle={{ color: '#f9f7f6' }}
-                formatter={(value, name) => {
-                  const n = String(name);
-                  return [n.includes('%') ? `${value}%` : `${value} POs`, n];
-                }}
-              />
               {clickedWeek && (
-                <ReferenceArea yAxisId="pct" x1={clickedWeek} x2={clickedWeek} fill="rgba(255,137,0,0.12)" stroke="#FF8900" strokeOpacity={0.5} />
+                <button onClick={() => setClickedWeek(null)} className="text-xs text-[#9c9794] hover:text-fail transition-colors shrink-0">
+                  Clear {clickedWeek} ✕
+                </button>
               )}
-            </ComposedChart>
-          </ResponsiveContainer>
+            </div>
+
+            {/* legend */}
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3 mt-2">
+              {[
+                { color: '#34A853', label: 'Shipped on time (POs)' },
+                { color: '#F59E0B', label: 'This-week backlog' },
+                { color: '#DC2626', label: 'Accumulated backlog' },
+                { color: '#86efac', label: 'Predicted on track' },
+                { color: '#FF8900', label: 'SOT %', line: true },
+                { color: '#15803d', label: 'OTIF %', line: true, dashed: true },
+              ].map(item => (
+                <div key={item.label} className="flex items-center gap-1.5">
+                  {item.line
+                    ? <svg width="18" height="4" className="shrink-0"><line x1="0" y1="2" x2="18" y2="2" stroke={item.color} strokeWidth="2" strokeDasharray={item.dashed ? '5 3' : undefined} /></svg>
+                    : <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: item.color }} />
+                  }
+                  <span className="text-[10px] text-[#7b7571]">{item.label}</span>
+                </div>
+              ))}
+            </div>
+
+            <ResponsiveContainer width="100%" height={260}>
+              <ComposedChart data={chartData} margin={{ top: 8, right: 52, left: -10, bottom: 0 }} onClick={handleChartClick} style={{ cursor: 'pointer' }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e9e3df" vertical={false} />
+                <XAxis dataKey="weekLabel" tick={{ fill: '#9c9794', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="pos" tick={{ fill: '#9c9794', fontSize: 10 }} axisLine={false} tickLine={false} label={{ value: 'POs', angle: -90, position: 'insideLeft', fill: '#c8c0bb', fontSize: 10, dy: 20 }} />
+                <YAxis yAxisId="pct" orientation="right" domain={[0, 100]} tick={{ fill: '#9c9794', fontSize: 10 }} unit="%" axisLine={false} tickLine={false} />
+                <ReferenceLine yAxisId="pct" y={90} stroke="#c8c0bb" strokeDasharray="5 3" label={{ value: '90% target', position: 'insideTopRight', fill: '#c8c0bb', fontSize: 9 }} />
+
+                <Bar yAxisId="pos" dataKey="posShipped"      stackId="pos" fill="#34A853" name="Shipped on time"          radius={[0,0,0,0]} />
+                <Bar yAxisId="pos" dataKey="posBacklog"      stackId="pos" fill="#F59E0B" name="This-week backlog"        radius={[0,0,0,0]} />
+                <Bar yAxisId="pos" dataKey="pastPOBacklog"   stackId="pos" fill="#DC2626" name="Accumulated past backlog" radius={[0,0,0,0]} />
+                <Bar yAxisId="pos" dataKey="posPredictedSOT" stackId="pos" fill="#86efac" name="Expected on track"        radius={[3,3,0,0]} />
+
+                <Line
+                  yAxisId="pct" dataKey="sotPct" stroke="#FF8900" strokeWidth={2.5} name="SOT %" connectNulls={false} activeDot={{ r: 5 }}
+                  dot={(p: { cx?: number; cy?: number; index?: number; value?: number; payload: { isFuture?: boolean } }) => {
+                    const cx = p.cx ?? 0; const cy = p.cy ?? 0;
+                    const lastIdx = chartData.reduce((acc: number, d, i) => (d.sotPct != null && !d.isFuture ? i : acc), -1);
+                    return (
+                      <g key={`sot-dot-${p.index}`}>
+                        {!p.payload.isFuture
+                          ? <circle cx={cx} cy={cy} r={3} fill="#FF8900" />
+                          : <circle cx={cx} cy={cy} r={3} fill="white" stroke="#FF8900" strokeWidth={2} />
+                        }
+                        {p.index === lastIdx && p.value != null && (
+                          <text x={cx + 8} y={cy + 4} fill="#FF8900" fontSize={11} fontWeight={700}>{p.value}%</text>
+                        )}
+                      </g>
+                    );
+                  }}
+                />
+                <Line
+                  yAxisId="pct" dataKey="otifPct" stroke="#15803d" strokeWidth={2} strokeDasharray="6 3" name="OTIF %" connectNulls={false}
+                  dot={(p: { cx?: number; cy?: number; index?: number; value?: number; payload: { isFuture?: boolean } }) => {
+                    const cx = p.cx ?? 0; const cy = p.cy ?? 0;
+                    const lastIdx = chartData.reduce((acc: number, d, i) => (d.otifPct != null && !d.isFuture ? i : acc), -1);
+                    return (
+                      <g key={`otif-dot-${p.index}`}>
+                        {!p.payload.isFuture
+                          ? <circle cx={cx} cy={cy} r={3} fill="#15803d" />
+                          : <circle cx={cx} cy={cy} r={3} fill="white" stroke="#15803d" strokeWidth={2} />
+                        }
+                        {p.index === lastIdx && p.value != null && (
+                          <text x={cx + 8} y={cy + 4} fill="#15803d" fontSize={11} fontWeight={700}>{p.value}%</text>
+                        )}
+                      </g>
+                    );
+                  }}
+                />
+
+                <Tooltip
+                  contentStyle={{ background: '#403833', border: 'none', borderRadius: 8, fontSize: 11, padding: '8px 12px' }}
+                  labelStyle={{ color: '#ffa236', fontWeight: 700, marginBottom: 4 }}
+                  itemStyle={{ color: '#f9f7f6' }}
+                  formatter={(value, name) => {
+                    const n = String(name);
+                    return [n.includes('%') ? `${value}%` : `${value} POs`, n];
+                  }}
+                />
+                {clickedWeek && (
+                  <ReferenceArea yAxisId="pct" x1={clickedWeek} x2={clickedWeek} fill="rgba(255,137,0,0.12)" stroke="#FF8900" strokeOpacity={0.5} />
+                )}
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
         </div>
+
+        {/* section divider */}
+        {clickedWeek && (
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-[#e9e3df]" />
+            <span className="text-[10px] uppercase tracking-widest text-[#b5aaa5] font-semibold">Breakdown</span>
+            <div className="flex-1 h-px bg-[#e9e3df]" />
+          </div>
+        )}
 
         {/* drill-down panel — only shows when a week is selected */}
         {clickedWeek && (
