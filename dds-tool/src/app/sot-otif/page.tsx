@@ -257,15 +257,21 @@ export default function SOTOTIFPage() {
 
       <div className="px-6 py-4 space-y-4 max-w-6xl mx-auto">
 
-        {/* category filter */}
-        <Seg
-          options={[{ value: 'All', label: 'All categories' }, ...SKU_CATEGORIES.map(c => ({ value: c, label: c }))]}
-          value={selectedCat}
-          onChange={v => setSelectedCat(v as SKUCategory | 'All')}
-        />
+        {/* hero card: category filter top bar + KPI numbers + trend chart */}
+        <div className="bg-white rounded-xl border border-[#e9e3df] flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
 
-        {/* hero card: KPI numbers + trend chart fused side-by-side */}
-        <div className="bg-white rounded-xl border border-[#e9e3df] flex" style={{ boxShadow: 'var(--shadow-card)' }}>
+          {/* top filter bar */}
+          <div className="px-5 py-2.5 border-b border-[#e9e3df] flex items-center gap-3">
+            <span className="text-[10px] text-[#b5aaa5] font-semibold uppercase tracking-widest shrink-0">Category</span>
+            <Seg
+              options={[{ value: 'All', label: 'All categories' }, ...SKU_CATEGORIES.map(c => ({ value: c, label: c }))]}
+              value={selectedCat}
+              onChange={v => setSelectedCat(v as SKUCategory | 'All')}
+            />
+          </div>
+
+          {/* main content row: KPI numbers left + chart right */}
+          <div className="flex flex-1">
 
           {/* LEFT: headline KPI numbers */}
           <div className="flex flex-col justify-center gap-6 px-7 py-6 shrink-0" style={{ minWidth: 210 }}>
@@ -329,10 +335,9 @@ export default function SOTOTIFPage() {
             {/* legend */}
             <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3 mt-2">
               {[
-                { color: '#34A853', label: 'Shipped on time (POs)' },
+                { color: '#34A853', label: 'Shipped / Predicted on track' },
                 { color: '#F59E0B', label: 'This-week backlog' },
-                { color: '#DC2626', label: 'Accumulated backlog' },
-                { color: '#86efac', label: 'Predicted on track' },
+                { color: '#DC2626', label: 'Accumulated backlog (past weeks)' },
                 { color: '#FF8900', label: 'SOT %', line: true },
                 { color: '#15803d', label: 'OTIF %', line: true, dashed: true },
               ].map(item => (
@@ -357,7 +362,7 @@ export default function SOTOTIFPage() {
                 <Bar yAxisId="pos" dataKey="posShipped"      stackId="pos" fill="#34A853" name="Shipped on time"          radius={[0,0,0,0]} />
                 <Bar yAxisId="pos" dataKey="posBacklog"      stackId="pos" fill="#F59E0B" name="This-week backlog"        radius={[0,0,0,0]} />
                 <Bar yAxisId="pos" dataKey="pastPOBacklog"   stackId="pos" fill="#DC2626" name="Accumulated past backlog" radius={[0,0,0,0]} />
-                <Bar yAxisId="pos" dataKey="posPredictedSOT" stackId="pos" fill="#86efac" name="Expected on track"        radius={[3,3,0,0]} />
+                <Bar yAxisId="pos" dataKey="posPredictedSOT" stackId="pos" fill="#34A853" name="Predicted on track"       radius={[3,3,0,0]} />
 
                 <Line
                   yAxisId="pct" dataKey="sotPct" stroke="#FF8900" strokeWidth={2.5} name="SOT %" connectNulls={false} activeDot={{ r: 5 }}
@@ -411,6 +416,7 @@ export default function SOTOTIFPage() {
               </ComposedChart>
             </ResponsiveContainer>
           </div>
+          </div>{/* end main content row */}
         </div>
 
         {/* section divider */}

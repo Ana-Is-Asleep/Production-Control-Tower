@@ -255,7 +255,7 @@ export function Dashboard() {
                       <Bar yAxisId="pos" dataKey="posShipped"      stackId="s" fill="#34A853" radius={[0,0,0,0]} />
                       <Bar yAxisId="pos" dataKey="posBacklog"      stackId="s" fill="#F59E0B" radius={[0,0,0,0]} />
                       <Bar yAxisId="pos" dataKey="pastPOBacklog"   stackId="s" fill="#DC2626" radius={[0,0,0,0]} />
-                      <Bar yAxisId="pos" dataKey="posPredictedSOT" stackId="s" fill="#86efac" radius={[2,2,0,0]} />
+                      <Bar yAxisId="pos" dataKey="posPredictedSOT" stackId="s" fill="#34A853" radius={[2,2,0,0]} />
                       <Line yAxisId="pct" dataKey="otifPct" stroke="#15803d" strokeWidth={2} dot={{ r: 3, fill: '#15803d', strokeWidth: 0 }} name="OTIF %" connectNulls={false} />
                       <Line yAxisId="pct" dataKey="sotPct"  stroke="#FF8900" strokeWidth={2} dot={{ r: 3, fill: '#FF8900', strokeWidth: 0 }} activeDot={{ r: 4 }} name="SOT %" connectNulls={false} />
                       <Tooltip contentStyle={{ background: '#403833', border: 'none', borderRadius: 8, fontSize: 11, padding: '6px 10px' }} labelStyle={{ color: '#ffa236', fontWeight: 700 }} itemStyle={{ color: '#f9f7f6' }} formatter={(v, n) => { const s = String(n); return [s.includes('%') ? `${v}%` : `${v} POs`, s]; }} />

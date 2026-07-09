@@ -84,8 +84,9 @@ export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: Purchase
         ? new Set(wLines.filter(l => computeExpectedSOT(l) === true).map(l => l.po)).size
         : 0;
 
-      // POs from earlier PGRD weeks (2026+) still unshipped as of this week
-      const pastPOBacklog = new Set(
+      // Accumulated backlog from earlier PGRD weeks (past/current only — not projected into future weeks,
+      // since today's backlog snapshot doesn't predict which POs will clear before a future week)
+      const pastPOBacklog = isFuture ? 0 : new Set(
         allSrc.filter(l =>
           l.pgrd &&
           l.pgrd.getFullYear() >= 2026 &&
