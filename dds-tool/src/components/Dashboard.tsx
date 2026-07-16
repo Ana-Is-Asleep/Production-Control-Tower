@@ -266,10 +266,15 @@ export function Dashboard() {
                       <YAxis yAxisId="pct" domain={[0, 100]} tick={{ fill: '#9c9794', fontSize: 11 }} unit="%" axisLine={false} tickLine={false} />
                       <YAxis yAxisId="pos" orientation="right" hide />
                       <ReferenceLine yAxisId="pct" y={90} stroke="#d5cdc6" strokeDasharray="4 4" />
-                      <Bar yAxisId="pos" dataKey="posPredictedSOT" stackId="s" fill="#34A853" fillOpacity={0.88} radius={[0,0,0,0]} />
-                      <Bar yAxisId="pos" dataKey="posShipped"      stackId="s" fill="#34A853" fillOpacity={0.88} radius={[0,0,0,0]} />
-                      <Bar yAxisId="pos" dataKey="posBacklog"      stackId="s" fill="#F59E0B" fillOpacity={0.88} radius={[0,0,0,0]} />
-                      <Bar yAxisId="pos" dataKey="pastPOBacklog"   stackId="s" fill="#DC2626" fillOpacity={0.88} radius={[2,2,0,0]} />
+                      <defs>
+                        <linearGradient id="db-green" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#34A853" stopOpacity={0.55} /><stop offset="100%" stopColor="#34A853" stopOpacity={0.95} /></linearGradient>
+                        <linearGradient id="db-amber" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#F59E0B" stopOpacity={0.55} /><stop offset="100%" stopColor="#F59E0B" stopOpacity={0.95} /></linearGradient>
+                        <linearGradient id="db-red"   x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#DC2626" stopOpacity={0.55} /><stop offset="100%" stopColor="#DC2626" stopOpacity={0.95} /></linearGradient>
+                      </defs>
+                      <Bar yAxisId="pos" dataKey="posPredictedSOT" stackId="s" fill="url(#db-green)" radius={[0,0,0,0]} />
+                      <Bar yAxisId="pos" dataKey="posShipped"      stackId="s" fill="url(#db-green)" radius={[0,0,0,0]} />
+                      <Bar yAxisId="pos" dataKey="posBacklog"      stackId="s" fill="url(#db-amber)" radius={[0,0,0,0]} />
+                      <Bar yAxisId="pos" dataKey="pastPOBacklog"   stackId="s" fill="url(#db-red)"   radius={[2,2,0,0]} />
                       <Line yAxisId="pct" dataKey="otifPct" stroke="#15803d" strokeWidth={2} dot={{ r: 3, fill: '#15803d', strokeWidth: 0 }} name="OTIF %" connectNulls={false} />
                       <Line yAxisId="pct" dataKey="sotPct"  stroke="#FF8900" strokeWidth={2} dot={{ r: 3, fill: '#FF8900', strokeWidth: 0 }} activeDot={{ r: 4 }} name="SOT %" connectNulls={false} />
                       <Tooltip contentStyle={{ background: '#403833', border: 'none', borderRadius: 8, fontSize: 11, padding: '6px 10px' }} labelStyle={{ color: '#ffa236', fontWeight: 700 }} itemStyle={{ color: '#f9f7f6' }} formatter={(v, n) => { const s = String(n); return [s.includes('%') ? `${v}%` : `${v} POs`, s]; }} />
@@ -315,7 +320,10 @@ export function Dashboard() {
                           <YAxis tick={{ fill: '#9c9794', fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
                           <Tooltip contentStyle={{ background: '#403833', border: 'none', color: '#f9f7f6', borderRadius: 8, fontSize: 11 }}
                             formatter={(v, n) => [`${v}`, n === 'upcoming' ? 'Upcoming POs' : 'Hist. avg']} />
-                          <Bar dataKey="upcoming" fill="#FF8900" fillOpacity={0.88} radius={[3,3,0,0]} name="upcoming">
+                          <defs>
+                            <linearGradient id="db-orange" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FF8900" stopOpacity={0.55} /><stop offset="100%" stopColor="#FF8900" stopOpacity={0.95} /></linearGradient>
+                          </defs>
+                          <Bar dataKey="upcoming" fill="url(#db-orange)" radius={[3,3,0,0]} name="upcoming">
                             <LabelList dataKey="upcoming" position="top" style={{ fill: '#7b7571', fontSize: 10, fontWeight: 600 }}
                               formatter={(v: unknown) => Number(v) > 0 ? Number(v) : ''} />
                           </Bar>
@@ -418,14 +426,19 @@ export function Dashboard() {
                     itemStyle={{ color: '#f9f7f6' }}
                     formatter={(v: unknown) => [`${Number(v)}d`, '']}
                   />
+                  <defs>
+                    <linearGradient id="db-lt-orange" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FF8900" stopOpacity={0.55} /><stop offset="100%" stopColor="#FF8900" stopOpacity={0.95} /></linearGradient>
+                    <linearGradient id="db-lt-purple" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#6469aa" stopOpacity={0.55} /><stop offset="100%" stopColor="#6469aa" stopOpacity={0.95} /></linearGradient>
+                    <linearGradient id="db-lt-green"  x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#34A853" stopOpacity={0.55} /><stop offset="100%" stopColor="#34A853" stopOpacity={0.95} /></linearGradient>
+                  </defs>
                   {ltCat === 'All' ? (
                     <>
-                      <Bar dataKey="Mattresses"  fill={CATEGORY_COLORS.Mattresses}  fillOpacity={0.88} radius={[3,3,0,0]} maxBarSize={20} />
-                      <Bar dataKey="Beds"        fill={CATEGORY_COLORS.Beds}        fillOpacity={0.88} radius={[3,3,0,0]} maxBarSize={20} />
-                      <Bar dataKey="Accessories" fill={CATEGORY_COLORS.Accessories} fillOpacity={0.88} radius={[3,3,0,0]} maxBarSize={20} />
+                      <Bar dataKey="Mattresses"  fill="url(#db-lt-orange)" radius={[3,3,0,0]} maxBarSize={20} />
+                      <Bar dataKey="Beds"        fill="url(#db-lt-purple)" radius={[3,3,0,0]} maxBarSize={20} />
+                      <Bar dataKey="Accessories" fill="url(#db-lt-green)"  radius={[3,3,0,0]} maxBarSize={20} />
                     </>
                   ) : (
-                    <Bar dataKey={ltCat} fill={CATEGORY_COLORS[ltCat as SKUCategory]} fillOpacity={0.88} radius={[3,3,0,0]} maxBarSize={30} />
+                    <Bar dataKey={ltCat} fill={ltCat === 'Mattresses' ? 'url(#db-lt-orange)' : ltCat === 'Beds' ? 'url(#db-lt-purple)' : 'url(#db-lt-green)'} radius={[3,3,0,0]} maxBarSize={30} />
                   )}
                 </BarChart>
               </ResponsiveContainer>

@@ -229,14 +229,19 @@ export default function LeadTimesPage() {
                   itemStyle={{ color: '#f9f7f6' }}
                   formatter={(v: unknown, n: unknown) => [`${Number(v)}d`, String(n)]}
                 />
+                <defs>
+                  <linearGradient id="lt-orange" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FF8900" stopOpacity={0.55} /><stop offset="100%" stopColor="#FF8900" stopOpacity={0.95} /></linearGradient>
+                  <linearGradient id="lt-purple" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#6469aa" stopOpacity={0.55} /><stop offset="100%" stopColor="#6469aa" stopOpacity={0.95} /></linearGradient>
+                  <linearGradient id="lt-green"  x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#34A853" stopOpacity={0.55} /><stop offset="100%" stopColor="#34A853" stopOpacity={0.95} /></linearGradient>
+                </defs>
                 {selectedCat === 'All' ? (
                   <>
-                    <Bar dataKey="Mattresses"  fill="#FF8900" fillOpacity={0.88} radius={[3,3,0,0]} maxBarSize={22} name="Mattresses" />
-                    <Bar dataKey="Beds"        fill="#6469aa" fillOpacity={0.88} radius={[3,3,0,0]} maxBarSize={22} name="Beds" />
-                    <Bar dataKey="Accessories" fill="#34A853" fillOpacity={0.88} radius={[3,3,0,0]} maxBarSize={22} name="Accessories" />
+                    <Bar dataKey="Mattresses"  fill="url(#lt-orange)" radius={[3,3,0,0]} maxBarSize={22} name="Mattresses" />
+                    <Bar dataKey="Beds"        fill="url(#lt-purple)" radius={[3,3,0,0]} maxBarSize={22} name="Beds" />
+                    <Bar dataKey="Accessories" fill="url(#lt-green)"  radius={[3,3,0,0]} maxBarSize={22} name="Accessories" />
                   </>
                 ) : (
-                  <Bar dataKey={selectedCat} fill={CATEGORY_COLORS[selectedCat]} fillOpacity={0.88} radius={[3,3,0,0]} maxBarSize={30} name={selectedCat} />
+                  <Bar dataKey={selectedCat} fill={selectedCat === 'Mattresses' ? 'url(#lt-orange)' : selectedCat === 'Beds' ? 'url(#lt-purple)' : 'url(#lt-green)'} radius={[3,3,0,0]} maxBarSize={30} name={selectedCat} />
                 )}
               </BarChart>
             </ResponsiveContainer>
@@ -254,7 +259,10 @@ export default function LeadTimesPage() {
                 <ReferenceLine y={TARGET_LT} stroke="#F59E0B" strokeDasharray="4 4" label={{ value: '30d target', position: 'right', fill: '#F59E0B', fontSize: 11 }} />
                 <Tooltip contentStyle={{ background: '#403833', border: 'none', color: '#f9f7f6', borderRadius: 8, fontSize: 12 }} formatter={(v: unknown, n: unknown) => [`${Number(v)}d`, String(n)]} />
                 <Legend verticalAlign="top" align="right" iconSize={8} formatter={(v) => <span style={{ color: '#58524e', fontSize: 11 }}>{v}</span>} />
-                <Bar dataKey="actual" fill="#FF8900" fillOpacity={0.88} radius={[3, 3, 0, 0]} name="Production LT" />
+                <defs>
+                  <linearGradient id="lt-v-orange" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FF8900" stopOpacity={0.55} /><stop offset="100%" stopColor="#FF8900" stopOpacity={0.95} /></linearGradient>
+                </defs>
+                <Bar dataKey="actual" fill="url(#lt-v-orange)" radius={[3, 3, 0, 0]} name="Production LT" />
                 <Bar dataKey="agreed" fill="rgba(100,116,239,0.3)" radius={[3, 3, 0, 0]} name="Agreed LT" />
               </BarChart>
             </ResponsiveContainer>

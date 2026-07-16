@@ -198,7 +198,10 @@ export default function TransportationPage() {
                     contentStyle={{ background: '#403833', border: 'none', color: '#f9f7f6', borderRadius: 8, fontSize: 12 }}
                     formatter={(v, n) => [`${v}`, n === 'upcoming' ? `W${nextWeek} upcoming` : 'Historical avg']}
                   />
-                  <Bar dataKey="upcoming" fill="#FF8900" fillOpacity={0.88} radius={[4, 4, 0, 0]} name="upcoming">
+                  <defs>
+                    <linearGradient id="tr-orange" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FF8900" stopOpacity={0.55} /><stop offset="100%" stopColor="#FF8900" stopOpacity={0.95} /></linearGradient>
+                  </defs>
+                  <Bar dataKey="upcoming" fill="url(#tr-orange)" radius={[4, 4, 0, 0]} name="upcoming">
                     <LabelList dataKey="upcoming" position="top" style={{ fill: '#7b7571', fontSize: 11, fontWeight: 700 }}
                       formatter={(v: unknown) => Number(v) > 0 ? Number(v) : ''} />
                   </Bar>
