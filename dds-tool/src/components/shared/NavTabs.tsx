@@ -5,8 +5,7 @@ import { useData } from '../../context/DataContext';
 
 const TABS = [
   { label: 'Overview',       href: '/' },
-  { label: 'SOT + OTIF',     href: '/sot-otif' },
-  { label: 'Backlog',        href: '/backlog' },
+  { label: 'Performance',    href: '/performance' },
   { label: 'Transportation', href: '/transportation' },
   { label: 'Invoices',       href: '/invoices' },
   { label: 'Lead Times',     href: '/lead-times' },

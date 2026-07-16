@@ -224,10 +224,10 @@ export function Dashboard() {
 
           <div className="px-4 pt-3 pb-4 space-y-3">
 
-            {/* row 1: SOT+OTIF hero */}
-            <div onClick={() => router.push('/sot-otif')} className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-6 py-5 cursor-pointer h-[280px]" style={{ boxShadow: 'var(--shadow-card)' }}>
+            {/* row 1: Performance hero (SOT+OTIF + Backlog) */}
+            <div onClick={() => router.push('/performance')} className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-6 py-5 cursor-pointer h-[280px]" style={{ boxShadow: 'var(--shadow-card)' }}>
               <div className="flex items-stretch gap-10 h-full">
-                <div className="flex gap-10 shrink-0 items-center">
+                <div className="flex gap-8 shrink-0 items-center">
                   <div>
                     <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-2">SOT · 90% target</p>
                     <p className={`kpi-number font-extrabold text-6xl leading-none ${kpis.sotPct === null ? 'text-[#c8c0bb]' : kpis.sotPct >= 90 ? 'text-pass' : 'text-fail'}`}>
@@ -241,6 +241,20 @@ export function Dashboard() {
                       {kpis.otifPct !== null ? `${kpis.otifPct}%` : '—'}
                     </p>
                     {otifDelta !== null && <p className={`text-sm font-semibold mt-2 ${otifDelta >= 0 ? 'text-pass' : 'text-warn'}`}>{otifDelta >= 0 ? '↑' : '↓'} {Math.abs(otifDelta)}pp vs target</p>}
+                  </div>
+                  <div className="w-px bg-[#e9e3df] self-stretch mx-1 shrink-0" />
+                  <div className="flex flex-col justify-center gap-2">
+                    <p className="text-[10px] uppercase tracking-widest text-[#9c9794]">Backlog</p>
+                    {[
+                      { label: 'Critical', count: new Set(kpis.backlogSummary.critical.map(l => l.po)).size, color: 'text-fail' },
+                      { label: 'Recent',   count: new Set(kpis.backlogSummary.recent.map(l => l.po)).size,   color: 'text-warn' },
+                      { label: 'Future',   count: new Set(kpis.backlogSummary.futureBacklog.map(l => l.po)).size, color: 'text-brand' },
+                    ].map((item) => (
+                      <div key={item.label} className="flex items-baseline justify-between gap-3">
+                        <span className="text-xs text-[#9c9794]">{item.label}</span>
+                        <span className={`kpi-number font-extrabold text-2xl leading-none ${item.color}`}>{item.count}</span>
+                      </div>
+                    ))}
                   </div>
                   <p className="text-xs text-brand font-semibold self-end pb-1">Drill down →</p>
                 </div>
@@ -265,24 +279,8 @@ export function Dashboard() {
               </div>
             </div>
 
-            {/* row 2: Backlog | Transportation | Invoices */}
-            <div className="grid grid-cols-3 gap-3 h-[300px]">
-              <div onClick={() => router.push('/backlog')} className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
-                <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Backlog</p>
-                <div className="space-y-3">
-                  {[
-                    { label: 'Critical', count: new Set(kpis.backlogSummary.critical.map(l => l.po)).size, color: 'text-fail' },
-                    { label: 'Recent',   count: new Set(kpis.backlogSummary.recent.map(l => l.po)).size,   color: 'text-warn' },
-                    { label: 'Future',   count: new Set(kpis.backlogSummary.futureBacklog.map(l => l.po)).size, color: 'text-brand' },
-                  ].map((item) => (
-                    <div key={item.label} className="flex items-baseline justify-between">
-                      <span className="text-sm text-[#777]">{item.label}</span>
-                      <span className={`kpi-number font-extrabold text-4xl ${item.color}`}>{item.count}</span>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-xs text-brand font-semibold">Drill down →</p>
-              </div>
+            {/* row 2: Transportation | Invoices */}
+            <div className="grid grid-cols-2 gap-3 h-[300px]">
 
               {/* Transportation: not booked (left) + pickup chart (right) */}
               <div onClick={() => router.push('/transportation')} className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-5 flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
