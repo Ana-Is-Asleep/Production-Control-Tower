@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -46,18 +46,18 @@ function VendorDropdown({ allSuppliers, selected, onChange }: { allSuppliers: st
         className={`filter-pill flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border font-medium ${selected.length > 0 ? 'bg-[#403833] text-white border-[#403833]' : 'border-[#e9e3df] text-[#58524e] hover:border-[#403833]'}`}
       >
         <span className="max-w-[220px] truncate">{label}</span>
-        <span className="opacity-50 text-[10px]">▾</span>
+        <span className="opacity-50 text-[10px]">?</span>
       </button>
       {open && (
         <div className="absolute left-0 top-full mt-1 bg-white border border-[#e9e3df] rounded-lg shadow-lg z-50 w-72 py-1 max-h-72 overflow-y-auto" style={{ boxShadow: 'var(--shadow-card-hover)' }}>
           <button onClick={() => onChange([])} className={`w-full text-left px-4 py-2 text-xs font-medium ${selected.length === 0 ? 'text-brand' : 'text-[#58524e] hover:bg-[#f9f7f6]'}`}>
-            All vendors {selected.length === 0 && '✓'}
+            All vendors {selected.length === 0 && '?'}
           </button>
           <div className="border-t border-[#e9e3df] my-1" />
           {allSuppliers.map((s) => (
             <button key={s} onClick={() => toggle(s)} className="w-full text-left px-4 py-2 text-xs flex items-center justify-between hover:bg-[#f9f7f6]">
               <span className={selected.includes(s) ? 'text-[#403833] font-medium' : 'text-[#58524e]'}>{s}</span>
-              {selected.includes(s) && <span className="text-brand text-xs">✓</span>}
+              {selected.includes(s) && <span className="text-brand text-xs">?</span>}
             </button>
           ))}
         </div>
@@ -141,7 +141,7 @@ export function Dashboard() {
           </span>
         )}
         <button onClick={() => setUploadOpen(true)} className="filter-pill text-xs border border-[#e9e3df] rounded-lg px-3 py-1.5 text-[#58524e] hover:border-brand hover:text-brand shrink-0">
-          ↑ Upload
+          ? Upload
         </button>
         {hasData && (
           <button
@@ -149,7 +149,7 @@ export function Dashboard() {
             className={`filter-pill flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-semibold transition-all shrink-0 ${allAnnotated ? 'bg-pass text-white' : 'bg-[#403833] text-white hover:bg-[#58524e]'}`}
           >
             {allAnnotated
-              ? <><span className="w-2 h-2 rounded-full bg-white animate-pulse" /> Ready ✓</>
+              ? <><span className="w-2 h-2 rounded-full bg-white animate-pulse" /> Ready ?</>
               : <>Prepare {kpis.failingLines.length > 0 && <span className="bg-white/20 text-white text-xs rounded-full px-1.5">{annotatedCount}/{kpis.failingLines.length}</span>}</>
             }
           </button>
@@ -174,7 +174,7 @@ export function Dashboard() {
             {['SOT + OTIF', 'Backlog', 'Not Booked'].map((label) => (
               <div key={label} className="bg-[#f4f1ef] rounded-lg p-8">
                 <p className="text-xs uppercase tracking-widest text-[#9c9794] mb-3">{label}</p>
-                <p className="font-sans text-6xl font-bold text-[#c8c0bb]">—</p>
+                <p className="font-sans text-6xl font-bold text-[#c8c0bb]">�</p>
               </div>
             ))}
           </div>
@@ -192,7 +192,7 @@ export function Dashboard() {
               onChange={(s) => setFilters({ ...filters, suppliers: s })}
             />
             <span className="text-[#e9e3df]">|</span>
-            {/* category pills — only 4 so these stay as pills */}
+            {/* category pills � only 4 so these stay as pills */}
             {SKU_CATEGORIES.map((c) => (
               <button
                 key={c}
@@ -217,7 +217,7 @@ export function Dashboard() {
             </select>
             {(filters.suppliers.length > 0 || filters.categories.length > 0 || filters.pgrdWeek !== null) && (
               <button onClick={() => setFilters({ suppliers: [], categories: [], pgrdWeek: null })} className="text-xs text-[#9c9794] hover:text-fail transition-colors">
-                Clear ✕
+                Clear ?
               </button>
             )}
           </div>
@@ -229,18 +229,18 @@ export function Dashboard() {
               <div className="flex items-stretch gap-10 h-full">
                 <div className="flex gap-8 shrink-0 items-center">
                   <div>
-                    <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-2">SOT · 90% target</p>
+                    <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-2">SOT � 90% target</p>
                     <p className={`kpi-number font-extrabold text-6xl leading-none ${kpis.sotPct === null ? 'text-[#c8c0bb]' : kpis.sotPct >= 90 ? 'text-pass' : 'text-fail'}`}>
-                      {kpis.sotPct !== null ? `${kpis.sotPct}%` : '—'}
+                      {kpis.sotPct !== null ? `${kpis.sotPct}%` : '�'}
                     </p>
-                    {sotDelta !== null && <p className={`text-sm font-semibold mt-2 ${sotDelta >= 0 ? 'text-pass' : 'text-fail'}`}>{sotDelta >= 0 ? '↑' : '↓'} {Math.abs(sotDelta)}pp vs target</p>}
+                    {sotDelta !== null && <p className={`text-sm font-semibold mt-2 ${sotDelta >= 0 ? 'text-pass' : 'text-fail'}`}>{sotDelta >= 0 ? '?' : '?'} {Math.abs(sotDelta)}pp vs target</p>}
                   </div>
                   <div>
-                    <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-2">OTIF · 90% target</p>
+                    <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-2">OTIF � 90% target</p>
                     <p className={`kpi-number font-extrabold text-6xl leading-none ${kpis.otifPct === null ? 'text-[#c8c0bb]' : kpis.otifPct >= 90 ? 'text-pass' : 'text-warn'}`}>
-                      {kpis.otifPct !== null ? `${kpis.otifPct}%` : '—'}
+                      {kpis.otifPct !== null ? `${kpis.otifPct}%` : '�'}
                     </p>
-                    {otifDelta !== null && <p className={`text-sm font-semibold mt-2 ${otifDelta >= 0 ? 'text-pass' : 'text-warn'}`}>{otifDelta >= 0 ? '↑' : '↓'} {Math.abs(otifDelta)}pp vs target</p>}
+                    {otifDelta !== null && <p className={`text-sm font-semibold mt-2 ${otifDelta >= 0 ? 'text-pass' : 'text-warn'}`}>{otifDelta >= 0 ? '?' : '?'} {Math.abs(otifDelta)}pp vs target</p>}
                   </div>
                   <div className="w-px bg-[#e9e3df] self-stretch mx-1 shrink-0" />
                   <div className="flex flex-col justify-center gap-2">
@@ -256,7 +256,7 @@ export function Dashboard() {
                       </div>
                     ))}
                   </div>
-                  <p className="text-xs text-brand font-semibold self-end pb-1">Drill down →</p>
+                  <p className="text-xs text-brand font-semibold self-end pb-1">Drill down ?</p>
                 </div>
                 <div className="flex-1">
                   <ResponsiveContainer width="100%" height="100%">
@@ -266,10 +266,10 @@ export function Dashboard() {
                       <YAxis yAxisId="pct" domain={[0, 100]} tick={{ fill: '#9c9794', fontSize: 11 }} unit="%" axisLine={false} tickLine={false} />
                       <YAxis yAxisId="pos" orientation="right" hide />
                       <ReferenceLine yAxisId="pct" y={90} stroke="#d5cdc6" strokeDasharray="4 4" />
-                      <Bar yAxisId="pos" dataKey="posPredictedSOT" stackId="s" fill="#34A853" fillOpacity={0.82} radius={[0,0,0,0]} />
-                      <Bar yAxisId="pos" dataKey="posShipped"      stackId="s" fill="#34A853" fillOpacity={0.82} radius={[0,0,0,0]} />
-                      <Bar yAxisId="pos" dataKey="posBacklog"      stackId="s" fill="#F59E0B" fillOpacity={0.82} radius={[0,0,0,0]} />
-                      <Bar yAxisId="pos" dataKey="pastPOBacklog"   stackId="s" fill="#DC2626" fillOpacity={0.82} radius={[2,2,0,0]} />
+                      <Bar yAxisId="pos" dataKey="posPredictedSOT" stackId="s" fill="#34A853" fillOpacity={0.72} radius={[0,0,0,0]} />
+                      <Bar yAxisId="pos" dataKey="posShipped"      stackId="s" fill="#34A853" fillOpacity={0.72} radius={[0,0,0,0]} />
+                      <Bar yAxisId="pos" dataKey="posBacklog"      stackId="s" fill="#F59E0B" fillOpacity={0.72} radius={[0,0,0,0]} />
+                      <Bar yAxisId="pos" dataKey="pastPOBacklog"   stackId="s" fill="#DC2626" fillOpacity={0.72} radius={[2,2,0,0]} />
                       <Line yAxisId="pct" dataKey="otifPct" stroke="#15803d" strokeWidth={2} dot={{ r: 3, fill: '#15803d', strokeWidth: 0 }} name="OTIF %" connectNulls={false} />
                       <Line yAxisId="pct" dataKey="sotPct"  stroke="#FF8900" strokeWidth={2} dot={{ r: 3, fill: '#FF8900', strokeWidth: 0 }} activeDot={{ r: 4 }} name="SOT %" connectNulls={false} />
                       <Tooltip contentStyle={{ background: '#403833', border: 'none', borderRadius: 8, fontSize: 11, padding: '6px 10px' }} labelStyle={{ color: '#ffa236', fontWeight: 700 }} itemStyle={{ color: '#f9f7f6' }} formatter={(v, n) => { const s = String(n); return [s.includes('%') ? `${v}%` : `${v} POs`, s]; }} />
@@ -286,7 +286,7 @@ export function Dashboard() {
               <div onClick={() => router.push('/transportation')} className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-5 flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
                 <div className="flex items-start justify-between mb-3">
                   <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Transportation</p>
-                  <p className="text-[10px] text-brand font-semibold">Drill down →</p>
+                  <p className="text-[10px] text-brand font-semibold">Drill down ?</p>
                 </div>
                 <div className="flex items-stretch gap-4 flex-1 min-h-0">
                   <div className="flex flex-col justify-center shrink-0">
@@ -296,7 +296,7 @@ export function Dashboard() {
                   </div>
                   <div className="w-px bg-[#e9e3df] shrink-0" />
                   <div className="flex-1 flex flex-col min-w-0">
-                    <p className="text-[10px] text-[#b5aaa5] mb-1">W{String(lastWeek + 1).padStart(2, '0')} upcoming · avg line</p>
+                    <p className="text-[10px] text-[#b5aaa5] mb-1">W{String(lastWeek + 1).padStart(2, '0')} upcoming � avg line</p>
                     <div className="flex-1">
                       <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart
@@ -315,7 +315,7 @@ export function Dashboard() {
                           <YAxis tick={{ fill: '#9c9794', fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
                           <Tooltip contentStyle={{ background: '#403833', border: 'none', color: '#f9f7f6', borderRadius: 8, fontSize: 11 }}
                             formatter={(v, n) => [`${v}`, n === 'upcoming' ? 'Upcoming POs' : 'Hist. avg']} />
-                          <Bar dataKey="upcoming" fill="#FF8900" fillOpacity={0.82} radius={[3,3,0,0]} name="upcoming">
+                          <Bar dataKey="upcoming" fill="#FF8900" fillOpacity={0.72} radius={[3,3,0,0]} name="upcoming">
                             <LabelList dataKey="upcoming" position="top" style={{ fill: '#7b7571', fontSize: 10, fontWeight: 600 }}
                               formatter={(v: unknown) => Number(v) > 0 ? Number(v) : ''} />
                           </Bar>
@@ -368,11 +368,11 @@ export function Dashboard() {
                     </div>
                   </div>
                 )}
-                <p className="text-xs text-brand font-semibold mt-2">Drill down →</p>
+                <p className="text-xs text-brand font-semibold mt-2">Drill down ?</p>
               </div>
             </div>
 
-            {/* row 3: lead times — weekly bar chart, click to drill down */}
+            {/* row 3: lead times � weekly bar chart, click to drill down */}
             <div className="bg-white rounded-lg border border-[#e9e3df] p-5" style={{ boxShadow: 'var(--shadow-card)' }}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
@@ -384,7 +384,7 @@ export function Dashboard() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {/* category filter pills — stop propagation so they don't trigger navigation */}
+                  {/* category filter pills � stop propagation so they don't trigger navigation */}
                   <button
                     onClick={(e) => { e.stopPropagation(); setLtCat('All'); }}
                     className={`text-[11px] px-2.5 py-1 rounded-full border font-medium transition-all ${ltCat === 'All' ? 'bg-[#403833] text-white border-[#403833]' : 'border-[#e9e3df] text-[#7b7571]'}`}>
@@ -402,7 +402,7 @@ export function Dashboard() {
                   <button
                     onClick={() => router.push('/lead-times')}
                     className="text-[11px] text-brand font-semibold hover:underline">
-                    View all →
+                    View all ?
                   </button>
                 </div>
               </div>
@@ -420,12 +420,12 @@ export function Dashboard() {
                   />
                   {ltCat === 'All' ? (
                     <>
-                      <Bar dataKey="Mattresses"  fill={CATEGORY_COLORS.Mattresses}  fillOpacity={0.82} radius={[3,3,0,0]} maxBarSize={20} />
-                      <Bar dataKey="Beds"        fill={CATEGORY_COLORS.Beds}        fillOpacity={0.82} radius={[3,3,0,0]} maxBarSize={20} />
-                      <Bar dataKey="Accessories" fill={CATEGORY_COLORS.Accessories} fillOpacity={0.82} radius={[3,3,0,0]} maxBarSize={20} />
+                      <Bar dataKey="Mattresses"  fill={CATEGORY_COLORS.Mattresses}  fillOpacity={0.72} radius={[3,3,0,0]} maxBarSize={20} />
+                      <Bar dataKey="Beds"        fill={CATEGORY_COLORS.Beds}        fillOpacity={0.72} radius={[3,3,0,0]} maxBarSize={20} />
+                      <Bar dataKey="Accessories" fill={CATEGORY_COLORS.Accessories} fillOpacity={0.72} radius={[3,3,0,0]} maxBarSize={20} />
                     </>
                   ) : (
-                    <Bar dataKey={ltCat} fill={CATEGORY_COLORS[ltCat as SKUCategory]} fillOpacity={0.82} radius={[3,3,0,0]} maxBarSize={30} />
+                    <Bar dataKey={ltCat} fill={CATEGORY_COLORS[ltCat as SKUCategory]} fillOpacity={0.72} radius={[3,3,0,0]} maxBarSize={30} />
                   )}
                 </BarChart>
               </ResponsiveContainer>

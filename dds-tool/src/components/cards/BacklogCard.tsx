@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { Card } from '../shared/Card';
@@ -40,7 +40,7 @@ export function BacklogCard({ backlog }: BacklogCardProps) {
             onClick={() => setExpanded((v) => !v)}
             className="text-xs text-muted hover:text-dark transition-colors"
           >
-            {expanded ? '▲' : '▼'}
+            {expanded ? '?' : '?'}
           </button>
         </div>
 
@@ -73,7 +73,7 @@ export function BacklogCard({ backlog }: BacklogCardProps) {
 
         {total === 0 && (
           <div className="mt-4 text-xs text-pass font-medium text-center py-2 bg-pass-bg rounded-lg">
-            ✓ No backlog items
+            ? No backlog items
           </div>
         )}
       </div>

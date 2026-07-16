@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { SlideOver } from '../shared/SlideOver';
@@ -51,13 +51,13 @@ export function SKUDeepDive({ lines }: SKUDeepDiveProps) {
     },
     {
       key: 'sot', header: 'SOT',
-      render: (r) => r.kpi.sotResult === null ? <span className="text-muted">—</span>
-        : r.kpi.sotResult ? <span className="text-pass font-bold">✓</span> : <span className="text-fail font-bold">✗</span>
+      render: (r) => r.kpi.sotResult === null ? <span className="text-muted">�</span>
+        : r.kpi.sotResult ? <span className="text-pass font-bold">?</span> : <span className="text-fail font-bold">?</span>
     },
     {
       key: 'otif', header: 'OTIF',
-      render: (r) => r.kpi.otif === null ? <span className="text-muted">—</span>
-        : r.kpi.otif ? <span className="text-pass font-bold">✓</span> : <span className="text-warn font-bold">✗</span>
+      render: (r) => r.kpi.otif === null ? <span className="text-muted">�</span>
+        : r.kpi.otif ? <span className="text-pass font-bold">?</span> : <span className="text-warn font-bold">?</span>
     },
     { key: 'status', header: 'Status', render: (r) => <span className="text-xs text-muted">{r.status}</span> },
   ];
@@ -84,7 +84,7 @@ export function SKUDeepDive({ lines }: SKUDeepDiveProps) {
               <span className="font-sans text-xl font-bold text-warn">{notOtifCount}</span>
             </div>
           </div>
-          <p className="text-xs text-brand mt-3">→ Open detail view</p>
+          <p className="text-xs text-brand mt-3">? Open detail view</p>
         </div>
       </Card>
 

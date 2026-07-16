@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useMemo } from 'react';
 import { useData } from '../context/DataContext';
@@ -65,9 +65,9 @@ export function PrepareModal({ onClose, failingLines }: PrepareModalProps) {
         <div className="px-6 py-5 border-b border-[#e9e3df] flex items-center justify-between">
           <div>
             <h2 className="font-semibold text-[#403833] text-base">Prepare for Meeting</h2>
-            <p className="text-xs text-[#9c9794] mt-0.5">{failingLines.length} lines out of target · W22 2026</p>
+            <p className="text-xs text-[#9c9794] mt-0.5">{failingLines.length} lines out of target � W22 2026</p>
           </div>
-          <button onClick={onClose} className="text-[#b5aaa5] hover:text-[#403833] transition-colors">✕</button>
+          <button onClick={onClose} className="text-[#b5aaa5] hover:text-[#403833] transition-colors">?</button>
         </div>
 
         {/* step indicator */}
@@ -79,11 +79,11 @@ export function PrepareModal({ onClose, failingLines }: PrepareModalProps) {
                 className="flex items-center gap-2"
               >
                 <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${step === s.n ? 'bg-[#403833] text-white' : step > s.n ? 'bg-pass text-white' : 'bg-[#e9e3df] text-[#9c9794]'}`}>
-                  {step > s.n ? '✓' : s.n}
+                  {step > s.n ? '?' : s.n}
                 </span>
                 <span className={`text-xs font-medium ${step === s.n ? 'text-[#403833]' : step > s.n ? 'text-pass' : 'text-[#9c9794]'}`}>{s.label}</span>
               </button>
-              {i < STEPS.length - 1 && <span className="mx-3 text-[#e9e3df] text-xs">—</span>}
+              {i < STEPS.length - 1 && <span className="mx-3 text-[#e9e3df] text-xs">�</span>}
             </div>
           ))}
           {/* progress */}
@@ -97,7 +97,7 @@ export function PrepareModal({ onClose, failingLines }: PrepareModalProps) {
           )}
         </div>
 
-        {/* step 1 — select vendors */}
+        {/* step 1 � select vendors */}
         {step === 1 && (
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
             <p className="text-sm text-[#58524e]">Which vendors are you responsible for? Select all that apply.</p>
@@ -107,7 +107,7 @@ export function PrepareModal({ onClose, failingLines }: PrepareModalProps) {
                 className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border text-sm font-medium transition-all ${selectedVendors.length === 0 ? 'border-[#403833] bg-[#403833] text-white' : 'border-[#e9e3df] text-[#58524e] hover:border-[#CCC]'}`}
               >
                 All vendors
-                {selectedVendors.length === 0 && <span>✓</span>}
+                {selectedVendors.length === 0 && <span>?</span>}
               </button>
               {allVendors.map((v) => (
                 <button
@@ -123,7 +123,7 @@ export function PrepareModal({ onClose, failingLines }: PrepareModalProps) {
           </div>
         )}
 
-        {/* step 2 — root causes */}
+        {/* step 2 � root causes */}
         {step === 2 && (
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
             {visibleLines.length === 0 && (
@@ -155,7 +155,7 @@ export function PrepareModal({ onClose, failingLines }: PrepareModalProps) {
                     <div className="flex items-center gap-1.5 shrink-0">
                       {kpi.sotFail && <span className="text-[10px] bg-[#FEE2E2] text-fail px-2 py-0.5 rounded-full font-medium">SOT</span>}
                       {kpi.otifFail && <span className="text-[10px] bg-[#FEF3C7] text-warn px-2 py-0.5 rounded-full font-medium">OTIF</span>}
-                      {done && <span className="text-pass font-bold">✓</span>}
+                      {done && <span className="text-pass font-bold">?</span>}
                     </div>
                   </div>
 
@@ -189,21 +189,21 @@ export function PrepareModal({ onClose, failingLines }: PrepareModalProps) {
         {/* footer */}
         <div className="px-6 py-4 border-t border-[#e9e3df] flex items-center justify-between gap-3">
           {step > 1 ? (
-            <button onClick={() => setStep(step - 1)} className="text-sm text-[#7b7571] hover:text-[#403833] transition-colors">← Back</button>
+            <button onClick={() => setStep(step - 1)} className="text-sm text-[#7b7571] hover:text-[#403833] transition-colors">? Back</button>
           ) : <div />}
           {step < 2 ? (
             <button
               onClick={() => setStep(2)}
               className="bg-[#403833] text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#58524e] transition-colors"
             >
-              {`Continue with ${selectedVendors.length === 0 ? 'all' : selectedVendors.length} vendor${selectedVendors.length === 1 ? '' : 's'} →`}
+              {`Continue with ${selectedVendors.length === 0 ? 'all' : selectedVendors.length} vendor${selectedVendors.length === 1 ? '' : 's'} ?`}
             </button>
           ) : (
             <button
               onClick={onClose}
               className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${allDone ? 'bg-pass text-white' : 'bg-[#403833] text-white hover:bg-[#58524e]'}`}
             >
-              {allDone ? '✓ All lines annotated — ready for review' : `Save & close (${annotatedCount}/${visibleLines.length} done)`}
+              {allDone ? '? All lines annotated � ready for review' : `Save & close (${annotatedCount}/${visibleLines.length} done)`}
             </button>
           )}
         </div>

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import type { ActionItem } from '../../types';
@@ -63,7 +63,7 @@ export function OpenActions() {
           <div className="relative bg-card rounded-lg border border-border w-full max-w-lg mx-4 flex flex-col max-h-[80vh]" style={{ boxShadow: 'var(--shadow-slide)' }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <h2 className="font-semibold text-navy text-base">Open Actions</h2>
-              <button onClick={() => setOpen(false)} className="text-muted hover:text-dark">✕</button>
+              <button onClick={() => setOpen(false)} className="text-muted hover:text-dark">?</button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
               {actions.length === 0 && (
@@ -83,7 +83,7 @@ export function OpenActions() {
                     {a.linkedPO && <span className="text-brand">{a.linkedPO}</span>}
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => cycleStatus(a.id)}>
-                    {a.status === 'open' ? 'Start →' : a.status === 'in_progress' ? 'Mark done ✓' : 'Reopen'}
+                    {a.status === 'open' ? 'Start ?' : a.status === 'in_progress' ? 'Mark done ?' : 'Reopen'}
                   </Button>
                 </div>
               ))}

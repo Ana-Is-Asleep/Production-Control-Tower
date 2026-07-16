@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 
@@ -27,7 +27,7 @@ export function Card({ children, className = '', expandable = false, expandedCon
               onClick={() => setExpanded((v) => !v)}
               className="text-xs text-muted hover:text-dark transition-colors flex items-center gap-1"
             >
-              <span>{expanded ? '▲ Collapse' : '▼ Expand details'}</span>
+              <span>{expanded ? '? Collapse' : '? Expand details'}</span>
             </button>
           </div>
           {expanded && (

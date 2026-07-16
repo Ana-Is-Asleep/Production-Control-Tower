@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useCallback } from 'react';
 import { SlideOver } from '../shared/SlideOver';
@@ -54,7 +54,7 @@ export function UploadPanel({ open, onClose, onLoad }: UploadPanelProps) {
       setInvoiceRows(parsedInvoices);
       setInvoiceCount(invoiceFile ? parsedInvoices.length : null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to parse — check the file format');
+      setError(e instanceof Error ? e.message : 'Failed to parse � check the file format');
     } finally {
       setLoading(false);
     }
@@ -74,26 +74,26 @@ export function UploadPanel({ open, onClose, onLoad }: UploadPanelProps) {
           onClick={() => document.getElementById('file-input')?.click()}
           className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${dragging ? 'border-brand bg-brand-dim' : 'border-border hover:border-brand-soft'}`}
         >
-          <div className="text-3xl mb-3">📂</div>
+          <div className="text-3xl mb-3">??</div>
           <p className="text-sm text-dark font-medium">Drag & drop your XLSX files here</p>
-          <p className="text-xs text-muted mt-1">Purchase Order Lines · Invoices (optional)</p>
+          <p className="text-xs text-muted mt-1">Purchase Order Lines � Invoices (optional)</p>
           <input id="file-input" type="file" accept=".xlsx" multiple className="hidden"
             onChange={(e) => handleFiles(Array.from(e.target.files ?? []))} />
         </div>
 
         {error   && <div className="bg-fail-bg text-fail-text text-sm px-3 py-2 rounded-lg">{error}</div>}
-        {loading && <div className="text-sm text-muted text-center py-4">Parsing… this may take a moment for large files</div>}
+        {loading && <div className="text-sm text-muted text-center py-4">Parsing� this may take a moment for large files</div>}
 
         {result && !loading && (
           <div className="space-y-3">
             <div className="border border-border rounded-lg divide-y divide-border">
               <div className="flex items-center justify-between px-4 py-2.5">
-                <div className="flex items-center gap-2"><span className="text-green-600">✓</span><span className="text-sm text-dark">Purchase Lines</span></div>
+                <div className="flex items-center gap-2"><span className="text-green-600">?</span><span className="text-sm text-dark">Purchase Lines</span></div>
                 <span className="text-xs text-muted">{result.lineCount.toLocaleString()} rows</span>
               </div>
               {invoiceCount !== null && (
                 <div className="flex items-center justify-between px-4 py-2.5">
-                  <div className="flex items-center gap-2"><span className="text-green-600">✓</span><span className="text-sm text-dark">Invoices</span></div>
+                  <div className="flex items-center gap-2"><span className="text-green-600">?</span><span className="text-sm text-dark">Invoices</span></div>
                   <span className="text-xs text-muted">{invoiceCount.toLocaleString()} rows</span>
                 </div>
               )}
@@ -103,7 +103,7 @@ export function UploadPanel({ open, onClose, onLoad }: UploadPanelProps) {
               <div className="flex justify-between"><span>D2C lines (2026)</span><span className="font-medium text-brand">{d2cCount.toLocaleString()}</span></div>
             </div>
             <Button className="w-full justify-center" onClick={() => { onLoad(result.lines, invoiceRows.length > 0 ? invoiceRows : undefined); onClose(); }}>
-              Load Data →
+              Load Data ?
             </Button>
           </div>
         )}

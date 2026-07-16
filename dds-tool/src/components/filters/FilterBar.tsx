@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { Button } from '../shared/Button';
 import type { FilterState } from '../../types';
@@ -29,7 +29,7 @@ export function FilterBar({ filters, setFilters, allSuppliers, lastWeek, lastYea
       <div className="flex items-center gap-2 shrink-0">
         <span className="font-sans font-bold text-brand text-xl">emma.</span>
         <span className="text-muted text-xs">|</span>
-        <span className="text-navy text-sm font-semibold">DDS Meeting Tool · P2W EU D2C</span>
+        <span className="text-navy text-sm font-semibold">DDS Meeting Tool � P2W EU D2C</span>
       </div>
 
       <div className="flex-1" />
@@ -37,7 +37,7 @@ export function FilterBar({ filters, setFilters, allSuppliers, lastWeek, lastYea
       <div className="relative group">
         <button className="flex items-center gap-1.5 text-sm border border-border rounded-lg px-3 py-1.5 hover:border-brand-soft transition-colors text-dark">
           <span className="max-w-[200px] truncate">{displaySuppliers}</span>
-          <span className="text-muted text-xs">▾</span>
+          <span className="text-muted text-xs">?</span>
         </button>
         <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg min-w-[200px] py-1 hidden group-hover:block z-50">
           <button
@@ -52,7 +52,7 @@ export function FilterBar({ filters, setFilters, allSuppliers, lastWeek, lastYea
               onClick={() => toggleSupplier(s)}
               className={`w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 hover:bg-canvas ${filters.suppliers.includes(s) ? 'text-brand font-medium' : 'text-dark'}`}
             >
-              {filters.suppliers.includes(s) && <span>✓</span>}
+              {filters.suppliers.includes(s) && <span>?</span>}
               {s}
             </button>
           ))}
@@ -64,7 +64,7 @@ export function FilterBar({ filters, setFilters, allSuppliers, lastWeek, lastYea
       </div>
 
       <Button variant="outline" size="sm" onClick={onOpenUpload}>
-        ↑ Upload
+        ? Upload
       </Button>
 
       <button

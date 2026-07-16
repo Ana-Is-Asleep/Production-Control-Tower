@@ -332,7 +332,7 @@ export default function TransportationPage() {
                 contentStyle={{ background: '#403833', border: 'none', color: '#f9f7f6', borderRadius: 8, fontSize: 12 }}
                 formatter={(v, n) => [`${v}`, n === 'upcoming' ? `W${nextWeek} upcoming` : 'Historical avg']}
               />
-              <Bar dataKey="upcoming" fill="#FF8900" fillOpacity={0.82} radius={[4, 4, 0, 0]} name="upcoming">
+              <Bar dataKey="upcoming" fill="#FF8900" fillOpacity={0.72} radius={[4, 4, 0, 0]} name="upcoming">
                 <LabelList dataKey="upcoming" position="top" style={{ fill: '#7b7571', fontSize: 12, fontWeight: 700 }}
                   formatter={(v: unknown) => Number(v) > 0 ? Number(v) : ''} />
               </Bar>

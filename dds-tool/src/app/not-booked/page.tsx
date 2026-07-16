@@ -1,4 +1,4 @@
-ï»¿'use client';
+'use client';
 
 import { useState, useMemo, Fragment } from 'react';
 import { useData } from '../../context/DataContext';
@@ -99,14 +99,14 @@ export default function NotBookedPage() {
           />
           <KpiCard
             label="Most urgent PGRD"
-            value={mostUrgentPgrd ? formatDateShort(mostUrgentPgrd) ?? 'â€”' : 'â€”'}
+            value={mostUrgentPgrd ? formatDateShort(mostUrgentPgrd) ?? '—' : '—'}
             delta={mostUrgentPgrd ? 'Earliest unbooked delivery' : 'No unbooked POs'}
             deltaGood={!mostUrgentPgrd}
           />
           <KpiCard
             label="By category"
-            value={`${catCounts.Beds.size}B Â· ${catCounts.Mattresses.size}M Â· ${catCounts.Accessories.size}A`}
-            delta="Beds Â· Mattresses Â· Accessories"
+            value={`${catCounts.Beds.size}B · ${catCounts.Mattresses.size}M · ${catCounts.Accessories.size}A`}
+            delta="Beds · Mattresses · Accessories"
             deltaGood={false}
           />
         </div>
@@ -138,7 +138,7 @@ export default function NotBookedPage() {
         {filteredPOs.length > 0 ? (
           <div className="bg-white rounded-lg overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
             <div className="px-5 py-3 border-b border-[#e9e3df]">
-              <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">POs missing pickup booking â€” click to expand lines</p>
+              <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">POs missing pickup booking — click to expand lines</p>
             </div>
             <table className="w-full text-sm">
               <thead>
@@ -158,7 +158,7 @@ export default function NotBookedPage() {
                         className="border-b border-[#e9e3df] hover:bg-[#f9f7f6] cursor-pointer transition-colors">
                         <td className="px-4 py-3 font-semibold text-[#403833]">
                           <span className="flex items-center gap-2">
-                            <span className="text-[#b5aaa5] text-xs">{expandedPO === group.po ? 'â–¾' : 'â–¸'}</span>
+                            <span className="text-[#b5aaa5] text-xs">{expandedPO === group.po ? '?' : '?'}</span>
                             {group.po}
                           </span>
                         </td>
