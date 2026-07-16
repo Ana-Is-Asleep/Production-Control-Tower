@@ -44,11 +44,17 @@ function parseRowsInto(xml: string, ss: string[], results: unknown[][]): void {
   for (let ri = 1; ri < rowParts.length; ri++) {
     const row: unknown[] = [];
     const cellParts = rowParts[ri].split(CELL_OPEN);
+    let nextColIdx = 0; // fallback for cells that omit r= attribute
     for (let ci = 1; ci < cellParts.length; ci++) {
       const cell = cellParts[ci];
       const rM = cell.match(/\br="([A-Z]+)\d+"/);
-      if (!rM) continue;
-      const colIdx = colToIndex(rM[1]);
+      let colIdx: number;
+      if (rM) {
+        colIdx = colToIndex(rM[1]);
+        nextColIdx = colIdx + 1;
+      } else {
+        colIdx = nextColIdx++;
+      }
       const type = cell.match(/\bt="([^"]+)"/)?.[1] ?? '';
       // Match <v> or <x:v>
       const raw  = cell.match(/<(?:x:)?v>([^<]*)<\/(?:x:)?v>/)?.[1] ?? '';
