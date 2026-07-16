@@ -144,202 +144,209 @@ export default function TransportationPage() {
 
       <div className="px-6 py-5 max-w-5xl mx-auto space-y-5">
 
-        {/* ── NOT BOOKED ─────────────────────────────────────────────────── */}
-        <SectionLabel>Not Booked — POs missing pickup booking</SectionLabel>
+        {/* ── PICKUPS + NOT BOOKED side by side ─────────────────────────── */}
+        <div className="grid grid-cols-2 gap-5 items-start">
 
-        <div className="grid grid-cols-4 gap-4">
-          <KpiCard
-            label="POs not booked"
-            value={totalPOs}
-            sub={totalPOs === 0 ? 'All POs have pickup booked' : `${totalNBLines} lines affected`}
-            deltaColor={totalPOs === 0 ? 'pass' : 'fail'}
-          />
-          <KpiCard
-            label="% of active POs"
-            value={pctUnbooked}
-            unit="%"
-            sub={pctUnbooked === 0 ? 'clean' : `out of ${activePOs} active POs`}
-            deltaColor={pctUnbooked === 0 ? 'pass' : 'fail'}
-          />
-          <KpiCard
-            label="Most urgent PGRD"
-            value={mostUrgentPgrd ? formatDateShort(mostUrgentPgrd) ?? '—' : '—'}
-            sub={mostUrgentPgrd ? 'Earliest unbooked delivery' : 'No unbooked POs'}
-            deltaColor={mostUrgentPgrd ? 'fail' : 'pass'}
-          />
-          <KpiCard
-            label="By category"
-            value={`${catCounts.Beds.size}B · ${catCounts.Mattresses.size}M · ${catCounts.Accessories.size}A`}
-            sub="Beds · Mattresses · Accessories"
-            deltaColor="neutral"
-          />
-        </div>
+          {/* LEFT: Upcoming Pickups */}
+          <div className="space-y-4">
+            <SectionLabel>Upcoming Pickups — W{String(nextWeek).padStart(2, '0')} ESD bookings</SectionLabel>
 
-        {/* category filter */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={() => setSelectedCat('All')}
-            className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-all ${selectedCat === 'All' ? 'bg-[#403833] text-white border-[#403833]' : 'border-[#e9e3df] text-[#58524e] hover:border-[#403833]'}`}>
-            All categories
-          </button>
-          {SKU_CATEGORIES.map((c) => (
-            <button key={c}
-              onClick={() => setSelectedCat(c)}
-              className="text-xs px-3 py-1.5 rounded-lg border font-medium transition-all"
-              style={selectedCat === c
-                ? { background: CATEGORY_COLORS[c], color: '#f9f7f6', borderColor: CATEGORY_COLORS[c] }
-                : { borderColor: '#e9e3df', color: '#58524e' }}>
-              {c}
-              {catCounts[c].size > 0 && <span className="ml-1.5 text-[10px] opacity-70">{catCounts[c].size}</span>}
-            </button>
-          ))}
-          <span className="ml-auto text-xs text-[#9c9794]">{filteredPOs.length} PO{filteredPOs.length !== 1 ? 's' : ''}</span>
-        </div>
-
-        {filteredPOs.length > 0 ? (
-          <div className="bg-white rounded-lg overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
-            <div className="px-5 py-3 border-b border-[#e9e3df]">
-              <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">POs missing pickup booking — click to expand lines</p>
-            </div>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-[#403833] text-white">
-                  {['PO', 'Vendor', 'Destination', 'PGRD', 'Category', 'Lines'].map((h) => (
-                    <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filteredPOs.map((group) => {
-                  const cats = [...new Set(group.lines.map(l => categorizeSKU(l.sku)))];
-                  return (
-                    <Fragment key={group.po}>
-                      <tr
-                        onClick={() => setExpandedPO(expandedPO === group.po ? null : group.po)}
-                        className="border-b border-[#e9e3df] hover:bg-[#f9f7f6] cursor-pointer transition-colors">
-                        <td className="px-4 py-3 font-semibold text-[#403833]">
-                          <span className="flex items-center gap-2">
-                            <span className="text-[#b5aaa5] text-xs">{expandedPO === group.po ? '▾' : '▸'}</span>
-                            {group.po}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-[#58524e]">{group.vendor}</td>
-                        <td className="px-4 py-3 text-[#58524e]">{group.destination}</td>
-                        <td className="px-4 py-3 text-[#58524e] whitespace-nowrap">{formatDateShort(group.pgrd)}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex gap-1 flex-wrap">
-                            {cats.map(c => (
-                              <span key={c} className="text-[10px] font-medium px-2 py-0.5 rounded-full text-white" style={{ background: CATEGORY_COLORS[c] }}>{c}</span>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-xs bg-[#FEE2E2] text-fail px-2 py-0.5 rounded-full font-medium">
-                            {group.lines.length} line{group.lines.length !== 1 ? 's' : ''}
-                          </span>
-                        </td>
-                      </tr>
-                      {expandedPO === group.po && (
-                        <tr className="bg-[#faf7f3]">
-                          <td colSpan={6} className="px-6 py-3">
-                            <table className="w-full text-xs">
-                              <thead>
-                                <tr className="text-[#9c9794] border-b border-[#e9e3df]">
-                                  {['Line', 'SKU', 'Category', 'PGRD', 'Qty'].map((h) => (
-                                    <th key={h} className="py-1.5 pr-6 text-left font-medium uppercase text-[10px] tracking-wide">{h}</th>
-                                  ))}
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {group.lines.map((l) => {
-                                  const cat = categorizeSKU(l.sku);
-                                  return (
-                                    <tr key={`${l.po}-${l.line}`} className="border-b border-[#f4f1ef] last:border-0">
-                                      <td className="py-1.5 pr-6 text-[#7b7571]">{l.line}</td>
-                                      <td className="py-1.5 pr-6 font-mono text-[#58524e]">{l.sku}</td>
-                                      <td className="py-1.5 pr-6">
-                                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full text-white" style={{ background: CATEGORY_COLORS[cat] }}>{cat}</span>
-                                      </td>
-                                      <td className="py-1.5 pr-6 text-[#7b7571]">{formatDateShort(l.pgrd)}</td>
-                                      <td className="py-1.5 pr-6 text-[#7b7571]">{l.qty}</td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg p-8 text-center text-[#b5aaa5]" style={{ boxShadow: 'var(--shadow-card)' }}>
-            {totalPOs === 0 ? 'All POs have pickup booked' : 'No POs match the selected category'}
-          </div>
-        )}
-
-        {/* ── UPCOMING PICKUPS ───────────────────────────────────────────── */}
-        <SectionLabel>Upcoming Pickups — W{String(nextWeek).padStart(2, '0')} ESD bookings</SectionLabel>
-
-        <div className="grid grid-cols-4 gap-4">
-          <KpiCard
-            label={`Upcoming W${String(nextWeek).padStart(2, '0')}`}
-            value={totalUpcoming}
-            unit="POs"
-            sub="ESD bookings next week"
-            deltaColor="neutral"
-          />
-          <KpiCard
-            label="Historical avg / week"
-            value={totalExpected}
-            unit="POs"
-            sub={`${overallAvg}/day · ${pastWeekNums.length} weeks avg`}
-            deltaColor="neutral"
-          />
-          <KpiCard
-            label="vs average"
-            value={`${delta > 0 ? '+' : ''}${delta}`}
-            unit="POs"
-            sub={delta > 0 ? 'busier than avg week' : delta < 0 ? 'quieter than avg week' : 'same as avg week'}
-            deltaColor={delta === 0 ? 'neutral' : delta > 0 ? 'fail' : 'pass'}
-          />
-          <KpiCard
-            label="Busiest day"
-            value={busiestDay?.upcoming > 0 ? busiestDay.day : '—'}
-            unit={busiestDay?.upcoming > 0 ? `${busiestDay.upcoming} POs` : undefined}
-            sub={busiestDay?.upcoming > 0 ? 'highest pickup day' : 'no bookings yet'}
-            deltaColor="neutral"
-          />
-        </div>
-
-        <div className="bg-white rounded-lg p-6" style={{ boxShadow: 'var(--shadow-card)' }}>
-          <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-1">
-            Upcoming W{String(nextWeek).padStart(2, '0')} vs Historical Average
-          </p>
-          <p className="text-[10px] text-[#b5aaa5] mb-5">
-            Bars = ESD bookings for W{String(nextWeek).padStart(2, '0')} &middot; Dashed line = avg across W{String(pastWeekNums[0]).padStart(2, '0')}–W{String(pastWeekNums[pastWeekNums.length - 1]).padStart(2, '0')}
-          </p>
-          <ResponsiveContainer width="100%" height={240}>
-            <ComposedChart data={chartData} margin={{ top: 16, right: 20, left: -10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="2 4" stroke="#f4f1ef" vertical={false} />
-              <XAxis dataKey="day" tick={{ fill: '#9c9794', fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#9c9794', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <Tooltip
-                contentStyle={{ background: '#403833', border: 'none', color: '#f9f7f6', borderRadius: 8, fontSize: 12 }}
-                formatter={(v, n) => [`${v}`, n === 'upcoming' ? `W${nextWeek} upcoming` : 'Historical avg']}
+            <div className="grid grid-cols-2 gap-3">
+              <KpiCard
+                label={`Upcoming W${String(nextWeek).padStart(2, '0')}`}
+                value={totalUpcoming}
+                unit="POs"
+                sub="ESD bookings next week"
+                deltaColor="neutral"
               />
-              <Bar dataKey="upcoming" fill="#FF8900" fillOpacity={0.72} radius={[4, 4, 0, 0]} name="upcoming">
-                <LabelList dataKey="upcoming" position="top" style={{ fill: '#7b7571', fontSize: 12, fontWeight: 700 }}
-                  formatter={(v: unknown) => Number(v) > 0 ? Number(v) : ''} />
-              </Bar>
-              <Line dataKey="avg" stroke="#6469aa" strokeWidth={2.5} dot={{ r: 4, fill: '#6469aa', strokeWidth: 0 }}
-                strokeDasharray="5 3" name="avg" />
-            </ComposedChart>
-          </ResponsiveContainer>
+              <KpiCard
+                label="Historical avg / week"
+                value={totalExpected}
+                unit="POs"
+                sub={`${overallAvg}/day · ${pastWeekNums.length} weeks avg`}
+                deltaColor="neutral"
+              />
+              <KpiCard
+                label="vs average"
+                value={`${delta > 0 ? '+' : ''}${delta}`}
+                unit="POs"
+                sub={delta > 0 ? 'busier than avg week' : delta < 0 ? 'quieter than avg week' : 'same as avg week'}
+                deltaColor={delta === 0 ? 'neutral' : delta > 0 ? 'fail' : 'pass'}
+              />
+              <KpiCard
+                label="Busiest day"
+                value={busiestDay?.upcoming > 0 ? busiestDay.day : '—'}
+                unit={busiestDay?.upcoming > 0 ? `${busiestDay.upcoming} POs` : undefined}
+                sub={busiestDay?.upcoming > 0 ? 'highest pickup day' : 'no bookings yet'}
+                deltaColor="neutral"
+              />
+            </div>
+
+            <div className="bg-white rounded-lg p-5" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-1">
+                W{String(nextWeek).padStart(2, '0')} vs Historical Average
+              </p>
+              <p className="text-[10px] text-[#b5aaa5] mb-4">
+                Bars = ESD bookings &middot; Dashed = avg W{String(pastWeekNums[0]).padStart(2, '0')}–W{String(pastWeekNums[pastWeekNums.length - 1]).padStart(2, '0')}
+              </p>
+              <ResponsiveContainer width="100%" height={210}>
+                <ComposedChart data={chartData} margin={{ top: 16, right: 16, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="2 4" stroke="#f4f1ef" vertical={false} />
+                  <XAxis dataKey="day" tick={{ fill: '#9c9794', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: '#9c9794', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{ background: '#403833', border: 'none', color: '#f9f7f6', borderRadius: 8, fontSize: 12 }}
+                    formatter={(v, n) => [`${v}`, n === 'upcoming' ? `W${nextWeek} upcoming` : 'Historical avg']}
+                  />
+                  <Bar dataKey="upcoming" fill="#FF8900" radius={[4, 4, 0, 0]} name="upcoming">
+                    <LabelList dataKey="upcoming" position="top" style={{ fill: '#7b7571', fontSize: 11, fontWeight: 700 }}
+                      formatter={(v: unknown) => Number(v) > 0 ? Number(v) : ''} />
+                  </Bar>
+                  <Line dataKey="avg" stroke="#6469aa" strokeWidth={2.5} dot={{ r: 4, fill: '#6469aa', strokeWidth: 0 }}
+                    strokeDasharray="5 3" name="avg" />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* RIGHT: Not Booked */}
+          <div className="space-y-4">
+            <SectionLabel>Not Booked — POs missing pickup booking</SectionLabel>
+
+            <div className="grid grid-cols-2 gap-3">
+              <KpiCard
+                label="POs not booked"
+                value={totalPOs}
+                sub={totalPOs === 0 ? 'All POs have pickup booked' : `${totalNBLines} lines affected`}
+                deltaColor={totalPOs === 0 ? 'pass' : 'fail'}
+              />
+              <KpiCard
+                label="% of active POs"
+                value={pctUnbooked}
+                unit="%"
+                sub={pctUnbooked === 0 ? 'clean' : `out of ${activePOs} active POs`}
+                deltaColor={pctUnbooked === 0 ? 'pass' : 'fail'}
+              />
+              <KpiCard
+                label="Most urgent PGRD"
+                value={mostUrgentPgrd ? formatDateShort(mostUrgentPgrd) ?? '—' : '—'}
+                sub={mostUrgentPgrd ? 'Earliest unbooked delivery' : 'No unbooked POs'}
+                deltaColor={mostUrgentPgrd ? 'fail' : 'pass'}
+              />
+              <KpiCard
+                label="By category"
+                value={`${catCounts.Beds.size}B · ${catCounts.Mattresses.size}M · ${catCounts.Accessories.size}A`}
+                sub="Beds · Mattresses · Accessories"
+                deltaColor="neutral"
+              />
+            </div>
+
+            {/* category filter */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setSelectedCat('All')}
+                className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-all ${selectedCat === 'All' ? 'bg-[#403833] text-white border-[#403833]' : 'border-[#e9e3df] text-[#58524e] hover:border-[#403833]'}`}>
+                All
+              </button>
+              {SKU_CATEGORIES.map((c) => (
+                <button key={c}
+                  onClick={() => setSelectedCat(c)}
+                  className="text-xs px-3 py-1.5 rounded-lg border font-medium transition-all"
+                  style={selectedCat === c
+                    ? { background: CATEGORY_COLORS[c], color: '#f9f7f6', borderColor: CATEGORY_COLORS[c] }
+                    : { borderColor: '#e9e3df', color: '#58524e' }}>
+                  {c}
+                  {catCounts[c].size > 0 && <span className="ml-1.5 text-[10px] opacity-70">{catCounts[c].size}</span>}
+                </button>
+              ))}
+              <span className="ml-auto text-xs text-[#9c9794]">{filteredPOs.length} PO{filteredPOs.length !== 1 ? 's' : ''}</span>
+            </div>
+
+            {filteredPOs.length > 0 ? (
+              <div className="bg-white rounded-lg overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <div className="px-5 py-3 border-b border-[#e9e3df]">
+                  <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">POs missing pickup booking — click to expand</p>
+                </div>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-[#403833] text-white">
+                      {['PO', 'Vendor', 'PGRD', 'Cat', 'Lines'].map((h) => (
+                        <th key={h} className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredPOs.map((group) => {
+                      const cats = [...new Set(group.lines.map(l => categorizeSKU(l.sku)))];
+                      return (
+                        <Fragment key={group.po}>
+                          <tr
+                            onClick={() => setExpandedPO(expandedPO === group.po ? null : group.po)}
+                            className="border-b border-[#e9e3df] hover:bg-[#f9f7f6] cursor-pointer transition-colors">
+                            <td className="px-3 py-2.5 font-semibold text-[#403833]">
+                              <span className="flex items-center gap-1.5">
+                                <span className="text-[#b5aaa5] text-xs">{expandedPO === group.po ? '▾' : '▸'}</span>
+                                {group.po}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2.5 text-[#58524e] text-xs">{group.vendor}</td>
+                            <td className="px-3 py-2.5 text-[#58524e] whitespace-nowrap text-xs">{formatDateShort(group.pgrd)}</td>
+                            <td className="px-3 py-2.5">
+                              <div className="flex gap-1 flex-wrap">
+                                {cats.map(c => (
+                                  <span key={c} className="text-[9px] font-medium px-1.5 py-0.5 rounded-full text-white" style={{ background: CATEGORY_COLORS[c] }}>{c[0]}</span>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2.5">
+                              <span className="text-xs bg-[#FEE2E2] text-fail px-2 py-0.5 rounded-full font-medium">
+                                {group.lines.length}
+                              </span>
+                            </td>
+                          </tr>
+                          {expandedPO === group.po && (
+                            <tr className="bg-[#faf7f3]">
+                              <td colSpan={5} className="px-4 py-3">
+                                <table className="w-full text-xs">
+                                  <thead>
+                                    <tr className="text-[#9c9794] border-b border-[#e9e3df]">
+                                      {['Line', 'SKU', 'Category', 'PGRD', 'Qty'].map((h) => (
+                                        <th key={h} className="py-1.5 pr-4 text-left font-medium uppercase text-[10px] tracking-wide">{h}</th>
+                                      ))}
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {group.lines.map((l) => {
+                                      const cat = categorizeSKU(l.sku);
+                                      return (
+                                        <tr key={`${l.po}-${l.line}`} className="border-b border-[#f4f1ef] last:border-0">
+                                          <td className="py-1.5 pr-4 text-[#7b7571]">{l.line}</td>
+                                          <td className="py-1.5 pr-4 font-mono text-[#58524e]">{l.sku}</td>
+                                          <td className="py-1.5 pr-4">
+                                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full text-white" style={{ background: CATEGORY_COLORS[cat] }}>{cat}</span>
+                                          </td>
+                                          <td className="py-1.5 pr-4 text-[#7b7571]">{formatDateShort(l.pgrd)}</td>
+                                          <td className="py-1.5 pr-4 text-[#7b7571]">{l.qty}</td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg p-8 text-center text-[#b5aaa5]" style={{ boxShadow: 'var(--shadow-card)' }}>
+                {totalPOs === 0 ? 'All POs have pickup booked' : 'No POs match the selected category'}
+              </div>
+            )}
+          </div>
         </div>
 
         {upcomingByDay.length > 0 && (
