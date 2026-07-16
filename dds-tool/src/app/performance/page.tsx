@@ -468,18 +468,12 @@ export default function PerformancePage() {
                   <YAxis yAxisId="pos" tick={{ fill: '#9c9794', fontSize: 10 }} axisLine={false} tickLine={false} label={{ value: 'POs', angle: -90, position: 'insideLeft', fill: '#c8c0bb', fontSize: 10, dy: 20 }} />
                   <YAxis yAxisId="pct" orientation="right" domain={[0, 100]} tick={{ fill: '#9c9794', fontSize: 10 }} unit="%" axisLine={false} tickLine={false} />
                   <ReferenceLine yAxisId="pct" y={90} stroke="#c8c0bb" strokeDasharray="5 3" label={{ value: '90% target', position: 'insideTopRight', fill: '#c8c0bb', fontSize: 9 }} />
-                  <Bar yAxisId="pos" dataKey="posShipped"      stackId="pos" fill="#34A853" name="Shipped on time"          radius={[0,0,0,0]} />
-                  <Bar yAxisId="pos" dataKey="posBacklog"      stackId="pos" fill="#F59E0B" name="This-week backlog"        radius={[0,0,0,0]} />
-                  <Bar yAxisId="pos" dataKey="pastPOBacklog"   stackId="pos" fill="#DC2626" name="Accumulated past backlog" radius={[0,0,0,0]} />
-                  <Bar yAxisId="pos" dataKey="posPredictedSOT" stackId="pos" fill="#34A853" name="Predicted on track"       radius={[3,3,0,0]} />
-                  <Line yAxisId="pct" dataKey="sotPctDash"  stroke="#FF8900" strokeWidth={2}   strokeDasharray="5 3" name="" connectNulls={false}
-                    dot={(p: { cx?: number; cy?: number; index?: number }) => (
-                      <circle key={`sot-f-${p.index}`} cx={p.cx ?? 0} cy={p.cy ?? 0} r={3} fill="white" stroke="#FF8900" strokeWidth={1.5} />
-                    )} />
-                  <Line yAxisId="pct" dataKey="otifPctDash" stroke="#15803d" strokeWidth={1.5} strokeDasharray="5 3" name="" connectNulls={false}
-                    dot={(p: { cx?: number; cy?: number; index?: number }) => (
-                      <circle key={`otif-f-${p.index}`} cx={p.cx ?? 0} cy={p.cy ?? 0} r={3} fill="white" stroke="#15803d" strokeWidth={1.5} />
-                    )} />
+                  <Bar yAxisId="pos" dataKey="posPredictedSOT" stackId="pos" fill="#34A853" fillOpacity={0.82} name="Predicted on track"       radius={[0,0,0,0]} />
+                  <Bar yAxisId="pos" dataKey="posShipped"      stackId="pos" fill="#34A853" fillOpacity={0.82} name="Shipped on time"          radius={[0,0,0,0]} />
+                  <Bar yAxisId="pos" dataKey="posBacklog"      stackId="pos" fill="#F59E0B" fillOpacity={0.82} name="This-week backlog"        radius={[0,0,0,0]} />
+                  <Bar yAxisId="pos" dataKey="pastPOBacklog"   stackId="pos" fill="#DC2626" fillOpacity={0.82} name="Accumulated past backlog" radius={[3,3,0,0]} />
+                  <Line yAxisId="pct" dataKey="sotPctDash"  stroke="#FF8900" strokeWidth={2}   strokeDasharray="5 3" name="" connectNulls={false} dot={false} />
+                  <Line yAxisId="pct" dataKey="otifPctDash" stroke="#15803d" strokeWidth={1.5} strokeDasharray="5 3" name="" connectNulls={false} dot={false} />
                   <Line
                     yAxisId="pct" dataKey="sotPctSolid" stroke="#FF8900" strokeWidth={2.5} name="SOT %" connectNulls={false} activeDot={{ r: 5 }}
                     dot={(p: { cx?: number; cy?: number; index?: number; value?: number }) => {
@@ -929,9 +923,9 @@ export default function PerformancePage() {
                 <YAxis tick={{ fill: '#9c9794', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={{ background: '#403833', border: 'none', color: '#f9f7f6', borderRadius: 8, fontSize: 12 }} labelStyle={{ color: '#FF8900', fontWeight: 700 }} />
                 <Legend verticalAlign="top" align="right" iconSize={8} formatter={(v) => <span style={{ color: '#58524e', fontSize: 11 }}>{v}</span>} />
-                <Bar dataKey="critical" stackId="a" fill="#DC3545" name="Critical" radius={[0,0,0,0]} />
-                <Bar dataKey="recent" stackId="a" fill="#F59E0B" name="Recent" />
-                <Bar dataKey="futureBacklog" stackId="a" fill="#FF8900" name="Future Backlog" radius={[3,3,0,0]} />
+                <Bar dataKey="critical" stackId="a" fill="#DC3545" fillOpacity={0.82} name="Critical" radius={[0,0,0,0]} />
+                <Bar dataKey="recent" stackId="a" fill="#F59E0B" fillOpacity={0.82} name="Recent" />
+                <Bar dataKey="futureBacklog" stackId="a" fill="#FF8900" fillOpacity={0.82} name="Future Backlog" radius={[3,3,0,0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
