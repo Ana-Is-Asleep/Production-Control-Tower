@@ -65,7 +65,7 @@ export function PrepareModal({ onClose, failingLines }: PrepareModalProps) {
         <div className="px-6 py-5 border-b border-[#e9e3df] flex items-center justify-between">
           <div>
             <h2 className="font-semibold text-[#403833] text-base">Prepare for Meeting</h2>
-            <p className="text-xs text-[#9c9794] mt-0.5">{failingLines.length} lines out of target · W22 2026</p>
+            <p className="text-xs text-[#9c9794] mt-0.5">{failingLines.length} lines out of target ï¿½ W22 2026</p>
           </div>
           <button onClick={onClose} className="text-[#b5aaa5] hover:text-[#403833] transition-colors">?</button>
         </div>
@@ -83,7 +83,7 @@ export function PrepareModal({ onClose, failingLines }: PrepareModalProps) {
                 </span>
                 <span className={`text-xs font-medium ${step === s.n ? 'text-[#403833]' : step > s.n ? 'text-pass' : 'text-[#9c9794]'}`}>{s.label}</span>
               </button>
-              {i < STEPS.length - 1 && <span className="mx-3 text-[#e9e3df] text-xs">—</span>}
+              {i < STEPS.length - 1 && <span className="mx-3 text-[#e9e3df] text-xs">ï¿½</span>}
             </div>
           ))}
           {/* progress */}
@@ -97,7 +97,7 @@ export function PrepareModal({ onClose, failingLines }: PrepareModalProps) {
           )}
         </div>
 
-        {/* step 1 — select vendors */}
+        {/* step 1 ï¿½ select vendors */}
         {step === 1 && (
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
             <p className="text-sm text-[#58524e]">Which vendors are you responsible for? Select all that apply.</p>
@@ -123,7 +123,7 @@ export function PrepareModal({ onClose, failingLines }: PrepareModalProps) {
           </div>
         )}
 
-        {/* step 2 — root causes */}
+        {/* step 2 ï¿½ root causes */}
         {step === 2 && (
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
             {visibleLines.length === 0 && (
@@ -203,7 +203,7 @@ export function PrepareModal({ onClose, failingLines }: PrepareModalProps) {
               onClick={onClose}
               className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${allDone ? 'bg-pass text-white' : 'bg-[#403833] text-white hover:bg-[#58524e]'}`}
             >
-              {allDone ? '? All lines annotated — ready for review' : `Save & close (${annotatedCount}/${visibleLines.length} done)`}
+              {allDone ? '? All lines annotated ï¿½ ready for review' : `Save & close (${annotatedCount}/${visibleLines.length} done)`}
             </button>
           )}
         </div>

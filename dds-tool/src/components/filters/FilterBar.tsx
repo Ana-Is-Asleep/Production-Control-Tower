@@ -29,7 +29,7 @@ export function FilterBar({ filters, setFilters, allSuppliers, lastWeek, lastYea
       <div className="flex items-center gap-2 shrink-0">
         <span className="font-sans font-bold text-brand text-xl">emma.</span>
         <span className="text-muted text-xs">|</span>
-        <span className="text-navy text-sm font-semibold">DDS Meeting Tool · P2W EU D2C</span>
+        <span className="text-navy text-sm font-semibold">DDS Meeting Tool ï¿½ P2W EU D2C</span>
       </div>
 
       <div className="flex-1" />

@@ -110,7 +110,7 @@ export default function PickupsPage() {
                 <p className="text-[26px] font-bold leading-none text-[#403833] tracking-tight">
                   {totalExpected}<span className="text-[13px] font-semibold text-[#9c9794] ml-1">POs</span>
                 </p>
-                <p className="text-[12px] font-semibold mt-1.5 text-[#7b7571]">{overallAvg}/day · {pastWeekNums.length} weeks avg</p>
+                <p className="text-[12px] font-semibold mt-1.5 text-[#7b7571]">{overallAvg}/day ï¿½ {pastWeekNums.length} weeks avg</p>
               </div>
               <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
                 <p className="text-[11px] font-semibold uppercase tracking-widest text-[#9c9794] mb-2">vs average</p>
@@ -124,7 +124,7 @@ export default function PickupsPage() {
               <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
                 <p className="text-[11px] font-semibold uppercase tracking-widest text-[#9c9794] mb-2">Busiest day</p>
                 <p className="text-[26px] font-bold leading-none text-[#403833] tracking-tight">
-                  {busiestDay?.upcoming > 0 ? busiestDay.day : '—'}<span className="text-[13px] font-semibold text-[#9c9794] ml-1">{busiestDay?.upcoming > 0 ? `${busiestDay.upcoming} POs` : ''}</span>
+                  {busiestDay?.upcoming > 0 ? busiestDay.day : 'ï¿½'}<span className="text-[13px] font-semibold text-[#9c9794] ml-1">{busiestDay?.upcoming > 0 ? `${busiestDay.upcoming} POs` : ''}</span>
                 </p>
                 <p className="text-[12px] font-semibold mt-1.5 text-[#7b7571]">{busiestDay?.upcoming > 0 ? 'highest pickup day' : 'no bookings yet'}</p>
               </div>
@@ -138,7 +138,7 @@ export default function PickupsPage() {
             Upcoming W{String(nextWeek).padStart(2,'0')} vs Historical Average
           </p>
           <p className="text-[10px] text-[#b5aaa5] mb-5">
-            Bars = ESD bookings for W{String(nextWeek).padStart(2,'0')} &middot; Dashed line = avg across W{String(pastWeekNums[0]).padStart(2,'0')}–W{String(pastWeekNums[pastWeekNums.length-1]).padStart(2,'0')}
+            Bars = ESD bookings for W{String(nextWeek).padStart(2,'0')} &middot; Dashed line = avg across W{String(pastWeekNums[0]).padStart(2,'0')}ï¿½W{String(pastWeekNums[pastWeekNums.length-1]).padStart(2,'0')}
           </p>
           <ResponsiveContainer width="100%" height={240}>
             <ComposedChart data={chartData} margin={{ top: 16, right: 20, left: -10, bottom: 0 }}>
@@ -160,7 +160,7 @@ export default function PickupsPage() {
         {/* upcoming POs table per day */}
         {upcomingByDay.length > 0 && (
           <div className="space-y-3">
-            <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Upcoming W{String(nextWeek).padStart(2,'0')} — by day</p>
+            <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Upcoming W{String(nextWeek).padStart(2,'0')} ï¿½ by day</p>
             {upcomingByDay.map(dayGroup => (
               <div key={dayGroup.dow} className="bg-white rounded-lg overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
                 <div className="px-5 py-3 border-b border-[#f4f1ef] flex items-center gap-3">

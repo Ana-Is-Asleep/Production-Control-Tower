@@ -99,14 +99,14 @@ export default function NotBookedPage() {
           />
           <KpiCard
             label="Most urgent PGRD"
-            value={mostUrgentPgrd ? formatDateShort(mostUrgentPgrd) ?? '—' : '—'}
+            value={mostUrgentPgrd ? formatDateShort(mostUrgentPgrd) ?? 'ï¿½' : 'ï¿½'}
             delta={mostUrgentPgrd ? 'Earliest unbooked delivery' : 'No unbooked POs'}
             deltaGood={!mostUrgentPgrd}
           />
           <KpiCard
             label="By category"
-            value={`${catCounts.Beds.size}B · ${catCounts.Mattresses.size}M · ${catCounts.Accessories.size}A`}
-            delta="Beds · Mattresses · Accessories"
+            value={`${catCounts.Beds.size}B ï¿½ ${catCounts.Mattresses.size}M ï¿½ ${catCounts.Accessories.size}A`}
+            delta="Beds ï¿½ Mattresses ï¿½ Accessories"
             deltaGood={false}
           />
         </div>
@@ -138,7 +138,7 @@ export default function NotBookedPage() {
         {filteredPOs.length > 0 ? (
           <div className="bg-white rounded-lg overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
             <div className="px-5 py-3 border-b border-[#e9e3df]">
-              <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">POs missing pickup booking — click to expand lines</p>
+              <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">POs missing pickup booking ï¿½ click to expand lines</p>
             </div>
             <table className="w-full text-sm">
               <thead>

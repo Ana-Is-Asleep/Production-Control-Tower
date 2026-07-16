@@ -65,7 +65,7 @@ function BacklogTable({ lines }: { lines: PurchaseLine[] }) {
     <div className="text-center py-10 text-[#b5aaa5] text-sm">No POs match the current filters</div>
   );
 
-  // group by PO — one row per PO, show line count and all unique categories
+  // group by PO ï¿½ one row per PO, show line count and all unique categories
   const grouped = useMemo(() => {
     const map = new Map<string, { lines: PurchaseLine[]; categories: Set<SKUCategory> }>();
     lines.forEach((l) => {

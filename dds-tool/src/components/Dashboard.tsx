@@ -174,7 +174,7 @@ export function Dashboard() {
             {['SOT + OTIF', 'Backlog', 'Not Booked'].map((label) => (
               <div key={label} className="bg-[#f4f1ef] rounded-lg p-8">
                 <p className="text-xs uppercase tracking-widest text-[#9c9794] mb-3">{label}</p>
-                <p className="font-sans text-6xl font-bold text-[#c8c0bb]">—</p>
+                <p className="font-sans text-6xl font-bold text-[#c8c0bb]">ï¿½</p>
               </div>
             ))}
           </div>
@@ -192,7 +192,7 @@ export function Dashboard() {
               onChange={(s) => setFilters({ ...filters, suppliers: s })}
             />
             <span className="text-[#e9e3df]">|</span>
-            {/* category pills — only 4 so these stay as pills */}
+            {/* category pills ï¿½ only 4 so these stay as pills */}
             {SKU_CATEGORIES.map((c) => (
               <button
                 key={c}
@@ -229,16 +229,16 @@ export function Dashboard() {
               <div className="flex items-stretch gap-10 h-full">
                 <div className="flex gap-8 shrink-0 items-center">
                   <div>
-                    <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-2">SOT · 90% target</p>
+                    <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-2">SOT ï¿½ 90% target</p>
                     <p className={`kpi-number font-extrabold text-6xl leading-none ${kpis.sotPct === null ? 'text-[#c8c0bb]' : kpis.sotPct >= 90 ? 'text-pass' : 'text-fail'}`}>
-                      {kpis.sotPct !== null ? `${kpis.sotPct}%` : '—'}
+                      {kpis.sotPct !== null ? `${kpis.sotPct}%` : 'ï¿½'}
                     </p>
                     {sotDelta !== null && <p className={`text-sm font-semibold mt-2 ${sotDelta >= 0 ? 'text-pass' : 'text-fail'}`}>{sotDelta >= 0 ? '?' : '?'} {Math.abs(sotDelta)}pp vs target</p>}
                   </div>
                   <div>
-                    <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-2">OTIF · 90% target</p>
+                    <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-2">OTIF ï¿½ 90% target</p>
                     <p className={`kpi-number font-extrabold text-6xl leading-none ${kpis.otifPct === null ? 'text-[#c8c0bb]' : kpis.otifPct >= 90 ? 'text-pass' : 'text-warn'}`}>
-                      {kpis.otifPct !== null ? `${kpis.otifPct}%` : '—'}
+                      {kpis.otifPct !== null ? `${kpis.otifPct}%` : 'ï¿½'}
                     </p>
                     {otifDelta !== null && <p className={`text-sm font-semibold mt-2 ${otifDelta >= 0 ? 'text-pass' : 'text-warn'}`}>{otifDelta >= 0 ? '?' : '?'} {Math.abs(otifDelta)}pp vs target</p>}
                   </div>
@@ -296,7 +296,7 @@ export function Dashboard() {
                   </div>
                   <div className="w-px bg-[#e9e3df] shrink-0" />
                   <div className="flex-1 flex flex-col min-w-0">
-                    <p className="text-[10px] text-[#b5aaa5] mb-1">W{String(lastWeek + 1).padStart(2, '0')} upcoming · avg line</p>
+                    <p className="text-[10px] text-[#b5aaa5] mb-1">W{String(lastWeek + 1).padStart(2, '0')} upcoming ï¿½ avg line</p>
                     <div className="flex-1">
                       <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart
@@ -372,7 +372,7 @@ export function Dashboard() {
               </div>
             </div>
 
-            {/* row 3: lead times — weekly bar chart, click to drill down */}
+            {/* row 3: lead times ï¿½ weekly bar chart, click to drill down */}
             <div className="bg-white rounded-lg border border-[#e9e3df] p-5" style={{ boxShadow: 'var(--shadow-card)' }}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
@@ -384,7 +384,7 @@ export function Dashboard() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {/* category filter pills — stop propagation so they don't trigger navigation */}
+                  {/* category filter pills ï¿½ stop propagation so they don't trigger navigation */}
                   <button
                     onClick={(e) => { e.stopPropagation(); setLtCat('All'); }}
                     className={`text-[11px] px-2.5 py-1 rounded-full border font-medium transition-all ${ltCat === 'All' ? 'bg-[#403833] text-white border-[#403833]' : 'border-[#e9e3df] text-[#7b7571]'}`}>

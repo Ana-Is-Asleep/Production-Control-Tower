@@ -54,7 +54,7 @@ export function UploadPanel({ open, onClose, onLoad }: UploadPanelProps) {
       setInvoiceRows(parsedInvoices);
       setInvoiceCount(invoiceFile ? parsedInvoices.length : null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to parse — check the file format');
+      setError(e instanceof Error ? e.message : 'Failed to parse ï¿½ check the file format');
     } finally {
       setLoading(false);
     }
@@ -76,13 +76,13 @@ export function UploadPanel({ open, onClose, onLoad }: UploadPanelProps) {
         >
           <div className="text-3xl mb-3">??</div>
           <p className="text-sm text-dark font-medium">Drag & drop your XLSX files here</p>
-          <p className="text-xs text-muted mt-1">Purchase Order Lines · Invoices (optional)</p>
+          <p className="text-xs text-muted mt-1">Purchase Order Lines ï¿½ Invoices (optional)</p>
           <input id="file-input" type="file" accept=".xlsx" multiple className="hidden"
             onChange={(e) => handleFiles(Array.from(e.target.files ?? []))} />
         </div>
 
         {error   && <div className="bg-fail-bg text-fail-text text-sm px-3 py-2 rounded-lg">{error}</div>}
-        {loading && <div className="text-sm text-muted text-center py-4">Parsing… this may take a moment for large files</div>}
+        {loading && <div className="text-sm text-muted text-center py-4">Parsingï¿½ this may take a moment for large files</div>}
 
         {result && !loading && (
           <div className="space-y-3">
