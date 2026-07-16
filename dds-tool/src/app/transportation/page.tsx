@@ -199,9 +199,9 @@ export default function TransportationPage() {
                     formatter={(v, n) => [`${v}`, n === 'upcoming' ? `W${nextWeek} upcoming` : 'Historical avg']}
                   />
                   <defs>
-                    <linearGradient id="tr-orange" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FF8900" stopOpacity={0.55} /><stop offset="100%" stopColor="#FF8900" stopOpacity={0.95} /></linearGradient>
+                    <linearGradient id="tr-orange" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FF8900" stopOpacity={0.78} /><stop offset="100%" stopColor="#FF8900" stopOpacity={0.85} /></linearGradient>
                   </defs>
-                  <Bar dataKey="upcoming" fill="url(#tr-orange)" radius={[4, 4, 0, 0]} name="upcoming">
+                  <Bar dataKey="upcoming" fill="url(#tr-orange)" fillOpacity={0.82} radius={[4, 4, 0, 0]} name="upcoming">
                     <LabelList dataKey="upcoming" position="top" style={{ fill: '#7b7571', fontSize: 11, fontWeight: 700 }}
                       formatter={(v: unknown) => Number(v) > 0 ? Number(v) : ''} />
                   </Bar>

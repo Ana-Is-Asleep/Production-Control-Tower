@@ -469,14 +469,14 @@ export default function PerformancePage() {
                   <YAxis yAxisId="pct" orientation="right" domain={[0, 100]} tick={{ fill: '#9c9794', fontSize: 10 }} unit="%" axisLine={false} tickLine={false} />
                   <ReferenceLine yAxisId="pct" y={90} stroke="#c8c0bb" strokeDasharray="5 3" label={{ value: '90% target', position: 'insideTopRight', fill: '#c8c0bb', fontSize: 9 }} />
                   <defs>
-                    <linearGradient id="pf-green" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#34A853" stopOpacity={0.55} /><stop offset="100%" stopColor="#34A853" stopOpacity={0.95} /></linearGradient>
-                    <linearGradient id="pf-amber" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#F59E0B" stopOpacity={0.55} /><stop offset="100%" stopColor="#F59E0B" stopOpacity={0.95} /></linearGradient>
-                    <linearGradient id="pf-red"   x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#DC2626" stopOpacity={0.55} /><stop offset="100%" stopColor="#DC2626" stopOpacity={0.95} /></linearGradient>
+                    <linearGradient id="pf-green" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#34A853" stopOpacity={0.78} /><stop offset="100%" stopColor="#34A853" stopOpacity={0.85} /></linearGradient>
+                    <linearGradient id="pf-amber" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#F59E0B" stopOpacity={0.78} /><stop offset="100%" stopColor="#F59E0B" stopOpacity={0.85} /></linearGradient>
+                    <linearGradient id="pf-red"   x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#DC2626" stopOpacity={0.78} /><stop offset="100%" stopColor="#DC2626" stopOpacity={0.85} /></linearGradient>
                   </defs>
-                  <Bar yAxisId="pos" dataKey="posPredictedSOT" stackId="pos" fill="url(#pf-green)" name="Predicted on track"       radius={[0,0,0,0]} />
-                  <Bar yAxisId="pos" dataKey="posShipped"      stackId="pos" fill="url(#pf-green)" name="Shipped on time"          radius={[0,0,0,0]} />
-                  <Bar yAxisId="pos" dataKey="posBacklog"      stackId="pos" fill="url(#pf-amber)" name="This-week backlog"        radius={[0,0,0,0]} />
-                  <Bar yAxisId="pos" dataKey="pastPOBacklog"   stackId="pos" fill="url(#pf-red)"   name="Accumulated past backlog" radius={[3,3,0,0]} />
+                  <Bar yAxisId="pos" dataKey="posPredictedSOT" stackId="pos" fill="url(#pf-green)" fillOpacity={0.82} name="Predicted on track"       radius={[0,0,0,0]} />
+                  <Bar yAxisId="pos" dataKey="posShipped"      stackId="pos" fill="url(#pf-green)" fillOpacity={0.82} name="Shipped on time"          radius={[0,0,0,0]} />
+                  <Bar yAxisId="pos" dataKey="posBacklog"      stackId="pos" fill="url(#pf-amber)" fillOpacity={0.82} name="This-week backlog"        radius={[0,0,0,0]} />
+                  <Bar yAxisId="pos" dataKey="pastPOBacklog"   stackId="pos" fill="url(#pf-red)" fillOpacity={0.82}   name="Accumulated past backlog" radius={[3,3,0,0]} />
                   <Line yAxisId="pct" dataKey="sotPctDash"  stroke="#FF8900" strokeWidth={2}   strokeDasharray="5 3" name="" connectNulls={false} dot={false} />
                   <Line yAxisId="pct" dataKey="otifPctDash" stroke="#15803d" strokeWidth={1.5} strokeDasharray="5 3" name="" connectNulls={false} dot={false} />
                   <Line
@@ -929,13 +929,13 @@ export default function PerformancePage() {
                 <Tooltip contentStyle={{ background: '#403833', border: 'none', color: '#f9f7f6', borderRadius: 8, fontSize: 12 }} labelStyle={{ color: '#FF8900', fontWeight: 700 }} />
                 <Legend verticalAlign="top" align="right" iconSize={8} formatter={(v) => <span style={{ color: '#58524e', fontSize: 11 }}>{v}</span>} />
                 <defs>
-                  <linearGradient id="pf-bl-red" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#DC3545" stopOpacity={0.55} /><stop offset="100%" stopColor="#DC3545" stopOpacity={0.95} /></linearGradient>
-                  <linearGradient id="pf-bl-amb" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#F59E0B" stopOpacity={0.55} /><stop offset="100%" stopColor="#F59E0B" stopOpacity={0.95} /></linearGradient>
-                  <linearGradient id="pf-bl-org" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FF8900" stopOpacity={0.55} /><stop offset="100%" stopColor="#FF8900" stopOpacity={0.95} /></linearGradient>
+                  <linearGradient id="pf-bl-red" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#DC3545" stopOpacity={0.78} /><stop offset="100%" stopColor="#DC3545" stopOpacity={0.85} /></linearGradient>
+                  <linearGradient id="pf-bl-amb" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#F59E0B" stopOpacity={0.78} /><stop offset="100%" stopColor="#F59E0B" stopOpacity={0.85} /></linearGradient>
+                  <linearGradient id="pf-bl-org" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FF8900" stopOpacity={0.78} /><stop offset="100%" stopColor="#FF8900" stopOpacity={0.85} /></linearGradient>
                 </defs>
-                <Bar dataKey="critical"     stackId="a" fill="url(#pf-bl-red)" name="Critical"      radius={[0,0,0,0]} />
-                <Bar dataKey="recent"       stackId="a" fill="url(#pf-bl-amb)" name="Recent" />
-                <Bar dataKey="futureBacklog" stackId="a" fill="url(#pf-bl-org)" name="Future Backlog" radius={[3,3,0,0]} />
+                <Bar dataKey="critical"     stackId="a" fill="url(#pf-bl-red)" fillOpacity={0.82} name="Critical"      radius={[0,0,0,0]} />
+                <Bar dataKey="recent"       stackId="a" fill="url(#pf-bl-amb)" fillOpacity={0.82} name="Recent" />
+                <Bar dataKey="futureBacklog" stackId="a" fill="url(#pf-bl-org)" fillOpacity={0.82} name="Future Backlog" radius={[3,3,0,0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
