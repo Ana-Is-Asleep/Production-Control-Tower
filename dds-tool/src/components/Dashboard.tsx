@@ -266,10 +266,10 @@ export function Dashboard() {
                       <YAxis yAxisId="pct" domain={[0, 100]} tick={{ fill: '#9c9794', fontSize: 11 }} unit="%" axisLine={false} tickLine={false} />
                       <YAxis yAxisId="pos" orientation="right" hide />
                       <ReferenceLine yAxisId="pct" y={90} stroke="#d5cdc6" strokeDasharray="4 4" />
-                      <Bar yAxisId="pos" dataKey="posPredictedSOT" stackId="s" fill="#34A853" radius={[0,0,0,0]} />
-                      <Bar yAxisId="pos" dataKey="posShipped"      stackId="s" fill="#34A853" radius={[0,0,0,0]} />
-                      <Bar yAxisId="pos" dataKey="posBacklog"      stackId="s" fill="#F59E0B" radius={[0,0,0,0]} />
-                      <Bar yAxisId="pos" dataKey="pastPOBacklog"   stackId="s" fill="#DC2626" radius={[2,2,0,0]} />
+                      <Bar yAxisId="pos" dataKey="posPredictedSOT" stackId="s" fill="#34A853" fillOpacity={0.88} radius={[0,0,0,0]} />
+                      <Bar yAxisId="pos" dataKey="posShipped"      stackId="s" fill="#34A853" fillOpacity={0.88} radius={[0,0,0,0]} />
+                      <Bar yAxisId="pos" dataKey="posBacklog"      stackId="s" fill="#F59E0B" fillOpacity={0.88} radius={[0,0,0,0]} />
+                      <Bar yAxisId="pos" dataKey="pastPOBacklog"   stackId="s" fill="#DC2626" fillOpacity={0.88} radius={[2,2,0,0]} />
                       <Line yAxisId="pct" dataKey="otifPct" stroke="#15803d" strokeWidth={2} dot={{ r: 3, fill: '#15803d', strokeWidth: 0 }} name="OTIF %" connectNulls={false} />
                       <Line yAxisId="pct" dataKey="sotPct"  stroke="#FF8900" strokeWidth={2} dot={{ r: 3, fill: '#FF8900', strokeWidth: 0 }} activeDot={{ r: 4 }} name="SOT %" connectNulls={false} />
                       <Tooltip contentStyle={{ background: '#403833', border: 'none', borderRadius: 8, fontSize: 11, padding: '6px 10px' }} labelStyle={{ color: '#ffa236', fontWeight: 700 }} itemStyle={{ color: '#f9f7f6' }} formatter={(v, n) => { const s = String(n); return [s.includes('%') ? `${v}%` : `${v} POs`, s]; }} />
@@ -315,7 +315,7 @@ export function Dashboard() {
                           <YAxis tick={{ fill: '#9c9794', fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
                           <Tooltip contentStyle={{ background: '#403833', border: 'none', color: '#f9f7f6', borderRadius: 8, fontSize: 11 }}
                             formatter={(v, n) => [`${v}`, n === 'upcoming' ? 'Upcoming POs' : 'Hist. avg']} />
-                          <Bar dataKey="upcoming" fill="#FF8900" radius={[3,3,0,0]} name="upcoming">
+                          <Bar dataKey="upcoming" fill="#FF8900" fillOpacity={0.88} radius={[3,3,0,0]} name="upcoming">
                             <LabelList dataKey="upcoming" position="top" style={{ fill: '#7b7571', fontSize: 10, fontWeight: 600 }}
                               formatter={(v: unknown) => Number(v) > 0 ? Number(v) : ''} />
                           </Bar>
@@ -420,12 +420,12 @@ export function Dashboard() {
                   />
                   {ltCat === 'All' ? (
                     <>
-                      <Bar dataKey="Mattresses"  fill={CATEGORY_COLORS.Mattresses}  radius={[3,3,0,0]} maxBarSize={20} />
-                      <Bar dataKey="Beds"        fill={CATEGORY_COLORS.Beds}        radius={[3,3,0,0]} maxBarSize={20} />
-                      <Bar dataKey="Accessories" fill={CATEGORY_COLORS.Accessories} radius={[3,3,0,0]} maxBarSize={20} />
+                      <Bar dataKey="Mattresses"  fill={CATEGORY_COLORS.Mattresses}  fillOpacity={0.88} radius={[3,3,0,0]} maxBarSize={20} />
+                      <Bar dataKey="Beds"        fill={CATEGORY_COLORS.Beds}        fillOpacity={0.88} radius={[3,3,0,0]} maxBarSize={20} />
+                      <Bar dataKey="Accessories" fill={CATEGORY_COLORS.Accessories} fillOpacity={0.88} radius={[3,3,0,0]} maxBarSize={20} />
                     </>
                   ) : (
-                    <Bar dataKey={ltCat} fill={CATEGORY_COLORS[ltCat as SKUCategory]} radius={[3,3,0,0]} maxBarSize={30} />
+                    <Bar dataKey={ltCat} fill={CATEGORY_COLORS[ltCat as SKUCategory]} fillOpacity={0.88} radius={[3,3,0,0]} maxBarSize={30} />
                   )}
                 </BarChart>
               </ResponsiveContainer>
