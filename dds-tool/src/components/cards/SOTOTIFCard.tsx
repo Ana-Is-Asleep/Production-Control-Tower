@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import {
@@ -57,7 +57,7 @@ export function SOTOTIFCard({
             onClick={() => setExpanded((v) => !v)}
             className="text-xs text-muted hover:text-dark transition-colors"
           >
-            {expanded ? '? Collapse' : '? Expand'}
+            {expanded ? '▲ Collapse' : '▼ Expand'}
           </button>
         </div>
 
@@ -65,26 +65,26 @@ export function SOTOTIFCard({
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="font-sans text-4xl font-bold text-dark">
-                {sotPct !== null ? `${sotPct}%` : '�'}
+                {sotPct !== null ? `${sotPct}%` : '—'}
               </span>
               <Badge variant={sotVariant}>SOT</Badge>
             </div>
             {sotDelta !== null && (
               <span className={`text-xs font-medium ${sotDelta >= 0 ? 'text-pass' : 'text-fail'}`}>
-                {sotDelta >= 0 ? '?' : '?'} {Math.abs(sotDelta)}pp vs target
+                {sotDelta >= 0 ? '↑' : '↓'} {Math.abs(sotDelta)}pp vs target
               </span>
             )}
           </div>
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="font-sans text-4xl font-bold text-dark">
-                {otifPct !== null ? `${otifPct}%` : '�'}
+                {otifPct !== null ? `${otifPct}%` : '—'}
               </span>
               <Badge variant={otifVariant}>OTIF</Badge>
             </div>
             {otifDelta !== null && (
               <span className={`text-xs font-medium ${otifDelta >= 0 ? 'text-pass' : 'text-warn'}`}>
-                {otifDelta >= 0 ? '?' : '?'} {Math.abs(otifDelta)}pp vs target
+                {otifDelta >= 0 ? '↑' : '↓'} {Math.abs(otifDelta)}pp vs target
               </span>
             )}
           </div>
@@ -96,17 +96,17 @@ export function SOTOTIFCard({
             <XAxis dataKey="weekLabel" tick={{ fill: '#8A7E74', fontSize: 11 }} axisLine={false} tickLine={false} />
             {/* left axis: SOT% / OTIF% lines */}
             <YAxis yAxisId="pct" domain={[0, 100]} tick={{ fill: '#8A7E74', fontSize: 11 }} unit="%" axisLine={false} tickLine={false} />
-            {/* right axis: PO count bars � hidden ticks, just for scale */}
+            {/* right axis: PO count bars — hidden ticks, just for scale */}
             <YAxis yAxisId="pos" orientation="right" tick={false} axisLine={false} tickLine={false} />
             <ReferenceLine yAxisId="pct" y={90} stroke="#8A7E74" strokeDasharray="4 4" />
 
-            {/* stacked bars: accumulated ? backlog ? shipped/predicted */}
+            {/* stacked bars: accumulated → backlog → shipped/predicted */}
             <Bar yAxisId="pos" dataKey="pastPOBacklog"   stackId="a" fill="#DC3545" name="Accumulated"    radius={[0,0,0,0]} />
             <Bar yAxisId="pos" dataKey="posBacklog"      stackId="a" fill="#F59E0B" name="Backlog"         radius={[0,0,0,0]} />
             <Bar yAxisId="pos" dataKey="posShipped"      stackId="a" fill="#34A853" name="Shipped"         radius={[3,3,0,0]} />
             <Bar yAxisId="pos" dataKey="posPredictedSOT" stackId="a" fill="#34A85366" name="Pred. on track" radius={[3,3,0,0]} />
 
-            {/* performance lines � dots are hollow for future (predicted) weeks */}
+            {/* performance lines — dots are hollow for future (predicted) weeks */}
             <Line
               yAxisId="pct" dataKey="otifPct" stroke="#34A853" strokeWidth={2} connectNulls={false} name="OTIF%"
               dot={(p: { cx?: number; cy?: number; payload: { isFuture: boolean } }) => {
@@ -162,13 +162,13 @@ export function SOTOTIFCard({
                     <tr key={w.isoWeek} className={`border-b border-border ${w.isCurrent ? 'bg-brand-dim' : ''}`}>
                       <td className="px-3 py-2 font-medium">{w.weekLabel}</td>
                       <td className="px-3 py-2">{w.totalLines}</td>
-                      <td className="px-3 py-2">�</td>
-                      <td className="px-3 py-2">�</td>
+                      <td className="px-3 py-2">—</td>
+                      <td className="px-3 py-2">—</td>
                       <td className={`px-3 py-2 font-medium ${(w.sotPct ?? 0) >= 90 ? 'text-pass' : 'text-fail'}`}>
-                        {w.sotPct !== null ? `${w.sotPct}%` : '�'}
+                        {w.sotPct !== null ? `${w.sotPct}%` : '—'}
                       </td>
                       <td className={`px-3 py-2 font-medium ${(w.otifPct ?? 0) >= 90 ? 'text-pass' : 'text-warn'}`}>
-                        {w.otifPct !== null ? `${w.otifPct}%` : '�'}
+                        {w.otifPct !== null ? `${w.otifPct}%` : '—'}
                       </td>
                     </tr>
                   ))}

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
@@ -10,7 +10,7 @@ import { formatDateMedium } from '../../lib/dateUtils';
 
 function AmountPill({ rows, className = '' }: { rows: InvoiceRow[]; className?: string }) {
   const amt = formatAmountsByCurrency(rows);
-  if (amt === '�') return null;
+  if (amt === '—') return null;
   return <span className={`text-xs text-[#7b7571] ${className}`}>{amt}</span>;
 }
 
@@ -29,8 +29,8 @@ export default function InvoicesPage() {
   const CARDS = [
     {
       id: 1,
-      label: 'Overdue � Pending Approval',
-      sub: 'Submitted, not approved � not MISSINGGR � past due',
+      label: 'Overdue – Pending Approval',
+      sub: 'Submitted, not approved · not MISSINGGR · past due',
       rows: kpis.overdueP2w,
       color: 'text-fail',
       bg: 'bg-[#FFF5F5]',
@@ -39,7 +39,7 @@ export default function InvoicesPage() {
     {
       id: 2,
       label: 'Total Pending',
-      sub: 'Submitted + Draft � all reason codes � any due date',
+      sub: 'Submitted + Draft · all reason codes · any due date',
       rows: kpis.totalPending,
       color: 'text-warn',
       bg: 'bg-[#FFFBF0]',
@@ -48,7 +48,7 @@ export default function InvoicesPage() {
     {
       id: 3,
       label: 'Due by End of Week',
-      sub: 'Submitted � effective due date = this Sunday',
+      sub: 'Submitted · effective due date ≤ this Sunday',
       rows: kpis.dueByEndOfWeek,
       color: 'text-brand',
       bg: 'bg-[#faf7f3]',
@@ -134,7 +134,7 @@ export default function InvoicesPage() {
             return (
               <div className="bg-white rounded-lg overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
                 <div className="px-5 py-3 border-b border-[#f4f1ef] flex items-center justify-between">
-                  <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">{card.label} � {card.rows.length} invoices</p>
+                  <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">{card.label} — {card.rows.length} invoices</p>
                   <AmountPill rows={card.rows} />
                 </div>
                 <div className="overflow-x-auto">
@@ -156,10 +156,10 @@ export default function InvoicesPage() {
                           <td className="px-4 py-2.5 text-[#58524e] whitespace-nowrap">
                             {r.effectiveDueDate
                               ? <span className={r.effectiveDueDate < today ? 'text-fail font-medium' : ''}>{formatDateMedium(r.effectiveDueDate)}</span>
-                              : '�'}
+                              : '—'}
                           </td>
                           <td className="px-4 py-2.5 text-xs text-[#58524e]">{r.invoiceStatus}</td>
-                          <td className="px-4 py-2.5 text-xs text-[#7b7571]">{r.reasonCode || '�'}</td>
+                          <td className="px-4 py-2.5 text-xs text-[#7b7571]">{r.reasonCode || '—'}</td>
                         </tr>
                       ))}
                       {card.rows.length > 200 && (
@@ -176,7 +176,7 @@ export default function InvoicesPage() {
           {breakdown.length > 0 && (
             <div className="bg-white rounded-lg overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
               <div className="px-5 py-4 border-b border-[#f4f1ef]">
-                <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Overdue P2W � Breakdown by Supplier</p>
+                <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Overdue P2W — Breakdown by Supplier</p>
               </div>
               <table className="w-full text-sm">
                 <thead>

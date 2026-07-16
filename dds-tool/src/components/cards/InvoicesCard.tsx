@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Card } from '../shared/Card';
 
@@ -12,7 +12,7 @@ export function InvoicesCard() {
             <span className="text-sm text-dark">Overdue</span>
             <div className="text-right">
               <span className="font-sans text-xl font-bold text-fail">3</span>
-              <span className="text-xs text-muted ml-1">/ �12,450</span>
+              <span className="text-xs text-muted ml-1">/ €12,450</span>
             </div>
           </div>
           <div className="flex items-center justify-between">

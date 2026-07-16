@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Legend, CartesianGrid } from 'recharts';
@@ -28,7 +28,7 @@ export default function LeadTimesPage() {
     [accumulatingLines, selectedCat]
   );
 
-  // weekly trend � all categories, then sliced to last 10 weeks
+  // weekly trend — all categories, then sliced to last 10 weeks
   const weeklyLT     = useMemo(() => computeWeeklyLT(accumulatingLines), [accumulatingLines]);
   const chartWeeklyLT = useMemo(() => weeklyLT.slice(-CHART_WEEKS), [weeklyLT]);
 
@@ -63,7 +63,7 @@ export default function LeadTimesPage() {
     });
     const avg = (arr: number[]) => arr.length > 0 ? Math.round(arr.reduce((s, n) => s + n, 0) / arr.length) : null;
     return [...map.entries()].map(([vendor, v]) => ({
-      vendor: vendor.length > 20 ? vendor.substring(0, 18) + '�' : vendor,
+      vendor: vendor.length > 20 ? vendor.substring(0, 18) + '…' : vendor,
       fullVendor: vendor,
       planned: avg(v.planned),
       expected: avg(v.expected),
@@ -74,7 +74,7 @@ export default function LeadTimesPage() {
     })).filter((r) => r.actual !== null && r.actual > 0).sort((a, b) => (b.vsAgreed ?? 0) - (a.vsAgreed ?? 0));
   }, [chartScopedLines]);
 
-  // group by PO for detail table � scoped to the same 10-week chart window
+  // group by PO for detail table — scoped to the same 10-week chart window
   const detailByPO = useMemo(() => {
     const map = new Map<string, { po: string; vendor: string; category: SKUCategory; orderDate: Date | null; pgrd: Date | null; asd: Date | null; lts: ReturnType<typeof computeLeadTime>[] }>();
     chartScopedLines.forEach(l => {
@@ -133,16 +133,16 @@ export default function LeadTimesPage() {
         {/* hero summary */}
         <div className="grid grid-cols-5 gap-4">
           {[
-            { label: 'Avg Planned LT', sub: 'Order ? PGRD', value: summary.avgPlannedLT, color: '#6469aa' },
-            { label: 'Avg Expected LT', sub: 'Order ? EGRD', value: summary.avgExpectedLT, color: '#FF8900' },
-            { label: 'Avg Production LT', sub: 'Order ? ASD', value: summary.avgProductionLT, color: summary.avgProductionLT !== null && summary.avgProductionLT <= summary.avgAgreedLT ? '#34A853' : '#DC3545' },
+            { label: 'Avg Planned LT', sub: 'Order → PGRD', value: summary.avgPlannedLT, color: '#6469aa' },
+            { label: 'Avg Expected LT', sub: 'Order → EGRD', value: summary.avgExpectedLT, color: '#FF8900' },
+            { label: 'Avg Production LT', sub: 'Order → ASD', value: summary.avgProductionLT, color: summary.avgProductionLT !== null && summary.avgProductionLT <= summary.avgAgreedLT ? '#34A853' : '#DC3545' },
             { label: 'Avg Agreed LT', sub: 'From file', value: summary.avgAgreedLT, color: '#8A8A8A' },
             { label: 'Target LT', sub: 'Always 30d', value: 30, color: '#8A8A8A' },
           ].map((item) => (
             <div key={item.label} className="bg-white rounded-lg p-5" style={{ boxShadow: 'var(--shadow-card)' }}>
               <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-2">{item.label}</p>
               <p className="kpi-number font-extrabold text-5xl leading-none" style={{ color: item.color }}>
-                {item.value !== null ? `${item.value}d` : '�'}
+                {item.value !== null ? `${item.value}d` : '—'}
               </p>
               <p className="text-[10px] text-[#b5aaa5] mt-1">{item.sub}</p>
             </div>
@@ -199,11 +199,11 @@ export default function LeadTimesPage() {
           </div>
         </div>
 
-        {/* weekly trend by category � last 10 weeks */}
+        {/* weekly trend by category — last 10 weeks */}
         {chartWeeklyLT.length > 0 && (
           <div className="bg-white rounded-lg p-6" style={{ boxShadow: 'var(--shadow-card)' }}>
             <div className="flex items-center justify-between mb-4">
-              <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Production Lead Time � Last {chartWeeklyLT.length} Weeks</p>
+              <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Production Lead Time — Last {chartWeeklyLT.length} Weeks</p>
               <div className="flex items-center gap-2">
                 {[{k:'Mattresses',c:'#FF8900'},{k:'Beds',c:'#6469aa'},{k:'Accessories',c:'#34A853'}].map(({k,c}) => (
                   <span key={k} className="flex items-center gap-1.5 text-[11px] text-[#58524e]">
@@ -261,7 +261,7 @@ export default function LeadTimesPage() {
           </div>
         )}
 
-        {/* detail table � one row per PO, scoped to chart window */}
+        {/* detail table — one row per PO, scoped to chart window */}
         {view === 'detail' && (
           <div className="bg-white rounded-lg overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
             <div className="overflow-x-auto">
@@ -283,18 +283,18 @@ export default function LeadTimesPage() {
                       <td className="px-4 py-3 text-[#58524e]">{r.vendor}</td>
                       <td className="px-4 py-3 text-[#58524e] whitespace-nowrap">{formatDateShort(r.orderDate)}</td>
                       <td className="px-4 py-3 text-[#58524e] whitespace-nowrap">{formatDateShort(r.pgrd)}</td>
-                      <td className="px-4 py-3 text-[#58524e] whitespace-nowrap">{r.asd ? formatDateShort(r.asd) : <span className="text-[#b5aaa5]">�</span>}</td>
-                      <td className="px-4 py-3 text-[#58524e]">{r.plannedLT != null ? `${r.plannedLT}d` : '�'}</td>
-                      <td className="px-4 py-3 font-semibold text-[#403833]">{r.productionLT != null ? `${r.productionLT}d` : <span className="text-[#b5aaa5]">�</span>}</td>
+                      <td className="px-4 py-3 text-[#58524e] whitespace-nowrap">{r.asd ? formatDateShort(r.asd) : <span className="text-[#b5aaa5]">—</span>}</td>
+                      <td className="px-4 py-3 text-[#58524e]">{r.plannedLT != null ? `${r.plannedLT}d` : '—'}</td>
+                      <td className="px-4 py-3 font-semibold text-[#403833]">{r.productionLT != null ? `${r.productionLT}d` : <span className="text-[#b5aaa5]">—</span>}</td>
                       <td className="px-4 py-3 text-[#7b7571]">{r.agreedLT}d</td>
                       <td className="px-4 py-3">
-                        {r.vsAgreed == null ? <span className="text-[#b5aaa5]">�</span>
+                        {r.vsAgreed == null ? <span className="text-[#b5aaa5]">—</span>
                           : r.vsAgreed < 0 ? <span className="text-pass font-semibold">{r.vsAgreed}d</span>
                           : r.vsAgreed > 0 ? <span className="text-fail font-semibold">+{r.vsAgreed}d</span>
                           : <span className="text-[#7b7571]">On time</span>}
                       </td>
                       <td className="px-4 py-3">
-                        {r.vsTarget == null ? <span className="text-[#b5aaa5]">�</span>
+                        {r.vsTarget == null ? <span className="text-[#b5aaa5]">—</span>
                           : r.vsTarget < 0 ? <span className="text-pass font-semibold">{r.vsTarget}d</span>
                           : r.vsTarget > 0 ? <span className="text-fail font-semibold">+{r.vsTarget}d</span>
                           : <span className="text-[#7b7571]">On time</span>}

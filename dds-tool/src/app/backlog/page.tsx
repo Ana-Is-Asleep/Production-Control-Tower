@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useMemo, useRef, useEffect, Fragment } from 'react';
 import { useData } from '../../context/DataContext';
@@ -40,18 +40,18 @@ function VendorDropdown({ vendors, selected, onChange }: { vendors: string[]; se
         className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border font-medium transition-all ${selected.length > 0 ? 'bg-[#403833] text-white border-[#403833]' : 'border-[#e9e3df] text-[#58524e] hover:border-[#403833]'}`}
       >
         <span className="max-w-[200px] truncate">{label}</span>
-        <span className="opacity-40 text-[10px]">?</span>
+        <span className="opacity-40 text-[10px]">▾</span>
       </button>
       {open && (
         <div className="absolute left-0 top-full mt-1 bg-white border border-[#e9e3df] rounded-lg shadow-lg z-50 w-64 py-1 max-h-64 overflow-y-auto" style={{ boxShadow: 'var(--shadow-card-hover)' }}>
           <button onClick={() => onChange([])} className={`w-full text-left px-4 py-2 text-xs font-medium ${selected.length === 0 ? 'text-brand' : 'text-[#58524e] hover:bg-[#f9f7f6]'}`}>
-            All vendors {selected.length === 0 && '?'}
+            All vendors {selected.length === 0 && '✓'}
           </button>
           <div className="border-t border-[#e9e3df] my-1" />
           {vendors.map((v) => (
             <button key={v} onClick={() => toggle(v)} className="w-full text-left px-4 py-2 text-xs flex items-center justify-between hover:bg-[#f9f7f6]">
               <span className={selected.includes(v) ? 'text-[#403833] font-medium' : 'text-[#58524e]'}>{v}</span>
-              {selected.includes(v) && <span className="text-brand">?</span>}
+              {selected.includes(v) && <span className="text-brand">✓</span>}
             </button>
           ))}
         </div>
@@ -65,7 +65,7 @@ function BacklogTable({ lines }: { lines: PurchaseLine[] }) {
     <div className="text-center py-10 text-[#b5aaa5] text-sm">No POs match the current filters</div>
   );
 
-  // group by PO � one row per PO, show line count and all unique categories
+  // group by PO — one row per PO, show line count and all unique categories
   const grouped = useMemo(() => {
     const map = new Map<string, { lines: PurchaseLine[]; categories: Set<SKUCategory> }>();
     lines.forEach((l) => {
@@ -264,7 +264,7 @@ export default function BacklogPage() {
             onClick={() => { setSelectedVendors([]); setSelectedCategories([]); }}
             className="text-xs text-[#9c9794] hover:text-fail transition-colors ml-1"
           >
-            Clear filters ?
+            Clear filters ✕
           </button>
         )}
         <span className="ml-auto text-xs text-[#9c9794]">{tabLines.length} line{tabLines.length !== 1 ? 's' : ''}</span>

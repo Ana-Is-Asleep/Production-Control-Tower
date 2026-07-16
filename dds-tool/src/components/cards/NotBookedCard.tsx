@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Card } from '../shared/Card';
 import type { PurchaseLine } from '../../types';
@@ -18,7 +18,7 @@ export function NotBookedCard({ lines }: NotBookedCardProps) {
         </div>
         <div className="space-y-1 max-h-36 overflow-y-auto">
           {lines.length === 0 && (
-            <p className="text-xs text-pass font-medium">? All lines booked</p>
+            <p className="text-xs text-pass font-medium">✓ All lines booked</p>
           )}
           {lines.slice(0, 8).map((l) => (
             <div key={`${l.po}-${l.line}`} className="flex items-center justify-between text-xs">

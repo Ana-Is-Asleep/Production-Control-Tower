@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useData } from '../../context/DataContext';
@@ -81,14 +81,14 @@ export default function SKUPage() {
                     {r.esd ? formatDateShort(r.esd) : <span className="text-xs bg-[#FEE2E2] text-fail px-2 py-0.5 rounded-full">No booking</span>}
                   </td>
                   <td className="px-3 py-2.5">
-                    {r.kpi.sotResult === null ? <span className="text-[#b5aaa5]">�</span>
-                      : r.kpi.sotResult ? <span className="text-pass font-bold">?</span>
-                      : <span className="text-fail font-bold">?</span>}
+                    {r.kpi.sotResult === null ? <span className="text-[#b5aaa5]">—</span>
+                      : r.kpi.sotResult ? <span className="text-pass font-bold">✓</span>
+                      : <span className="text-fail font-bold">✗</span>}
                   </td>
                   <td className="px-3 py-2.5">
-                    {r.kpi.otif === null ? <span className="text-[#b5aaa5]">�</span>
-                      : r.kpi.otif ? <span className="text-pass font-bold">?</span>
-                      : <span className="text-warn font-bold">?</span>}
+                    {r.kpi.otif === null ? <span className="text-[#b5aaa5]">—</span>
+                      : r.kpi.otif ? <span className="text-pass font-bold">✓</span>
+                      : <span className="text-warn font-bold">✗</span>}
                   </td>
                 </tr>
               ))}
