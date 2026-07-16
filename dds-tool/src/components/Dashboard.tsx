@@ -265,8 +265,8 @@ export function Dashboard() {
               </div>
             </div>
 
-            {/* row 2: Backlog | Not Booked | Invoices | Pickup */}
-            <div className="grid grid-cols-4 gap-3 h-[300px]">
+            {/* row 2: Backlog | Transportation | Invoices */}
+            <div className="grid grid-cols-3 gap-3 h-[300px]">
               <div onClick={() => router.push('/backlog')} className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
                 <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Backlog</p>
                 <div className="space-y-3">
@@ -284,16 +284,52 @@ export function Dashboard() {
                 <p className="text-xs text-brand font-semibold">Drill down →</p>
               </div>
 
-              <div onClick={() => router.push('/not-booked')} className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
-                <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Not Booked</p>
-                <div>
-                  <p className={`kpi-number font-extrabold text-7xl leading-none ${notBookedPOs.length === 0 ? 'text-pass' : 'text-fail'}`}>{notBookedPOs.length}</p>
-                  <p className="text-xs text-[#9c9794] mt-1">POs without ESD</p>
+              {/* Transportation: not booked (left) + pickup chart (right) */}
+              <div onClick={() => router.push('/transportation')} className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-5 flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <div className="flex items-start justify-between mb-3">
+                  <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Transportation</p>
+                  <p className="text-[10px] text-brand font-semibold">Drill down →</p>
                 </div>
-                <p className="text-xs text-brand font-semibold">Drill down →</p>
+                <div className="flex items-stretch gap-4 flex-1 min-h-0">
+                  <div className="flex flex-col justify-center shrink-0">
+                    <p className="text-[10px] uppercase tracking-widest text-[#9c9794] mb-1">Not booked</p>
+                    <p className={`kpi-number font-extrabold text-5xl leading-none ${notBookedPOs.length === 0 ? 'text-pass' : 'text-fail'}`}>{notBookedPOs.length}</p>
+                    <p className="text-[10px] text-[#9c9794] mt-1">POs without ESD</p>
+                  </div>
+                  <div className="w-px bg-[#e9e3df] shrink-0" />
+                  <div className="flex-1 flex flex-col min-w-0">
+                    <p className="text-[10px] text-[#b5aaa5] mb-1">W{String(lastWeek + 1).padStart(2, '0')} upcoming · avg line</p>
+                    <div className="flex-1">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart
+                          data={[1,2,3,4,5].map((dow, i) => {
+                            const days = ['Mon','Tue','Wed','Thu','Fri'];
+                            const nextWeek = lastWeek + 1;
+                            const upcoming = new Set(allD2cLines.filter(l => !l.asd && l.esd && l.esd.getDay() === dow && getISOWeek(l.esd) === nextWeek).map(l => l.po)).size;
+                            const pastWeekNums = kpis.weeklyTrend.filter(w => !w.isFuture && w.isCurrent === false).map(w => parseInt(w.weekLabel.replace('W','')));
+                            const avgPerWeek = pastWeekNums.map(w => new Set(accumulatingLines.filter(l => l.asd && l.asd.getDay() === dow && getISOWeek(l.asd) === w).map(l => l.po)).size);
+                            const avg = pastWeekNums.length > 0 ? Math.round(avgPerWeek.reduce((s,n) => s+n, 0) / pastWeekNums.length * 10) / 10 : 0;
+                            return { day: days[i], upcoming, avg };
+                          })}
+                          margin={{ top: 8, right: 0, left: -24, bottom: 0 }}
+                        >
+                          <XAxis dataKey="day" tick={{ fill: '#9c9794', fontSize: 10 }} axisLine={false} tickLine={false} />
+                          <YAxis tick={{ fill: '#9c9794', fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                          <Tooltip contentStyle={{ background: '#403833', border: 'none', color: '#f9f7f6', borderRadius: 8, fontSize: 11 }}
+                            formatter={(v, n) => [`${v}`, n === 'upcoming' ? 'Upcoming POs' : 'Hist. avg']} />
+                          <Bar dataKey="upcoming" fill="#FF8900" radius={[3,3,0,0]} name="upcoming">
+                            <LabelList dataKey="upcoming" position="top" style={{ fill: '#7b7571', fontSize: 10, fontWeight: 600 }}
+                              formatter={(v: unknown) => Number(v) > 0 ? Number(v) : ''} />
+                          </Bar>
+                          <Line dataKey="avg" stroke="#6469aa" strokeWidth={2} dot={{ r: 3, fill: '#6469aa', strokeWidth: 0 }} name="avg" strokeDasharray="4 4" />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-<div onClick={() => router.push('/invoices')} className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <div onClick={() => router.push('/invoices')} className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
                 <div className="flex items-center justify-between">
                   <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Invoices</p>
                   {invoices.length > 0 && (
@@ -335,42 +371,6 @@ export function Dashboard() {
                   </div>
                 )}
                 <p className="text-xs text-brand font-semibold mt-2">Drill down →</p>
-              </div>
-
-              <div onClick={() => router.push('/pickups')} className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
-                <div className="flex items-center justify-between mb-1">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Pickups</p>
-                    <p className="text-[10px] text-[#b5aaa5]">W{String(lastWeek + 1).padStart(2,'0')} upcoming · avg line</p>
-                  </div>
-                  <p className="text-[10px] text-brand font-semibold">Drill down →</p>
-                </div>
-                <ResponsiveContainer width="100%" height={130}>
-                  <ComposedChart
-                    data={[1,2,3,4,5].map((dow, i) => {
-                      const days = ['Mon','Tue','Wed','Thu','Fri'];
-                      const nextWeek = lastWeek + 1;
-                      // bars: upcoming week ESD bookings (always real next week, vendor-filtered)
-                      const upcoming = new Set(allD2cLines.filter(l => !l.asd && l.esd && l.esd.getDay() === dow && getISOWeek(l.esd) === nextWeek).map(l => l.po)).size;
-                      // line: avg across SOT window past weeks
-                      const pastWeekNums = kpis.weeklyTrend.filter(w => !w.isFuture && w.isCurrent === false).map(w => parseInt(w.weekLabel.replace('W','')));
-                      const avgPerWeek = pastWeekNums.map(w => new Set(accumulatingLines.filter(l => l.asd && l.asd.getDay() === dow && getISOWeek(l.asd) === w).map(l => l.po)).size);
-                      const avg = pastWeekNums.length > 0 ? Math.round(avgPerWeek.reduce((s,n) => s+n, 0) / pastWeekNums.length * 10) / 10 : 0;
-                      return { day: days[i], upcoming, avg };
-                    })}
-                    margin={{ top: 12, right: 0, left: -24, bottom: 0 }}
-                  >
-                    <XAxis dataKey="day" tick={{ fill: '#9c9794', fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#9c9794', fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                    <Tooltip contentStyle={{ background: '#403833', border: 'none', color: '#f9f7f6', borderRadius: 8, fontSize: 11 }}
-                      formatter={(v, n) => [`${v}`, n === 'upcoming' ? 'Upcoming POs' : 'Hist. avg']} />
-                    <Bar dataKey="upcoming" fill="#FF8900" radius={[3,3,0,0]} name="upcoming">
-                      <LabelList dataKey="upcoming" position="top" style={{ fill: '#7b7571', fontSize: 10, fontWeight: 600 }}
-                        formatter={(v: unknown) => Number(v) > 0 ? Number(v) : ''} />
-                    </Bar>
-                    <Line dataKey="avg" stroke="#6469aa" strokeWidth={2} dot={{ r: 3, fill: '#6469aa', strokeWidth: 0 }} name="avg" strokeDasharray="4 4" />
-                  </ComposedChart>
-                </ResponsiveContainer>
               </div>
             </div>
 
