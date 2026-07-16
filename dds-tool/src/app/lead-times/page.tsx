@@ -8,7 +8,7 @@ import { useData } from '../../context/DataContext';
 import { useFilters } from '../../hooks/useFilters';
 import { computeLeadTime, summariseLeadTimes, computeWeeklyLT } from '../../lib/leadTimeUtils';
 import { categorizeSKU, SKU_CATEGORIES, type SKUCategory } from '../../lib/skuUtils';
-import { formatDateShort } from '../../lib/dateUtils';
+import { formatDateShort, getISOWeek, getISOWeekYear } from '../../lib/dateUtils';
 import { TARGET_LT } from '../../data/leadTimeData';
 
 const CATEGORY_COLORS: Record<SKUCategory, string> = {
@@ -21,22 +21,39 @@ export default function LeadTimesPage() {
   const [selectedCat, setSelectedCat] = useState<SKUCategory | 'All'>('All');
   const [view, setView] = useState<'summary' | 'detail'>('summary');
 
-  const scopeLines = accumulatingLines;
+  const CHART_WEEKS = 10;
 
   const filtered = useMemo(() =>
-    selectedCat === 'All' ? scopeLines : scopeLines.filter((l) => categorizeSKU(l.sku) === selectedCat),
-    [scopeLines, selectedCat]
+    selectedCat === 'All' ? accumulatingLines : accumulatingLines.filter((l) => categorizeSKU(l.sku) === selectedCat),
+    [accumulatingLines, selectedCat]
   );
 
-  // weekly trend — all categories so the chart always shows all bars even when a cat filter is active
-  const weeklyLT = useMemo(() => computeWeeklyLT(accumulatingLines), [accumulatingLines]);
+  // weekly trend — all categories, then sliced to last 10 weeks
+  const weeklyLT     = useMemo(() => computeWeeklyLT(accumulatingLines), [accumulatingLines]);
+  const chartWeeklyLT = useMemo(() => weeklyLT.slice(-CHART_WEEKS), [weeklyLT]);
 
-  const summary = useMemo(() => summariseLeadTimes(filtered), [filtered]);
+  // week-key set for the visible chart window
+  const chartWeekKeys = useMemo(() =>
+    new Set(chartWeeklyLT.map(w => `${w.isoYear}-${String(w.isoWeek).padStart(2, '0')}`)),
+    [chartWeeklyLT]
+  );
+
+  // lines whose ASD falls inside the chart window (drives KPI cards + detail table)
+  const chartScopedLines = useMemo(() =>
+    filtered.filter(l => {
+      if (!l.asd) return false;
+      const key = `${getISOWeekYear(l.asd)}-${String(getISOWeek(l.asd)).padStart(2, '0')}`;
+      return chartWeekKeys.has(key);
+    }),
+    [filtered, chartWeekKeys]
+  );
+
+  const summary = useMemo(() => summariseLeadTimes(chartScopedLines), [chartScopedLines]);
 
   // per-vendor chart data
   const byVendor = useMemo(() => {
     const map = new Map<string, { planned: number[]; expected: number[]; production: number[]; agreedLT: number }>();
-    filtered.forEach((l) => {
+    chartScopedLines.forEach((l) => {
       const r = computeLeadTime(l);
       if (!map.has(l.supplier)) map.set(l.supplier, { planned: [], expected: [], production: [], agreedLT: r.agreedLT });
       const e = map.get(l.supplier)!;
@@ -55,12 +72,12 @@ export default function LeadTimesPage() {
       target: TARGET_LT,
       vsAgreed: avg(v.production) !== null ? (avg(v.production) as number) - v.agreedLT : null,
     })).filter((r) => r.actual !== null && r.actual > 0).sort((a, b) => (b.vsAgreed ?? 0) - (a.vsAgreed ?? 0));
-  }, [filtered]);
+  }, [chartScopedLines]);
 
-  // group by PO for detail table — one row per PO, average LTs across lines
+  // group by PO for detail table — scoped to the same 10-week chart window
   const detailByPO = useMemo(() => {
     const map = new Map<string, { po: string; vendor: string; category: SKUCategory; orderDate: Date | null; pgrd: Date | null; asd: Date | null; lts: ReturnType<typeof computeLeadTime>[] }>();
-    filtered.forEach(l => {
+    chartScopedLines.forEach(l => {
       const r = computeLeadTime(l);
       if (!map.has(l.po)) map.set(l.po, { po: l.po, vendor: l.supplier, category: categorizeSKU(l.sku), orderDate: l.orderDate, pgrd: l.pgrd, asd: l.asd, lts: [] });
       map.get(l.po)!.lts.push(r);
@@ -77,7 +94,7 @@ export default function LeadTimesPage() {
       vsTarget:     avgN(g.lts.map(r => r.vsTarget)),
       lineCount:    g.lts.length,
     })).filter(g => g.productionLT != null || g.plannedLT != null);
-  }, [filtered]);
+  }, [chartScopedLines]);
 
   return (
     <div className="min-h-screen bg-[#f5f2ee] page-enter">
@@ -182,11 +199,11 @@ export default function LeadTimesPage() {
           </div>
         </div>
 
-        {/* weekly trend by category — main chart, matches HTML design */}
-        {weeklyLT.length > 0 && (
+        {/* weekly trend by category — last 10 weeks */}
+        {chartWeeklyLT.length > 0 && (
           <div className="bg-white rounded-lg p-6" style={{ boxShadow: 'var(--shadow-card)' }}>
             <div className="flex items-center justify-between mb-4">
-              <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Production Lead Time by Week</p>
+              <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Production Lead Time — Last {chartWeeklyLT.length} Weeks</p>
               <div className="flex items-center gap-2">
                 {[{k:'Mattresses',c:'#FF8900'},{k:'Beds',c:'#6469aa'},{k:'Accessories',c:'#34A853'}].map(({k,c}) => (
                   <span key={k} className="flex items-center gap-1.5 text-[11px] text-[#58524e]">
@@ -201,7 +218,7 @@ export default function LeadTimesPage() {
               </div>
             </div>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={selectedCat === 'All' ? weeklyLT : weeklyLT} margin={{ top: 4, right: 24, left: -10, bottom: 0 }} barCategoryGap="25%">
+              <BarChart data={chartWeeklyLT} margin={{ top: 4, right: 24, left: -10, bottom: 0 }} barCategoryGap="25%">
                 <CartesianGrid strokeDasharray="3 3" stroke="#e9e3df" vertical={false} />
                 <XAxis dataKey="weekLabel" tick={{ fill: '#9c9794', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: '#9c9794', fontSize: 11 }} axisLine={false} tickLine={false} unit="d" domain={[0, 'auto']} />
@@ -244,48 +261,49 @@ export default function LeadTimesPage() {
           </div>
         )}
 
-        {/* detail table — one row per PO */}
+        {/* detail table — one row per PO, scoped to chart window */}
         {view === 'detail' && (
           <div className="bg-white rounded-lg overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-[#403833] text-white">
-                  {['PO', 'Category', 'Vendor', 'Order Date', 'PGRD', 'ASD', 'Planned LT', 'Production LT', 'Agreed LT', 'vs Agreed', 'vs Target', 'Lines'].map((h) => (
-                    <th key={h} className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {detailByPO.map((r) => (
-                  <tr key={r.po} className="border-b border-[#e9e3df] hover:bg-[#f9f7f6]">
-                    <td className="px-3 py-2.5 font-semibold text-[#403833] whitespace-nowrap">{r.po}</td>
-                    <td className="px-3 py-2.5">
-                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full text-white" style={{ background: CATEGORY_COLORS[r.category] }}>{r.category}</span>
-                    </td>
-                    <td className="px-3 py-2.5 text-[#58524e]">{r.vendor}</td>
-                    <td className="px-3 py-2.5 text-[#58524e] whitespace-nowrap">{formatDateShort(r.orderDate)}</td>
-                    <td className="px-3 py-2.5 text-[#58524e] whitespace-nowrap">{formatDateShort(r.pgrd)}</td>
-                    <td className="px-3 py-2.5 text-[#58524e] whitespace-nowrap">{r.asd ? formatDateShort(r.asd) : <span className="text-[#b5aaa5]">—</span>}</td>
-                    <td className="px-3 py-2.5 text-[#58524e]">{r.plannedLT != null ? `${r.plannedLT}d` : '—'}</td>
-                    <td className="px-3 py-2.5 font-semibold text-[#403833]">{r.productionLT != null ? `${r.productionLT}d` : <span className="text-[#b5aaa5]">—</span>}</td>
-                    <td className="px-3 py-2.5 text-[#7b7571]">{r.agreedLT}d</td>
-                    <td className="px-3 py-2.5">
-                      {r.vsAgreed == null ? <span className="text-[#b5aaa5]">—</span>
-                        : r.vsAgreed < 0 ? <span className="text-pass font-semibold">{r.vsAgreed}d</span>
-                        : r.vsAgreed > 0 ? <span className="text-fail font-semibold">+{r.vsAgreed}d</span>
-                        : <span className="text-[#7b7571]">On time</span>}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      {r.vsTarget == null ? <span className="text-[#b5aaa5]">—</span>
-                        : r.vsTarget < 0 ? <span className="text-pass font-semibold">{r.vsTarget}d</span>
-                        : r.vsTarget > 0 ? <span className="text-fail font-semibold">+{r.vsTarget}d</span>
-                        : <span className="text-[#7b7571]">On time</span>}
-                    </td>
-                    <td className="px-3 py-2.5 text-xs text-[#b5aaa5]">{r.lineCount}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm" style={{ minWidth: '900px' }}>
+                <thead>
+                  <tr className="bg-[#403833] text-white">
+                    {['PO', 'Category', 'Vendor', 'Order Date', 'PGRD', 'ASD', 'Planned LT', 'Production LT', 'Agreed LT', 'vs Agreed', 'vs Target'].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {detailByPO.map((r) => (
+                    <tr key={r.po} className="border-b border-[#e9e3df] hover:bg-[#f9f7f6]">
+                      <td className="px-4 py-3 font-semibold text-[#403833] whitespace-nowrap">{r.po}</td>
+                      <td className="px-4 py-3">
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full text-white" style={{ background: CATEGORY_COLORS[r.category] }}>{r.category}</span>
+                      </td>
+                      <td className="px-4 py-3 text-[#58524e]">{r.vendor}</td>
+                      <td className="px-4 py-3 text-[#58524e] whitespace-nowrap">{formatDateShort(r.orderDate)}</td>
+                      <td className="px-4 py-3 text-[#58524e] whitespace-nowrap">{formatDateShort(r.pgrd)}</td>
+                      <td className="px-4 py-3 text-[#58524e] whitespace-nowrap">{r.asd ? formatDateShort(r.asd) : <span className="text-[#b5aaa5]">—</span>}</td>
+                      <td className="px-4 py-3 text-[#58524e]">{r.plannedLT != null ? `${r.plannedLT}d` : '—'}</td>
+                      <td className="px-4 py-3 font-semibold text-[#403833]">{r.productionLT != null ? `${r.productionLT}d` : <span className="text-[#b5aaa5]">—</span>}</td>
+                      <td className="px-4 py-3 text-[#7b7571]">{r.agreedLT}d</td>
+                      <td className="px-4 py-3">
+                        {r.vsAgreed == null ? <span className="text-[#b5aaa5]">—</span>
+                          : r.vsAgreed < 0 ? <span className="text-pass font-semibold">{r.vsAgreed}d</span>
+                          : r.vsAgreed > 0 ? <span className="text-fail font-semibold">+{r.vsAgreed}d</span>
+                          : <span className="text-[#7b7571]">On time</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        {r.vsTarget == null ? <span className="text-[#b5aaa5]">—</span>
+                          : r.vsTarget < 0 ? <span className="text-pass font-semibold">{r.vsTarget}d</span>
+                          : r.vsTarget > 0 ? <span className="text-fail font-semibold">+{r.vsTarget}d</span>
+                          : <span className="text-[#7b7571]">On time</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
