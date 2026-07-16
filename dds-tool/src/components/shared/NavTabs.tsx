@@ -4,14 +4,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useData } from '../../context/DataContext';
 
 const TABS = [
-  { label: 'Overview',   href: '/' },
-  { label: 'SOT + OTIF', href: '/sot-otif' },
-  { label: 'Backlog',    href: '/backlog' },
-  { label: 'Not Booked', href: '/not-booked' },
-  { label: 'Invoices',   href: '/invoices' },
-  { label: 'Pickups',    href: '/pickups' },
-  { label: 'Lead Times', href: '/lead-times' },
-  { label: 'SKU',        href: '/sku' },
+  { label: 'Overview',       href: '/' },
+  { label: 'SOT + OTIF',     href: '/sot-otif' },
+  { label: 'Backlog',        href: '/backlog' },
+  { label: 'Transportation', href: '/transportation' },
+  { label: 'Invoices',       href: '/invoices' },
+  { label: 'Lead Times',     href: '/lead-times' },
+  { label: 'SKU',            href: '/sku' },
 ];
 
 interface NavTabsProps {
