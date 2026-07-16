@@ -222,10 +222,10 @@ export function Dashboard() {
             )}
           </div>
 
-          <div className="px-4 pt-2 pb-2 space-y-2">
+          <div className="px-4 pt-2 pb-2 flex flex-col gap-2" style={{ height: 'calc(100vh - 96px)' }}>
 
             {/* row 1: Performance hero (SOT+OTIF + Backlog) */}
-            <div onClick={() => router.push('/performance')} className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer h-[200px]" style={{ boxShadow: 'var(--shadow-card)' }}>
+            <div onClick={() => router.push('/performance')} className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex-[3] min-h-0" style={{ boxShadow: 'var(--shadow-card)' }}>
               <div className="flex items-stretch gap-8 h-full">
                 <div className="flex gap-6 shrink-0 items-center">
                   <div>
@@ -285,7 +285,7 @@ export function Dashboard() {
             </div>
 
             {/* row 2: Transportation | Invoices */}
-            <div className="grid grid-cols-2 gap-2 h-[200px]">
+            <div className="grid grid-cols-2 gap-2 flex-[2] min-h-0">
 
               {/* Transportation: not booked (left) + pickup chart (right) */}
               <div onClick={() => router.push('/transportation')} className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-4 flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
@@ -381,8 +381,8 @@ export function Dashboard() {
             </div>
 
             {/* row 3: lead times — weekly bar chart, click to drill down */}
-            <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
-              <div className="flex items-center justify-between mb-2">
+            <div className="bg-white rounded-lg border border-[#e9e3df] p-4 flex-[2] min-h-0 flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <div className="flex items-center justify-between mb-2 shrink-0">
                 <div className="flex items-center gap-3">
                   <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Production Lead Time</p>
                   {ltSummary.avgProductionLT !== null && (
@@ -414,7 +414,8 @@ export function Dashboard() {
                   </button>
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={120}>
+              <div className="flex-1 min-h-0">
+              <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={ltChartData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }} barCategoryGap="30%">
                   <CartesianGrid strokeDasharray="3 3" stroke="#e9e3df" vertical={false} />
                   <XAxis dataKey="weekLabel" tick={{ fill: '#9c9794', fontSize: 10 }} axisLine={false} tickLine={false} />
@@ -442,6 +443,7 @@ export function Dashboard() {
                   )}
                 </BarChart>
               </ResponsiveContainer>
+              </div>
             </div>
           </div>
         </div>
