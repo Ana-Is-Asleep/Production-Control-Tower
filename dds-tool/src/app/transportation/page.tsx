@@ -142,16 +142,16 @@ export default function TransportationPage() {
         </span>
       </header>
 
-      <div className="px-6 py-5 max-w-5xl mx-auto space-y-5">
+      <div style={{ height: 'calc(100vh - 48px)' }} className="px-6 py-4 max-w-5xl mx-auto flex flex-col gap-4">
 
         {/* ── PICKUPS + NOT BOOKED side by side ─────────────────────────── */}
-        <div className="grid grid-cols-2 gap-5 items-start">
+        <div className="flex-1 min-h-0 grid grid-cols-2 gap-5">
 
           {/* LEFT: Upcoming Pickups */}
-          <div className="space-y-4">
+          <div className="flex flex-col gap-3 min-h-0">
             <SectionLabel>Upcoming Pickups — W{String(nextWeek).padStart(2, '0')} ESD bookings</SectionLabel>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 shrink-0">
               <KpiCard
                 label={`Upcoming W${String(nextWeek).padStart(2, '0')}`}
                 value={totalUpcoming}
@@ -182,41 +182,43 @@ export default function TransportationPage() {
               />
             </div>
 
-            <div className="bg-white rounded-lg p-5" style={{ boxShadow: 'var(--shadow-card)' }}>
-              <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-1">
+            <div className="bg-white rounded-lg p-5 flex-1 min-h-0 flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-1 shrink-0">
                 W{String(nextWeek).padStart(2, '0')} vs Historical Average
               </p>
-              <p className="text-[10px] text-[#b5aaa5] mb-4">
+              <p className="text-[10px] text-[#b5aaa5] mb-2 shrink-0">
                 Bars = ESD bookings &middot; Dashed = avg W{String(pastWeekNums[0]).padStart(2, '0')}–W{String(pastWeekNums[pastWeekNums.length - 1]).padStart(2, '0')}
               </p>
-              <ResponsiveContainer width="100%" height={210}>
-                <ComposedChart data={chartData} margin={{ top: 16, right: 16, left: -10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="2 4" stroke="#f4f1ef" vertical={false} />
-                  <XAxis dataKey="day" tick={{ fill: '#9c9794', fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: '#9c9794', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                  <Tooltip
-                    contentStyle={{ background: '#403833', border: 'none', color: '#f9f7f6', borderRadius: 8, fontSize: 12 }}
-                    formatter={(v, n) => [`${v}`, n === 'upcoming' ? `W${nextWeek} upcoming` : 'Historical avg']}
-                  />
-                  <defs>
-                    <linearGradient id="tr-orange" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FF8900" stopOpacity={0.78} /><stop offset="100%" stopColor="#FF8900" stopOpacity={0.85} /></linearGradient>
-                  </defs>
-                  <Bar dataKey="upcoming" fill="url(#tr-orange)" fillOpacity={0.82} radius={[4, 4, 0, 0]} name="upcoming">
-                    <LabelList dataKey="upcoming" position="top" style={{ fill: '#7b7571', fontSize: 11, fontWeight: 700 }}
-                      formatter={(v: unknown) => Number(v) > 0 ? Number(v) : ''} />
-                  </Bar>
-                  <Line dataKey="avg" stroke="#6469aa" strokeWidth={2.5} dot={{ r: 4, fill: '#6469aa', strokeWidth: 0 }}
-                    strokeDasharray="5 3" name="avg" />
-                </ComposedChart>
-              </ResponsiveContainer>
+              <div className="flex-1 min-h-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={chartData} margin={{ top: 16, right: 16, left: -10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="2 4" stroke="#f4f1ef" vertical={false} />
+                    <XAxis dataKey="day" tick={{ fill: '#9c9794', fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: '#9c9794', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{ background: '#403833', border: 'none', color: '#f9f7f6', borderRadius: 8, fontSize: 12 }}
+                      formatter={(v, n) => [`${v}`, n === 'upcoming' ? `W${nextWeek} upcoming` : 'Historical avg']}
+                    />
+                    <defs>
+                      <linearGradient id="tr-orange" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FF8900" stopOpacity={0.78} /><stop offset="100%" stopColor="#FF8900" stopOpacity={0.85} /></linearGradient>
+                    </defs>
+                    <Bar dataKey="upcoming" fill="url(#tr-orange)" fillOpacity={0.82} radius={[4, 4, 0, 0]} name="upcoming">
+                      <LabelList dataKey="upcoming" position="top" style={{ fill: '#7b7571', fontSize: 11, fontWeight: 700 }}
+                        formatter={(v: unknown) => Number(v) > 0 ? Number(v) : ''} />
+                    </Bar>
+                    <Line dataKey="avg" stroke="#6469aa" strokeWidth={2.5} dot={{ r: 4, fill: '#6469aa', strokeWidth: 0 }}
+                      strokeDasharray="5 3" name="avg" />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
 
           {/* RIGHT: Not Booked */}
-          <div className="space-y-4">
+          <div className="flex flex-col gap-3 min-h-0">
             <SectionLabel>Not Booked — POs missing pickup booking</SectionLabel>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 shrink-0">
               <KpiCard
                 label="POs not booked"
                 value={totalPOs}
@@ -245,7 +247,7 @@ export default function TransportationPage() {
             </div>
 
             {/* category filter */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap shrink-0">
               <button
                 onClick={() => setSelectedCat('All')}
                 className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-all ${selectedCat === 'All' ? 'bg-[#403833] text-white border-[#403833]' : 'border-[#e9e3df] text-[#58524e] hover:border-[#403833]'}`}>
@@ -265,8 +267,9 @@ export default function TransportationPage() {
               <span className="ml-auto text-xs text-[#9c9794]">{filteredPOs.length} PO{filteredPOs.length !== 1 ? 's' : ''}</span>
             </div>
 
+            <div className="flex-1 min-h-0 overflow-auto rounded-lg" style={{ boxShadow: 'var(--shadow-card)' }}>
             {filteredPOs.length > 0 ? (
-              <div className="bg-white rounded-lg overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <div className="bg-white rounded-lg overflow-hidden h-full flex flex-col">
                 <div className="px-5 py-3 border-b border-[#e9e3df]">
                   <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">POs missing pickup booking — click to expand</p>
                 </div>
@@ -345,15 +348,18 @@ export default function TransportationPage() {
                 </table>
               </div>
             ) : (
-              <div className="bg-white rounded-lg p-8 text-center text-[#b5aaa5]" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <div className="bg-white rounded-lg p-8 text-center text-[#b5aaa5] h-full flex items-center justify-center">
                 {totalPOs === 0 ? 'All POs have pickup booked' : 'No POs match the selected category'}
               </div>
             )}
+            </div>
           </div>
         </div>
 
-        {upcomingByDay.length > 0 && (
-          <div className="space-y-3">
+      </div>
+
+      {upcomingByDay.length > 0 && (
+        <div className="px-6 pb-6 max-w-5xl mx-auto space-y-3 mt-4">
             <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">W{String(nextWeek).padStart(2, '0')} — by day</p>
             {upcomingByDay.map(dayGroup => (
               <div key={dayGroup.dow} className="bg-white rounded-lg overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
@@ -426,15 +432,8 @@ export default function TransportationPage() {
                 </table>
               </div>
             ))}
-          </div>
-        )}
-
-        {upcomingByDay.length === 0 && (
-          <div className="bg-white rounded-lg p-8 text-center text-[#b5aaa5]" style={{ boxShadow: 'var(--shadow-card)' }}>
-            No ESD bookings found for W{String(nextWeek).padStart(2, '0')}
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
