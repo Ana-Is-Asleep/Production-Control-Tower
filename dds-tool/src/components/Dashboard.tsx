@@ -222,25 +222,25 @@ export function Dashboard() {
             )}
           </div>
 
-          <div className="px-4 pt-3 pb-4 space-y-3">
+          <div className="px-4 pt-2 pb-2 space-y-2">
 
             {/* row 1: Performance hero (SOT+OTIF + Backlog) */}
-            <div onClick={() => router.push('/performance')} className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-6 py-5 cursor-pointer h-[280px]" style={{ boxShadow: 'var(--shadow-card)' }}>
-              <div className="flex items-stretch gap-10 h-full">
-                <div className="flex gap-8 shrink-0 items-center">
+            <div onClick={() => router.push('/performance')} className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer h-[200px]" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <div className="flex items-stretch gap-8 h-full">
+                <div className="flex gap-6 shrink-0 items-center">
                   <div>
-                    <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-2">SOT · 90% target</p>
-                    <p className={`kpi-number font-extrabold text-6xl leading-none ${kpis.sotPct === null ? 'text-[#c8c0bb]' : kpis.sotPct >= 90 ? 'text-pass' : 'text-fail'}`}>
+                    <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-1.5">SOT · 90% target</p>
+                    <p className={`kpi-number font-extrabold text-5xl leading-none ${kpis.sotPct === null ? 'text-[#c8c0bb]' : kpis.sotPct >= 90 ? 'text-pass' : 'text-fail'}`}>
                       {kpis.sotPct !== null ? `${kpis.sotPct}%` : '—'}
                     </p>
-                    {sotDelta !== null && <p className={`text-sm font-semibold mt-2 ${sotDelta >= 0 ? 'text-pass' : 'text-fail'}`}>{sotDelta >= 0 ? '↑' : '↓'} {Math.abs(sotDelta)}pp vs target</p>}
+                    {sotDelta !== null && <p className={`text-xs font-semibold mt-1.5 ${sotDelta >= 0 ? 'text-pass' : 'text-fail'}`}>{sotDelta >= 0 ? '↑' : '↓'} {Math.abs(sotDelta)}pp vs target</p>}
                   </div>
                   <div>
-                    <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-2">OTIF · 90% target</p>
-                    <p className={`kpi-number font-extrabold text-6xl leading-none ${kpis.otifPct === null ? 'text-[#c8c0bb]' : kpis.otifPct >= 90 ? 'text-pass' : 'text-warn'}`}>
+                    <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-1.5">OTIF · 90% target</p>
+                    <p className={`kpi-number font-extrabold text-5xl leading-none ${kpis.otifPct === null ? 'text-[#c8c0bb]' : kpis.otifPct >= 90 ? 'text-pass' : 'text-warn'}`}>
                       {kpis.otifPct !== null ? `${kpis.otifPct}%` : '—'}
                     </p>
-                    {otifDelta !== null && <p className={`text-sm font-semibold mt-2 ${otifDelta >= 0 ? 'text-pass' : 'text-warn'}`}>{otifDelta >= 0 ? '↑' : '↓'} {Math.abs(otifDelta)}pp vs target</p>}
+                    {otifDelta !== null && <p className={`text-xs font-semibold mt-1.5 ${otifDelta >= 0 ? 'text-pass' : 'text-warn'}`}>{otifDelta >= 0 ? '↑' : '↓'} {Math.abs(otifDelta)}pp vs target</p>}
                   </div>
                   <div className="w-px bg-[#e9e3df] self-stretch mx-1 shrink-0" />
                   <div className="flex flex-col justify-center gap-2">
@@ -285,18 +285,18 @@ export function Dashboard() {
             </div>
 
             {/* row 2: Transportation | Invoices */}
-            <div className="grid grid-cols-2 gap-3 h-[300px]">
+            <div className="grid grid-cols-2 gap-2 h-[200px]">
 
               {/* Transportation: not booked (left) + pickup chart (right) */}
-              <div onClick={() => router.push('/transportation')} className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-5 flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
-                <div className="flex items-start justify-between mb-3">
+              <div onClick={() => router.push('/transportation')} className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-4 flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <div className="flex items-start justify-between mb-2">
                   <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Transportation</p>
                   <p className="text-[10px] text-brand font-semibold">Drill down →</p>
                 </div>
                 <div className="flex items-stretch gap-4 flex-1 min-h-0">
                   <div className="flex flex-col justify-center shrink-0">
                     <p className="text-[10px] uppercase tracking-widest text-[#9c9794] mb-1">Not booked</p>
-                    <p className={`kpi-number font-extrabold text-5xl leading-none ${notBookedPOs.length === 0 ? 'text-pass' : 'text-fail'}`}>{notBookedPOs.length}</p>
+                    <p className={`kpi-number font-extrabold text-4xl leading-none ${notBookedPOs.length === 0 ? 'text-pass' : 'text-fail'}`}>{notBookedPOs.length}</p>
                     <p className="text-[10px] text-[#9c9794] mt-1">POs without ESD</p>
                   </div>
                   <div className="w-px bg-[#e9e3df] shrink-0" />
@@ -335,7 +335,7 @@ export function Dashboard() {
                 </div>
               </div>
 
-              <div onClick={() => router.push('/invoices')} className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-5 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <div onClick={() => router.push('/invoices')} className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-4 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-card)' }}>
                 <div className="flex items-center justify-between">
                   <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Invoices</p>
                   {invoices.length > 0 && (
@@ -381,8 +381,8 @@ export function Dashboard() {
             </div>
 
             {/* row 3: lead times — weekly bar chart, click to drill down */}
-            <div className="bg-white rounded-lg border border-[#e9e3df] p-5" style={{ boxShadow: 'var(--shadow-card)' }}>
-              <div className="flex items-center justify-between mb-3">
+            <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-3">
                   <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Production Lead Time</p>
                   {ltSummary.avgProductionLT !== null && (
@@ -414,7 +414,7 @@ export function Dashboard() {
                   </button>
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={180}>
+              <ResponsiveContainer width="100%" height={120}>
                 <BarChart data={ltChartData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }} barCategoryGap="30%">
                   <CartesianGrid strokeDasharray="3 3" stroke="#e9e3df" vertical={false} />
                   <XAxis dataKey="weekLabel" tick={{ fill: '#9c9794', fontSize: 10 }} axisLine={false} tickLine={false} />
