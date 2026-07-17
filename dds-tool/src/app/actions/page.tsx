@@ -5,7 +5,7 @@ import { NavTabs } from '../../components/shared/NavTabs';
 import { useData } from '../../context/DataContext';
 import { useFilters } from '../../hooks/useFilters';
 import { useKPIs } from '../../hooks/useKPIs';
-import { formatDateShort } from '../../lib/dateUtils';
+import { formatDateShort, getISOWeek } from '../../lib/dateUtils';
 import { computeKPIs, filterByChannel, formatAmountsByCurrency } from '../../lib/invoiceUtils';
 import type { PurchaseLine } from '../../types';
 import type { InvoiceRow } from '../../types/invoice';
@@ -471,6 +471,37 @@ export default function ActionsPage() {
                       )}
                     </div>
                   </div>
+
+                  {/* ESD by week — auto-answers "when will they ship?" */}
+                  {pastPOs.length > 0 && (() => {
+                    const byWeek = new Map<string, number>();
+                    let noEsd = 0;
+                    for (const p of pastPOs) {
+                      if (p.esd) {
+                        const label = `W${String(getISOWeek(p.esd)).padStart(2, '0')}`;
+                        byWeek.set(label, (byWeek.get(label) ?? 0) + 1);
+                      } else {
+                        noEsd++;
+                      }
+                    }
+                    const weeks = [...byWeek.entries()].sort(([a], [b]) => a.localeCompare(b));
+                    return (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-[#9c9794]">Ships</span>
+                        {weeks.map(([w, n]) => (
+                          <span key={w} className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#6469aa]/10 text-[#6469aa]">
+                            {w}: {n} PO{n !== 1 ? 's' : ''}
+                          </span>
+                        ))}
+                        {noEsd > 0 && (
+                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#DC2626]/10 text-[#DC2626]">
+                            No ESD: {noEsd}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
+
                   {/* What to check */}
                   <div className="rounded-xl px-4 py-3 space-y-1 bg-[#DC262608]">
                     <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5 text-[#DC2626]">What to check</p>
