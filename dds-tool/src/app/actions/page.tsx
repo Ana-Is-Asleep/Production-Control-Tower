@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { NavTabs } from '../../components/shared/NavTabs';
 import { useData } from '../../context/DataContext';
 import { useFilters } from '../../hooks/useFilters';
@@ -132,6 +132,13 @@ function Section({
   summary: React.ReactNode; children: React.ReactNode; open: number; total: number; defaultCollapsed?: boolean;
 }) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed ?? false);
+  const prevDefault = useRef(defaultCollapsed);
+  useEffect(() => {
+    if (prevDefault.current !== defaultCollapsed) {
+      prevDefault.current = defaultCollapsed;
+      setCollapsed(defaultCollapsed ?? false);
+    }
+  }, [defaultCollapsed]);
   const done = total - open;
   return (
     <div className="bg-white rounded-2xl border border-[#e9e3df] overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
