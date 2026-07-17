@@ -308,9 +308,18 @@ export default function ActionsPage() {
 
   const invoiceKPIs = useMemo(() => computeKPIs(filterByChannel(invoices, 'All')), [invoices]);
 
+  // D2C lines for the overview — derived from unfiltered allLines so supplier cards match dashboard
+  const D2C_CODES = useMemo(() => D2C_LOCATIONS.map(l => l.code), []);
+  const globalD2cLines = useMemo(() =>
+    allLines.filter(l => D2C_CODES.includes(l.destination) && l.pgrd?.getFullYear() === 2026 &&
+      (locations.length === 0 || locations.includes(l.destination))),
+    [allLines, D2C_CODES, locations]
+  );
+
+  // Supplier list for wizard switcher: only D2C suppliers (matches dashboard)
   const allSuppliers = useMemo(
-    () => [...new Set(allLines.map(l => l.supplier))].sort(),
-    [allLines]
+    () => [...new Set(globalD2cLines.map(l => l.supplier))].sort(),
+    [globalD2cLines]
   );
 
   const pastPOs     = useMemo(() => groupByPO(weekKpis.failingLines),                 [weekKpis.failingLines]);
@@ -345,23 +354,22 @@ export default function ActionsPage() {
   // ── Per-supplier overview stats (overview mode only) ─────────────────────
   const poToSupplier = useMemo(() => {
     const map = new Map<string, string>();
-    for (const l of allLines) map.set(l.po, l.supplier);
+    for (const l of globalD2cLines) map.set(l.po, l.supplier);
     return map;
-  }, [allLines]);
+  }, [globalD2cLines]);
 
   const supplierOverdueMap = useMemo(() => {
     const map = new Map<string, { overdue: Set<string>; notBooked: Set<string> }>();
-    for (const l of allLines) {
+    for (const l of globalD2cLines) {
       if (!l.pgrd) continue;
-      // Only count POs from the current review week
       if (getISOWeek(l.pgrd) !== lastWeek || l.pgrd.getFullYear() !== lastYear) continue;
       if (!map.has(l.supplier)) map.set(l.supplier, { overdue: new Set(), notBooked: new Set() });
       const s = map.get(l.supplier)!;
-      if (!l.asd) s.overdue.add(l.po);           // this week's POs not yet shipped
-      if (!l.edd && !l.asd) s.notBooked.add(l.po); // no transport booking
+      if (!l.asd) s.overdue.add(l.po);
+      if (!l.edd && !l.asd) s.notBooked.add(l.po);
     }
     return map;
-  }, [allLines, lastWeek, lastYear]);
+  }, [globalD2cLines, lastWeek, lastYear]);
 
   const supplierStoreProgress = useMemo(() => {
     const result = new Map<string, { done: number; total: number }>();
