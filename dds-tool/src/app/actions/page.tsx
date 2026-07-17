@@ -193,7 +193,8 @@ export default function ActionsPage() {
 
   function update(id: string, u: Partial<ActionEntry>) {
     setStore(prev => {
-      const next = { ...prev, [id]: { comment: '', done: false, updatedAt: new Date().toISOString(), ...prev[id], ...u } };
+      const existing: ActionEntry = prev[id] ?? { comment: '', done: false, updatedAt: new Date().toISOString() };
+      const next = { ...prev, [id]: { ...existing, ...u, updatedAt: new Date().toISOString() } };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       return next;
     });
