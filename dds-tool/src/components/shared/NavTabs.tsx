@@ -10,6 +10,7 @@ const TABS = [
   { label: 'Invoices',       href: '/invoices' },
   { label: 'Lead Times',     href: '/lead-times' },
   { label: 'SKU',            href: '/sku' },
+  { label: 'Actions',        href: '/actions' },
 ];
 
 interface NavTabsProps {

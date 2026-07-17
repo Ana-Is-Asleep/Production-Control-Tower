@@ -7,7 +7,6 @@ import { NavTabs } from './shared/NavTabs';
 import { useFilters, type ActiveFilters } from '../hooks/useFilters';
 import { useKPIs } from '../hooks/useKPIs';
 import { UploadPanel } from './upload/UploadPanel';
-import { PrepareModal } from './PrepareModal';
 import { SKU_CATEGORIES, type SKUCategory } from '../lib/skuUtils';
 import { summariseLeadTimes, computeWeeklyLT } from '../lib/leadTimeUtils';
 import { getISOWeek } from '../lib/dateUtils';
@@ -68,10 +67,10 @@ function VendorDropdown({ allSuppliers, selected, onChange }: { allSuppliers: st
 
 export function Dashboard() {
   const router = useRouter();
-  const { allLines, setAllLines, invoices, setInvoices, globalFilters, setGlobalFilters, resetAnnotations, isAnnotated } = useData();
+  const { allLines, setAllLines, invoices, setInvoices, globalFilters, setGlobalFilters, resetAnnotations } = useData();
   const [invoiceChannel, setInvoiceChannel] = useState<InvoiceChannel>('All');
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [prepareOpen, setPrepareOpen] = useState(false);
+
 
   const { filters, setFilters: _setFilters, weeklyLines, accumulatingLines, allD2cLines, allSuppliers, availableWeeks, lastWeek, activeWeek, lastYear } = useFilters(allLines);
 
@@ -82,10 +81,6 @@ export function Dashboard() {
   }, [_setFilters, setGlobalFilters]);
   const kpis = useKPIs(weeklyLines, accumulatingLines, allD2cLines);
 
-  const allAnnotated = useMemo(() => {
-    if (kpis.failingLines.length === 0) return allLines.length > 0;
-    return kpis.failingLines.every((l) => isAnnotated(`${l.po}-${l.line}`));
-  }, [kpis.failingLines, isAnnotated, allLines.length]);
 
   const handleLoad = (lines: PurchaseLine[], inv?: InvoiceRow[]) => {
     setAllLines(lines);
@@ -117,7 +112,6 @@ export function Dashboard() {
   const sotDelta = kpis.sotPct !== null ? kpis.sotPct - 90 : null;
   const otifDelta = kpis.otifPct !== null ? kpis.otifPct - 90 : null;
   const backlogTotal = kpis.backlogSummary.critical.length + kpis.backlogSummary.recent.length + kpis.backlogSummary.futureBacklog.length;
-  const annotatedCount = kpis.failingLines.filter((l) => isAnnotated(`${l.po}-${l.line}`)).length;
   // not booked = unique POs, not lines
   const notBookedPOs = [...new Set(kpis.notBookedLines.map((l) => l.po))];
   const ltSummary  = useMemo(() => summariseLeadTimes(weeklyLines), [weeklyLines]);
@@ -145,13 +139,15 @@ export function Dashboard() {
         </button>
         {hasData && (
           <button
-            onClick={() => setPrepareOpen(true)}
-            className={`filter-pill flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-semibold transition-all shrink-0 ${allAnnotated ? 'bg-pass text-white' : 'bg-[#403833] text-white hover:bg-[#58524e]'}`}
+            onClick={() => router.push('/actions')}
+            className="filter-pill flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-semibold transition-all shrink-0 bg-[#403833] text-white hover:bg-[#58524e]"
           >
-            {allAnnotated
-              ? <><span className="w-2 h-2 rounded-full bg-white animate-pulse" /> Ready ✓</>
-              : <>Prepare {kpis.failingLines.length > 0 && <span className="bg-white/20 text-white text-xs rounded-full px-1.5">{annotatedCount}/{kpis.failingLines.length}</span>}</>
-            }
+            Actions
+            {filters.suppliers.length === 1 && (
+              <span className="bg-white/20 text-white text-xs rounded-full px-1.5">
+                {kpis.failingLines.length + new Set(kpis.backlogSummary.critical.map(l => l.po)).size + new Set(kpis.backlogSummary.recent.map(l => l.po)).size}
+              </span>
+            )}
           </button>
         )}
       </header>
@@ -450,7 +446,6 @@ export function Dashboard() {
       )}
 
       <UploadPanel open={uploadOpen} onClose={() => setUploadOpen(false)} onLoad={handleLoad} />
-      {prepareOpen && <PrepareModal onClose={() => setPrepareOpen(false)} failingLines={kpis.failingLines} />}
     </div>
   );
 }
