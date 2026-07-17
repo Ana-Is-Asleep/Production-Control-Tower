@@ -252,20 +252,36 @@ function StepBar({ step, onStep, openCounts }: {
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
+const D2C_LOCATIONS: { code: string; label: string }[] = [
+  { code: 'DS0_FR',  label: 'FR (DS0)'  },
+  { code: 'GXO1_FR', label: 'FR (GXO)'  },
+  { code: 'LN_IT',   label: 'IT'         },
+  { code: 'DS_ES',   label: 'ES'         },
+  { code: 'DSV1_UK', label: 'UK'         },
+  { code: 'MS_IE',   label: 'IE'         },
+  { code: 'HA_DE',   label: 'DE'         },
+];
+
 export default function ActionsPage() {
   const { allLines, globalFilters, invoices } = useData();
-  const [supplier, setSupplier] = useState('');
-  const [step, setStep]         = useState(0);
-  const [store, setStore]       = useState<ActionsStore>({});
+  const [supplier, setSupplier]   = useState('');
+  const [step, setStep]           = useState(0);
+  const [store, setStore]         = useState<ActionsStore>({});
+  const [locations, setLocations] = useState<string[]>([]);
 
   useEffect(() => { setStore(loadStore()); }, []);
 
-  // Supplier pre-filter (no week yet — useFilters gives us infrastructure)
+  const toggleLocation = (code: string) =>
+    setLocations(prev => prev.includes(code) ? prev.filter(x => x !== code) : [...prev, code]);
+
+  // Supplier + location pre-filter
   const preFilteredLines = useMemo(() => {
     const suppliers = supplier ? [supplier] : (globalFilters?.suppliers ?? []);
-    if (suppliers.length === 0) return allLines;
-    return allLines.filter(l => suppliers.includes(l.supplier));
-  }, [allLines, supplier, globalFilters?.suppliers]);
+    let lines = allLines;
+    if (suppliers.length > 0) lines = lines.filter(l => suppliers.includes(l.supplier));
+    if (locations.length > 0) lines = lines.filter(l => locations.includes(l.destination));
+    return lines;
+  }, [allLines, supplier, globalFilters?.suppliers, locations]);
 
   // useFilters for infrastructure only: lastWeek, lastYear, availableWeeks, allD2cLines (all weeks)
   const { allD2cLines, lastWeek, lastYear, availableWeeks } = useFilters(preFilteredLines, {
@@ -398,9 +414,29 @@ export default function ActionsPage() {
       {/* ── OVERVIEW ──────────────────────────────────────────────────────── */}
       {!supplier && (
         <div className="px-6 py-6 max-w-5xl mx-auto">
-          <div className="mb-6">
-            <h1 className="text-xl font-bold text-[#403833]">Weekly DDS Review</h1>
-            <p className="text-sm text-[#9c9794] mt-0.5">Select a supplier to start your step-by-step review</p>
+          <div className="flex items-center justify-between gap-4 mb-5 flex-wrap">
+            <div>
+              <h1 className="text-xl font-bold text-[#403833]">Weekly DDS Review</h1>
+              <p className="text-sm text-[#9c9794] mt-0.5">Select a supplier to start your step-by-step review</p>
+            </div>
+            {/* Location filter pills */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {D2C_LOCATIONS.map(loc => (
+                <button
+                  key={loc.code}
+                  onClick={() => toggleLocation(loc.code)}
+                  className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all
+                    ${locations.includes(loc.code)
+                      ? 'bg-[#403833] text-white border-[#403833]'
+                      : 'bg-white text-[#58524e] border-[#e9e3df] hover:border-[#403833]'}`}
+                >
+                  {loc.label}
+                </button>
+              ))}
+              {locations.length > 0 && (
+                <button onClick={() => setLocations([])} className="text-[11px] text-[#9c9794] hover:text-[#DC2626] ml-1">✕</button>
+              )}
+            </div>
           </div>
 
           {!hasData ? (
@@ -463,9 +499,26 @@ export default function ActionsPage() {
             }
           </div>
 
-          {/* Step bar */}
-          <div className="bg-white rounded-2xl border border-[#e9e3df] px-5 py-3" style={{ boxShadow: 'var(--shadow-card)' }}>
+          {/* Step bar + location filter */}
+          <div className="bg-white rounded-2xl border border-[#e9e3df] px-5 py-3 flex items-center justify-between gap-4 flex-wrap" style={{ boxShadow: 'var(--shadow-card)' }}>
             <StepBar step={step} onStep={setStep} openCounts={openCounts} />
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {D2C_LOCATIONS.map(loc => (
+                <button
+                  key={loc.code}
+                  onClick={() => toggleLocation(loc.code)}
+                  className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all
+                    ${locations.includes(loc.code)
+                      ? 'bg-[#403833] text-white border-[#403833]'
+                      : 'bg-[#f9f7f6] text-[#58524e] border-[#e9e3df] hover:border-[#403833]'}`}
+                >
+                  {loc.label}
+                </button>
+              ))}
+              {locations.length > 0 && (
+                <button onClick={() => setLocations([])} className="text-[11px] text-[#9c9794] hover:text-[#DC2626] ml-1">✕</button>
+              )}
+            </div>
           </div>
 
           {/* ── Step 1: Past Performance ─────────────────────────────────── */}
