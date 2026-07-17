@@ -260,31 +260,51 @@ export default function ActionsPage() {
 
   useEffect(() => { setStore(loadStore()); }, []);
 
+  // Supplier pre-filter (no week yet — useFilters gives us infrastructure)
   const preFilteredLines = useMemo(() => {
     const suppliers = supplier ? [supplier] : (globalFilters?.suppliers ?? []);
     if (suppliers.length === 0) return allLines;
     return allLines.filter(l => suppliers.includes(l.supplier));
   }, [allLines, supplier, globalFilters?.suppliers]);
 
-  const { weeklyLines, accumulatingLines, allD2cLines, lastWeek, lastYear } = useFilters(preFilteredLines, {
-    suppliers: [],
-    categories: globalFilters?.categories ?? [],
-    pgrdWeek: globalFilters?.pgrdWeek ?? null,
+  // useFilters for infrastructure only: lastWeek, lastYear, availableWeeks, allD2cLines (all weeks)
+  const { allD2cLines, lastWeek, lastYear, availableWeeks } = useFilters(preFilteredLines, {
+    suppliers: [], categories: globalFilters?.categories ?? [], pgrdWeek: null,
   });
+
+  // Local week selector — resets when supplier changes, defaults to global filter week or lastWeek
+  const [localWeek, setLocalWeek] = useState<number | null>(null);
+  const activeWeek = localWeek ?? globalFilters?.pgrdWeek ?? lastWeek;
+
+  // Reset week when switching supplier
+  useEffect(() => { setLocalWeek(null); }, [supplier]);
+
+  // Lines for the selected week only (reactive — bypasses useState in useFilters)
+  const activeWeekLines = useMemo(() =>
+    (allD2cLines ?? []).filter(l => l.pgrd && getISOWeek(l.pgrd) === activeWeek && l.pgrd.getFullYear() === lastYear),
+    [allD2cLines, activeWeek, lastYear]
+  );
+
+  // KPIs for steps 1 & 2 (past perf + backlog): only selected week's POs
+  const weekKpis = useKPIs(activeWeekLines, activeWeekLines, activeWeekLines);
+  // Forward outlook (step 3): needs all D2C lines to find future-risk POs across upcoming weeks
+  const allKpis  = useKPIs(activeWeekLines, allD2cLines ?? [], allD2cLines ?? []);
+
+  const invoiceKPIs = useMemo(() => computeKPIs(filterByChannel(invoices, 'All')), [invoices]);
 
   const allSuppliers = useMemo(
     () => [...new Set(allLines.map(l => l.supplier))].sort(),
     [allLines]
   );
 
-  const kpis = useKPIs(weeklyLines, accumulatingLines, allD2cLines);
-  const invoiceKPIs = useMemo(() => computeKPIs(filterByChannel(invoices, 'All')), [invoices]);
+  const pastPOs     = useMemo(() => groupByPO(weekKpis.failingLines),                 [weekKpis.failingLines]);
+  const criticalPOs = useMemo(() => groupByPO(weekKpis.backlogSummary.critical),      [weekKpis.backlogSummary.critical]);
+  const recentPOs   = useMemo(() => groupByPO(weekKpis.backlogSummary.recent),        [weekKpis.backlogSummary.recent]);
+  const futurePOs   = useMemo(() => groupByPO(allKpis.backlogSummary.futureBacklog),  [allKpis.backlogSummary.futureBacklog]);
+  const notBooked   = useMemo(() => groupByPO(weekKpis.notBookedLines),               [weekKpis.notBookedLines]);
 
-  const pastPOs     = useMemo(() => groupByPO(kpis.failingLines),                [kpis.failingLines]);
-  const criticalPOs = useMemo(() => groupByPO(kpis.backlogSummary.critical),     [kpis.backlogSummary.critical]);
-  const recentPOs   = useMemo(() => groupByPO(kpis.backlogSummary.recent),       [kpis.backlogSummary.recent]);
-  const futurePOs   = useMemo(() => groupByPO(kpis.backlogSummary.futureBacklog),[kpis.backlogSummary.futureBacklog]);
-  const notBooked   = useMemo(() => groupByPO(kpis.notBookedLines),              [kpis.notBookedLines]);
+  // kpis alias for SOT/OTIF display (week-specific)
+  const kpis = weekKpis;
 
   function update(id: string, u: Partial<ActionEntry>) {
     setStore(prev => {
@@ -369,7 +389,7 @@ export default function ActionsPage() {
         <NavTabs className="ml-2" />
         <div className="flex-1" />
         <span className="text-xs bg-[#f4f1ef] border border-[#e9e3df] rounded-lg px-3 py-1.5 text-[#58524e] font-medium shrink-0">
-          W{String(lastWeek).padStart(2, '0')} {lastYear}
+          W{String(activeWeek).padStart(2, '0')} {lastYear}
         </span>
       </header>
 
@@ -409,10 +429,10 @@ export default function ActionsPage() {
 
           {/* Wizard header */}
           <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <button
                 onClick={() => setSupplier('')}
-                className="text-xs text-[#9c9794] hover:text-[#403833] transition-colors flex items-center gap-1"
+                className="text-xs text-[#9c9794] hover:text-[#403833] transition-colors"
               >
                 ← Overview
               </button>
@@ -423,6 +443,16 @@ export default function ActionsPage() {
                 className="text-sm font-bold text-[#403833] bg-transparent border-none focus:outline-none cursor-pointer"
               >
                 {allSuppliers.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <span className="text-[#d5cdc6]">·</span>
+              <select
+                value={activeWeek}
+                onChange={e => setLocalWeek(Number(e.target.value))}
+                className="text-xs font-semibold text-[#58524e] bg-[#f4f1ef] border border-[#e9e3df] rounded-lg px-2 py-1 focus:outline-none focus:border-[#403833] cursor-pointer"
+              >
+                {availableWeeks.map(w => (
+                  <option key={w} value={w}>W{String(w).padStart(2, '0')} {lastYear}{w === lastWeek ? ' (current)' : ''}</option>
+                ))}
               </select>
             </div>
             {totalOpen > 0
