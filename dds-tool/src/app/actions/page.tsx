@@ -21,10 +21,16 @@ function loadStore(): ActionsStore {
 }
 
 function groupByPO(lines: PurchaseLine[]) {
-  const map = new Map<string, { po: string; vendor: string; pgrd: Date | null; esd: Date | null; lines: PurchaseLine[] }>();
+  const map = new Map<string, {
+    po: string; vendor: string; pgrd: Date | null; egrd: Date | null;
+    esd: Date | null; lines: PurchaseLine[];
+  }>();
   for (const l of lines) {
-    if (!map.has(l.po)) map.set(l.po, { po: l.po, vendor: l.supplier, pgrd: l.pgrd, esd: l.esd, lines: [] });
-    map.get(l.po)!.lines.push(l);
+    if (!map.has(l.po)) map.set(l.po, { po: l.po, vendor: l.supplier, pgrd: l.pgrd, egrd: l.egrd, esd: l.esd, lines: [] });
+    const entry = map.get(l.po)!;
+    entry.lines.push(l);
+    if (!entry.egrd && l.egrd) entry.egrd = l.egrd;
+    if (!entry.esd && l.esd) entry.esd = l.esd;
   }
   return [...map.values()].sort((a, b) => (a.pgrd?.getTime() ?? 0) - (b.pgrd?.getTime() ?? 0));
 }
@@ -32,14 +38,15 @@ function groupByPO(lines: PurchaseLine[]) {
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function ActionRow({
-  id, po, vendor, pgrd, esd, lineCount, badge, badgeColor, store, onUpdate,
+  id, po, vendor, pgrd, egrd, esd, bookedCount, lineCount, badge, badgeColor, showEsd, store, onUpdate,
 }: {
-  id: string; po: string; vendor: string; pgrd: Date | null; esd: Date | null;
-  lineCount: number; badge: string; badgeColor: string;
+  id: string; po: string; vendor: string; pgrd: Date | null; egrd: Date | null; esd: Date | null;
+  bookedCount: number; lineCount: number; badge: string; badgeColor: string; showEsd?: boolean;
   store: ActionsStore; onUpdate: (id: string, u: Partial<ActionEntry>) => void;
 }) {
   const entry = store[id];
   const done = entry?.done ?? false;
+  const isBooked = bookedCount > 0;
   return (
     <div className={`flex gap-4 items-start px-4 py-3 rounded-xl border transition-all ${done ? 'opacity-40 bg-[#f9f7f6] border-[#f4f1ef]' : 'bg-white border-[#e9e3df]'}`}
       style={{ boxShadow: done ? 'none' : 'var(--shadow-card)' }}>
@@ -49,7 +56,12 @@ function ActionRow({
           <span className="font-bold text-[#403833] text-sm">{po}</span>
           <span className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full" style={{ background: badgeColor }}>{badge}</span>
           {pgrd && <span className="text-[11px] text-[#9c9794]">PGRD {formatDateShort(pgrd)}</span>}
-          {esd && <span className="text-[11px] text-[#b5aaa5]">ESD {formatDateShort(esd)}</span>}
+          {egrd && <span className="text-[11px] text-[#9c9794]">EGRD {formatDateShort(egrd)}</span>}
+          {showEsd && esd && <span className="text-[11px] text-[#6469aa] font-semibold">Ships {formatDateShort(esd)}</span>}
+          {!showEsd && esd && <span className="text-[11px] text-[#b5aaa5]">ESD {formatDateShort(esd)}</span>}
+          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${isBooked ? 'bg-[#34A853]/10 text-[#34A853]' : 'bg-[#DC2626]/10 text-[#DC2626]'}`}>
+            {isBooked ? `Booked${bookedCount < lineCount ? ` ${bookedCount}/${lineCount}` : ''}` : 'Not booked'}
+          </span>
         </div>
         <p className="text-xs font-medium text-[#58524e]">{vendor}</p>
         <p className="text-[10px] text-[#b5aaa5]">{lineCount} line{lineCount !== 1 ? 's' : ''}</p>
@@ -114,12 +126,12 @@ function InvoiceRow_({ inv, store, onUpdate }: {
 }
 
 function Section({
-  num, title, accent, prompts, summary, children, open, total,
+  num, title, accent, prompts, summary, children, open, total, defaultCollapsed,
 }: {
   num: string; title: string; accent: string; prompts: string[];
-  summary: React.ReactNode; children: React.ReactNode; open: number; total: number;
+  summary: React.ReactNode; children: React.ReactNode; open: number; total: number; defaultCollapsed?: boolean;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(defaultCollapsed ?? false);
   const done = total - open;
   return (
     <div className="bg-white rounded-2xl border border-[#e9e3df] overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
@@ -257,7 +269,7 @@ export default function ActionsPage() {
 
         {/* ── 1. Past Performance ───────────────────────────────────────── */}
         <Section
-          num="1" title="Past Performance" accent="#DC2626"
+          num="1" title="Past Performance" accent="#DC2626" defaultCollapsed={!supplier}
           prompts={[
             'When will they be shipped (by week)?',
             'Are all POs booked? Any missing ASD cases?',
@@ -277,7 +289,8 @@ export default function ActionsPage() {
             ? <Empty msg={supplier ? `No late POs for ${supplier} this week` : 'No late POs this week'} />
             : pastPOs.map(p => (
               <ActionRow key={`past-${p.po}`} id={`past-${p.po}`}
-                po={p.po} vendor={p.vendor} pgrd={p.pgrd} esd={p.esd}
+                po={p.po} vendor={p.vendor} pgrd={p.pgrd} egrd={p.egrd} esd={p.esd}
+                bookedCount={p.lines.filter(l => l.edd !== null).length}
                 lineCount={p.lines.length} badge="Late" badgeColor="#DC2626"
                 store={store} onUpdate={update} />
             ))
@@ -286,7 +299,7 @@ export default function ActionsPage() {
 
         {/* ── 2. Backlog Management ─────────────────────────────────────── */}
         <Section
-          num="2" title="Backlog Management" accent="#F59E0B"
+          num="2" title="Backlog Management" accent="#F59E0B" defaultCollapsed={!supplier}
           prompts={[
             'Critical: When will they be shipped? What is blocking execution?',
             'Critical: Is EGRD fully updated? Are bookings in place?',
@@ -312,18 +325,20 @@ export default function ActionsPage() {
                 )}
                 {criticalPOs.map(p => (
                   <ActionRow key={`crit-${p.po}`} id={`crit-${p.po}`}
-                    po={p.po} vendor={p.vendor} pgrd={p.pgrd} esd={p.esd}
+                    po={p.po} vendor={p.vendor} pgrd={p.pgrd} egrd={p.egrd} esd={p.esd}
+                    bookedCount={p.lines.filter(l => l.edd !== null).length}
                     lineCount={p.lines.length} badge="Critical" badgeColor="#DC2626"
-                    store={store} onUpdate={update} />
+                    showEsd store={store} onUpdate={update} />
                 ))}
                 {recentPOs.length > 0 && (
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[#F59E0B] mt-3">Recent backlog</p>
                 )}
                 {recentPOs.map(p => (
                   <ActionRow key={`rec-${p.po}`} id={`rec-${p.po}`}
-                    po={p.po} vendor={p.vendor} pgrd={p.pgrd} esd={p.esd}
+                    po={p.po} vendor={p.vendor} pgrd={p.pgrd} egrd={p.egrd} esd={p.esd}
+                    bookedCount={p.lines.filter(l => l.edd !== null).length}
                     lineCount={p.lines.length} badge="Recent" badgeColor="#F59E0B"
-                    store={store} onUpdate={update} />
+                    showEsd store={store} onUpdate={update} />
                 ))}
               </>
           }
@@ -331,7 +346,7 @@ export default function ActionsPage() {
 
         {/* ── 3. Forward Performance Outlook ───────────────────────────── */}
         <Section
-          num="3" title="Forward Performance Outlook" accent="#6469aa"
+          num="3" title="Forward Performance Outlook" accent="#6469aa" defaultCollapsed={!supplier}
           prompts={[
             'Is everything properly booked?',
             'Does EGRD = Booking? If not, why is there a gap?',
@@ -350,16 +365,17 @@ export default function ActionsPage() {
             ? <Empty msg="No future backlog risk" />
             : futurePOs.map(p => (
               <ActionRow key={`out-${p.po}`} id={`out-${p.po}`}
-                po={p.po} vendor={p.vendor} pgrd={p.pgrd} esd={p.esd}
+                po={p.po} vendor={p.vendor} pgrd={p.pgrd} egrd={p.egrd} esd={p.esd}
+                bookedCount={p.lines.filter(l => l.edd !== null).length}
                 lineCount={p.lines.length} badge="At risk" badgeColor="#6469aa"
-                store={store} onUpdate={update} />
+                showEsd store={store} onUpdate={update} />
             ))
           }
         </Section>
 
         {/* ── 4. Recovery & Additional Risks ───────────────────────────── */}
         <Section
-          num="4" title="Recovery & Additional Risks" accent="#34A853"
+          num="4" title="Recovery & Additional Risks" accent="#34A853" defaultCollapsed={!supplier}
           prompts={[
             'POs not booked — when will ESD be confirmed?',
             'Overdue invoices — what is driving it? (CMR, GR, documentation, transport)',
@@ -383,7 +399,8 @@ export default function ActionsPage() {
                 )}
                 {notBooked.map(p => (
                   <ActionRow key={`nb-${p.po}`} id={`nb-${p.po}`}
-                    po={p.po} vendor={p.vendor} pgrd={p.pgrd} esd={p.esd}
+                    po={p.po} vendor={p.vendor} pgrd={p.pgrd} egrd={p.egrd} esd={p.esd}
+                    bookedCount={p.lines.filter(l => l.edd !== null).length}
                     lineCount={p.lines.length} badge="No ESD" badgeColor="#8A8A8A"
                     store={store} onUpdate={update} />
                 ))}
