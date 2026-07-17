@@ -37,16 +37,35 @@ function groupByPO(lines: PurchaseLine[]) {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
+function daysBetween(a: Date | null, b: Date | null): number | null {
+  if (!a || !b) return null;
+  return Math.round((b.getTime() - a.getTime()) / 86400000);
+}
+
+function DeltaBadge({ days, label }: { days: number | null; label: string }) {
+  if (days === null) return null;
+  const color = days > 0 ? '#DC2626' : days < 0 ? '#34A853' : '#9c9794';
+  return (
+    <span className="text-[10px] text-[#9c9794]">
+      {label} <span style={{ color }} className="font-semibold">{days > 0 ? `+${days}d` : `${days}d`}</span>
+    </span>
+  );
+}
+
 function ActionRow({
-  id, po, vendor, pgrd, egrd, esd, bookedCount, lineCount, badge, badgeColor, showEsd, store, onUpdate,
+  id, po, vendor, pgrd, egrd, esd, bookedCount, totalQty, totalCqty, lineCount, badge, badgeColor, showEsd, store, onUpdate,
 }: {
   id: string; po: string; vendor: string; pgrd: Date | null; egrd: Date | null; esd: Date | null;
-  bookedCount: number; lineCount: number; badge: string; badgeColor: string; showEsd?: boolean;
+  bookedCount: number; totalQty: number; totalCqty: number;
+  lineCount: number; badge: string; badgeColor: string; showEsd?: boolean;
   store: ActionsStore; onUpdate: (id: string, u: Partial<ActionEntry>) => void;
 }) {
   const entry = store[id];
   const done = entry?.done ?? false;
   const isBooked = bookedCount > 0;
+  const dPgrdEgrd = daysBetween(pgrd, egrd);
+  const dEgrdEsd  = daysBetween(egrd, esd);
+  const dPgrdEsd  = daysBetween(pgrd, esd);
   return (
     <div className={`flex gap-4 items-start px-4 py-3 rounded-xl border transition-all ${done ? 'opacity-40 bg-[#f9f7f6] border-[#f4f1ef]' : 'bg-white border-[#e9e3df]'}`}
       style={{ boxShadow: done ? 'none' : 'var(--shadow-card)' }}>
@@ -63,8 +82,22 @@ function ActionRow({
             {isBooked ? `Booked${bookedCount < lineCount ? ` ${bookedCount}/${lineCount}` : ''}` : 'Not booked'}
           </span>
         </div>
-        <p className="text-xs font-medium text-[#58524e]">{vendor}</p>
-        <p className="text-[10px] text-[#b5aaa5]">{lineCount} line{lineCount !== 1 ? 's' : ''}</p>
+        {/* Date deltas row */}
+        <div className="flex items-center gap-3 flex-wrap mb-1">
+          <DeltaBadge days={dPgrdEgrd} label="PGRD→EGRD" />
+          <DeltaBadge days={dEgrdEsd}  label="EGRD→ESD" />
+          <DeltaBadge days={dPgrdEsd}  label="PGRD→ESD" />
+        </div>
+        {/* Vendor + qty */}
+        <div className="flex items-center gap-3">
+          <p className="text-xs font-medium text-[#58524e]">{vendor}</p>
+          <p className="text-[10px] text-[#b5aaa5]">
+            {lineCount} line{lineCount !== 1 ? 's' : ''} ·{' '}
+            <span className={totalCqty < totalQty ? 'text-[#F59E0B] font-semibold' : ''}>
+              {totalCqty.toLocaleString()} / {totalQty.toLocaleString()} confirmed
+            </span>
+          </p>
+        </div>
       </div>
       {/* Comment + done */}
       <div className="flex gap-2 items-center w-80 shrink-0">
@@ -298,6 +331,7 @@ export default function ActionsPage() {
               <ActionRow key={`past-${p.po}`} id={`past-${p.po}`}
                 po={p.po} vendor={p.vendor} pgrd={p.pgrd} egrd={p.egrd} esd={p.esd}
                 bookedCount={p.lines.filter(l => l.edd !== null).length}
+                totalQty={p.lines.reduce((s, l) => s + l.qty, 0)} totalCqty={p.lines.reduce((s, l) => s + l.cqty, 0)}
                 lineCount={p.lines.length} badge="Late" badgeColor="#DC2626"
                 store={store} onUpdate={update} />
             ))
@@ -334,6 +368,7 @@ export default function ActionsPage() {
                   <ActionRow key={`crit-${p.po}`} id={`crit-${p.po}`}
                     po={p.po} vendor={p.vendor} pgrd={p.pgrd} egrd={p.egrd} esd={p.esd}
                     bookedCount={p.lines.filter(l => l.edd !== null).length}
+                    totalQty={p.lines.reduce((s, l) => s + l.qty, 0)} totalCqty={p.lines.reduce((s, l) => s + l.cqty, 0)}
                     lineCount={p.lines.length} badge="Critical" badgeColor="#DC2626"
                     showEsd store={store} onUpdate={update} />
                 ))}
@@ -344,6 +379,7 @@ export default function ActionsPage() {
                   <ActionRow key={`rec-${p.po}`} id={`rec-${p.po}`}
                     po={p.po} vendor={p.vendor} pgrd={p.pgrd} egrd={p.egrd} esd={p.esd}
                     bookedCount={p.lines.filter(l => l.edd !== null).length}
+                    totalQty={p.lines.reduce((s, l) => s + l.qty, 0)} totalCqty={p.lines.reduce((s, l) => s + l.cqty, 0)}
                     lineCount={p.lines.length} badge="Recent" badgeColor="#F59E0B"
                     showEsd store={store} onUpdate={update} />
                 ))}
@@ -374,6 +410,7 @@ export default function ActionsPage() {
               <ActionRow key={`out-${p.po}`} id={`out-${p.po}`}
                 po={p.po} vendor={p.vendor} pgrd={p.pgrd} egrd={p.egrd} esd={p.esd}
                 bookedCount={p.lines.filter(l => l.edd !== null).length}
+                totalQty={p.lines.reduce((s, l) => s + l.qty, 0)} totalCqty={p.lines.reduce((s, l) => s + l.cqty, 0)}
                 lineCount={p.lines.length} badge="At risk" badgeColor="#6469aa"
                 showEsd store={store} onUpdate={update} />
             ))
@@ -408,6 +445,7 @@ export default function ActionsPage() {
                   <ActionRow key={`nb-${p.po}`} id={`nb-${p.po}`}
                     po={p.po} vendor={p.vendor} pgrd={p.pgrd} egrd={p.egrd} esd={p.esd}
                     bookedCount={p.lines.filter(l => l.edd !== null).length}
+                    totalQty={p.lines.reduce((s, l) => s + l.qty, 0)} totalCqty={p.lines.reduce((s, l) => s + l.cqty, 0)}
                     lineCount={p.lines.length} badge="No ESD" badgeColor="#8A8A8A"
                     store={store} onUpdate={update} />
                 ))}
