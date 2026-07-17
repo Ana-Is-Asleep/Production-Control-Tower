@@ -176,12 +176,19 @@ export default function ActionsPage() {
 
   useEffect(() => { setStore(loadStore()); }, []);
 
-  const appliedFilters = useMemo(() => ({
-    ...(globalFilters ?? {}),
-    suppliers: supplier ? [supplier] : (globalFilters?.suppliers ?? []),
-  }), [globalFilters, supplier]);
+  // Pre-filter by supplier before useFilters so the supplier selection actually propagates
+  // (useFilters only uses initialFilters as useState initial value, not reactive)
+  const preFilteredLines = useMemo(() => {
+    const suppliers = supplier ? [supplier] : (globalFilters?.suppliers ?? []);
+    if (suppliers.length === 0) return allLines;
+    return allLines.filter(l => suppliers.includes(l.supplier));
+  }, [allLines, supplier, globalFilters?.suppliers]);
 
-  const { weeklyLines, accumulatingLines, allD2cLines, allSuppliers, lastWeek, lastYear } = useFilters(allLines, appliedFilters);
+  const { weeklyLines, accumulatingLines, allD2cLines, allSuppliers, lastWeek, lastYear } = useFilters(preFilteredLines, {
+    suppliers: [],
+    categories: globalFilters?.categories ?? [],
+    pgrdWeek: globalFilters?.pgrdWeek ?? null,
+  });
   const kpis = useKPIs(weeklyLines, accumulatingLines, allD2cLines);
   const invoiceKPIs = useMemo(() => computeKPIs(filterByChannel(invoices, 'All')), [invoices]);
 
