@@ -276,7 +276,7 @@ export default function ActionsPage() {
 
         {/* ── 1. Past Performance ───────────────────────────────────────── */}
         <Section
-          num="1" title="Past Performance" accent="#DC2626" defaultCollapsed={!supplier}
+          key={`s1-${supplier}`} num="1" title="Past Performance" accent="#DC2626" defaultCollapsed={!supplier}
           prompts={[
             'When will they be shipped (by week)?',
             'Are all POs booked? Any missing ASD cases?',
@@ -306,7 +306,7 @@ export default function ActionsPage() {
 
         {/* ── 2. Backlog Management ─────────────────────────────────────── */}
         <Section
-          num="2" title="Backlog Management" accent="#F59E0B" defaultCollapsed={!supplier}
+          key={`s2-${supplier}`} num="2" title="Backlog Management" accent="#F59E0B" defaultCollapsed={!supplier}
           prompts={[
             'Critical: When will they be shipped? What is blocking execution?',
             'Critical: Is EGRD fully updated? Are bookings in place?',
@@ -353,7 +353,7 @@ export default function ActionsPage() {
 
         {/* ── 3. Forward Performance Outlook ───────────────────────────── */}
         <Section
-          num="3" title="Forward Performance Outlook" accent="#6469aa" defaultCollapsed={!supplier}
+          key={`s3-${supplier}`} num="3" title="Forward Performance Outlook" accent="#6469aa" defaultCollapsed={!supplier}
           prompts={[
             'Is everything properly booked?',
             'Does EGRD = Booking? If not, why is there a gap?',
@@ -382,7 +382,7 @@ export default function ActionsPage() {
 
         {/* ── 4. Recovery & Additional Risks ───────────────────────────── */}
         <Section
-          num="4" title="Recovery & Additional Risks" accent="#34A853" defaultCollapsed={!supplier}
+          key={`s4-${supplier}`} num="4" title="Recovery & Additional Risks" accent="#34A853" defaultCollapsed={!supplier}
           prompts={[
             'POs not booked — when will ESD be confirmed?',
             'Overdue invoices — what is driving it? (CMR, GR, documentation, transport)',
