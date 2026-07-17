@@ -236,11 +236,17 @@ export default function ActionsPage() {
     return allLines.filter(l => suppliers.includes(l.supplier));
   }, [allLines, supplier, globalFilters?.suppliers]);
 
-  const { weeklyLines, accumulatingLines, allD2cLines, allSuppliers, lastWeek, lastYear } = useFilters(preFilteredLines, {
+  const { weeklyLines, accumulatingLines, allD2cLines, lastWeek, lastYear } = useFilters(preFilteredLines, {
     suppliers: [],
     categories: globalFilters?.categories ?? [],
     pgrdWeek: globalFilters?.pgrdWeek ?? null,
   });
+
+  // Always derive supplier list from full unfiltered data so dropdown stays complete
+  const allSuppliers = useMemo(
+    () => [...new Set(allLines.map(l => l.supplier))].sort(),
+    [allLines]
+  );
   const kpis = useKPIs(weeklyLines, accumulatingLines, allD2cLines);
   const invoiceKPIs = useMemo(() => computeKPIs(filterByChannel(invoices, 'All')), [invoices]);
 
