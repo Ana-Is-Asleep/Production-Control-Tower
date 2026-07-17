@@ -334,16 +334,18 @@ export default function ActionsPage() {
   }, [allLines]);
 
   const supplierOverdueMap = useMemo(() => {
-    const today = new Date();
     const map = new Map<string, { overdue: Set<string>; notBooked: Set<string> }>();
     for (const l of allLines) {
+      if (!l.pgrd) continue;
+      // Only count POs from the current review week
+      if (getISOWeek(l.pgrd) !== lastWeek || l.pgrd.getFullYear() !== lastYear) continue;
       if (!map.has(l.supplier)) map.set(l.supplier, { overdue: new Set(), notBooked: new Set() });
       const s = map.get(l.supplier)!;
-      if (l.pgrd && l.pgrd < today && !l.asd) s.overdue.add(l.po);
-      if (!l.edd && !l.asd && l.pgrd && l.pgrd.getFullYear() >= 2025) s.notBooked.add(l.po);
+      if (!l.asd) s.overdue.add(l.po);           // this week's POs not yet shipped
+      if (!l.edd && !l.asd) s.notBooked.add(l.po); // no transport booking
     }
     return map;
-  }, [allLines]);
+  }, [allLines, lastWeek, lastYear]);
 
   const supplierStoreProgress = useMemo(() => {
     const result = new Map<string, { done: number; total: number }>();
