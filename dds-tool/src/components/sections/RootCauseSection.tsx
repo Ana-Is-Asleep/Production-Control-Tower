@@ -33,6 +33,10 @@ interface WeekCategoryDetail {
   raw: { reason: string; supplier: string; po: string }[];
 }
 
+function emptyDetail(): WeekCategoryDetail {
+  return { count: 0, suppliers: new Map(), raw: [] };
+}
+
 export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps) {
   const [selected, setSelected] = useState<{ week: string; category: ReasonCategory } | null>(null);
 
@@ -45,7 +49,7 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
 
     for (const week of weeksInRange) {
       for (const cat of REASON_CATEGORIES) {
-        detail.set(`${week.label}__${cat}`, { count: 0, suppliers: new Map(), raw: [] });
+        detail.set(`${week.label}__${cat}`, emptyDetail());
       }
     }
 
@@ -56,7 +60,7 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
       const reason = line.lossReasonCode.trim();
       const category = classifications[reason]?.category ?? 'other';
       const key = `${week.label}__${category}`;
-      const d = detail.get(key) ?? { count: 0, suppliers: new Map(), raw: [] };
+      const d = detail.get(key) ?? emptyDetail();
       d.count += 1;
       d.suppliers.set(line.supplier, (d.suppliers.get(line.supplier) ?? 0) + 1);
       d.raw.push({ reason, supplier: line.supplier, po: line.po });

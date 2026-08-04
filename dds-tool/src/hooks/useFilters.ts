@@ -10,6 +10,10 @@ export const WEEK_RANGE_MIN = -13;
 export const WEEK_RANGE_MAX = 5;
 export const WEEK_RANGE_DEFAULT: { start: number; end: number } = { start: -7, end: 3 };
 
+// hard floor: ignore anything with a PGRD before 2026 — keeps old/legacy PO history out of every
+// section (including the AI Root Cause classifier, which shouldn't waste calls categorizing stale data)
+const DATA_FLOOR = new Date(2026, 0, 1);
+
 export interface ActiveFilters {
   weekRange: { start: number; end: number }; // offsets from current ISO week, bounded [-13, 5]
   suppliers: string[];
@@ -42,8 +46,11 @@ function applyFilters(lines: PurchaseLine[], filters: ActiveFilters) {
   return result;
 }
 
-export function useFilters(allLines: PurchaseLine[], initialFilters?: ActiveFilters) {
+export function useFilters(rawLines: PurchaseLine[], initialFilters?: ActiveFilters) {
   const [filters, setFilters] = useState<ActiveFilters>(initialFilters ?? DEFAULT_FILTERS);
+
+  // drop anything with PGRD before 2026 before it reaches any section/calculation
+  const allLines = useMemo(() => rawLines.filter(l => l.pgrd && l.pgrd >= DATA_FLOOR), [rawLines]);
 
   const { week: curWeek, year: curYear } = useMemo(() => currentISOWeek(), []);
 
