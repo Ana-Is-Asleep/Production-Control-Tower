@@ -9,6 +9,7 @@ import { useVendorMapping } from '../hooks/useVendorMapping';
 import { UploadPanel } from './upload/UploadPanel';
 import { GlobalFilterBar } from './shared/GlobalFilterBar';
 import { TopGraphSection } from './sections/TopGraphSection';
+import { RootCauseSection } from './sections/RootCauseSection';
 import { formatFilterSummary } from '../lib/filterSummary';
 import type { PurchaseLine } from '../types';
 import type { InvoiceRow } from '../types/invoice';
@@ -77,10 +78,11 @@ export function Dashboard() {
               sotTarget={kpis.sotTarget}
               otifTarget={kpis.otifTarget}
             />
+            <RootCauseSection lines={weekRangeLines} weeksInRange={weeksInRange} />
             <p className="text-xs text-[#9c9794]">
               {filteredLines.length.toLocaleString()} total filtered lines · {invoices.length.toLocaleString()} invoice rows
             </p>
-            {/* Root Cause, Missing ESD, Backlog, Invoices and Lead Time sections mount here — see follow-up commits */}
+            {/* Missing ESD, Backlog, Invoices and Lead Time sections mount here — see follow-up commits */}
           </div>
         </div>
       )}
