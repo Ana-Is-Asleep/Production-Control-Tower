@@ -1,154 +1,100 @@
-import { differenceInDays, startOfWeek, addWeeks } from 'date-fns';
-import { getISOWeek, getISOWeekYear } from './dateUtils';
-import type { PurchaseLine, KPIResult, BacklogType } from '../types';
+import { startOfWeek, addWeeks } from 'date-fns';
+import type { PurchaseLine } from '../types';
 
-// Weeks run Monday–Sunday (ISO standard). Sunday is the last day of the week.
+// Weeks run Monday–Sunday (ISO standard). PGRD is always a Sunday representing the week-ending date.
 const MON = { weekStartsOn: 1 as const };
-const weekOf = (d: Date) => startOfWeek(d, MON);
+export const weekOf = (d: Date) => startOfWeek(d, MON);
 
-// SOT: shipped on time (ASD week ≤ PGRD week) AND in full (cqty = 100% of qty)
-// From WK27 2026 onwards aggregation uses PO-header weighting — see aggregateSOTRate()
-export function computeSOT(line: PurchaseLine): boolean | null {
-  if (!line.asd || !line.pgrd) return null;
-  const onTime = weekOf(line.asd) <= weekOf(line.pgrd);
-  const inFull = line.cqty >= line.qty;
-  return onTime && inFull;
+export type IsChinaSupplier = (vendorCode: string) => boolean;
+
+export interface LineResult {
+  line: PurchaseLine;
+  isChina: boolean;
+  isFutureWeek: boolean;
+  sot: boolean | null;
+  ot: boolean | null;
+  inFull: boolean | null;
+  otif: boolean | null;
 }
 
-// East Asia destinations require EGRD to be at least 1 week BEFORE PGRD (not same week).
-// Standard destinations: EGRD ≤ PGRD week is enough.
-function isEastAsia(destination: string): boolean {
-  const d = (destination ?? '').toLowerCase();
-  return d.includes('east asia') || d.includes('china') || d.includes(' cn') || d === 'cn'
-    || d.includes('japan') || d.includes(' jp') || d === 'jp'
-    || d.includes('korea') || d.includes(' kr') || d === 'kr'
-    || d.includes('vietnam') || d.includes(' vn') || d === 'vn'
-    || d.includes('thailand') || d.includes(' th') || d === 'th'
-    || d.includes('apac') || d.includes('sea') || d.includes('asia');
-}
-
-// OTIF: supplier confirms delivery on or before PGRD week, same qty threshold.
-// East Asia exception: EGRD must be strictly before PGRD (one week lead time required).
-export function computeOTIF(line: PurchaseLine): { ot: boolean | null; inFull: boolean | null; otif: boolean | null } {
-  if (!line.egrd || !line.pgrd) return { ot: null, inFull: null, otif: null };
-  const egrdW = weekOf(line.egrd);
+// SOT (Shipped On Time), per line:
+// — on-time if the relevant ship date is on/before the threshold week.
+// — past PGRD week: compare ASD. future PGRD week: compare ESD (no ESD yet ⇒ undetermined).
+// — China suppliers: threshold is PGRD - 1 week instead of PGRD (for both ASD and ESD comparisons).
+// A past-PGRD-week line with no ASD at all is a hard SOT failure (the week has closed, it never shipped).
+export function computeSOTLine(line: PurchaseLine, isChina: boolean, today: Date): boolean | null {
+  if (!line.pgrd) return null;
   const pgrdW = weekOf(line.pgrd);
-  const ot = isEastAsia(line.destination) ? egrdW < pgrdW : egrdW <= pgrdW;
-  const inFull = line.cqty >= line.qty * 0.97;
+  const thresholdW = isChina ? addWeeks(pgrdW, -1) : pgrdW;
+  const isFutureWeek = pgrdW > weekOf(today);
+
+  if (isFutureWeek) {
+    if (!line.esd) return null; // not yet booked — undetermined, doesn't count either way
+    return weekOf(line.esd) <= thresholdW;
+  }
+  if (!line.asd) return false; // week has closed with no shipment — SOT failure
+  return weekOf(line.asd) <= thresholdW;
+}
+
+// OTIF (On Time In Full), per line:
+// — on-time: EGRD ≤ PGRD (China: EGRD ≤ PGRD - 1 week). Always PGRD vs EGRD — no past/future switching.
+// — in-full: Qty Confirmed ≥ Qty Requested (exact, no tolerance).
+export function computeOTIFLine(line: PurchaseLine, isChina: boolean): { ot: boolean | null; inFull: boolean | null; otif: boolean | null } {
+  if (!line.pgrd || !line.egrd) return { ot: null, inFull: null, otif: null };
+  const pgrdW = weekOf(line.pgrd);
+  const thresholdW = isChina ? addWeeks(pgrdW, -1) : pgrdW;
+  const ot = weekOf(line.egrd) <= thresholdW;
+  const inFull = line.cqty >= line.qty;
   return { ot, inFull, otif: ot && inFull };
 }
 
-export function computeKPI(line: PurchaseLine): KPIResult {
-  const sot = computeSOT(line);
-  const { ot, inFull, otif } = computeOTIF(line);
-  return {
-    sotResult: sot,
-    sotFail: sot === false,
-    otif,
-    ot,
-    inFull,
-    otifFail: otif === false || ot === false,
-  };
+export function computeLineResult(line: PurchaseLine, isChinaSupplier: IsChinaSupplier, today: Date): LineResult {
+  const isChina = isChinaSupplier(line.vendorCode);
+  const sot = computeSOTLine(line, isChina, today);
+  const { ot, inFull, otif } = computeOTIFLine(line, isChina);
+  const isFutureWeek = !!line.pgrd && weekOf(line.pgrd) > weekOf(today);
+  return { line, isChina, isFutureWeek, sot, ot, inFull, otif };
 }
 
-// classifies each unshipped PO into backlog, future risk, or on track
-// based on the Europe DDS spec — sunday weeks, checking PGRD vs today
-export function classifyBacklog(line: PurchaseLine, today: Date): BacklogType {
-  if (line.asd) return 'shipped';
-  if (!line.pgrd) return 'on-track'; // open POs without a date skip out
-
-  const cw = weekOf(today);
-  const pgrdWeek = weekOf(line.pgrd);
-  const esdWeek = line.esd ? weekOf(line.esd) : null;
-
-  // already past PGRD with no shipment = backlog, split by how long it's been sitting
-  if (pgrdWeek < cw) {
-    const days = differenceInDays(today, line.pgrd);
-    return days > 14 ? 'backlog-critical' : 'backlog-recent';
+// PO-level %: average of a PO's lines' Yes(100)/No(0), ignoring lines whose result is null (undetermined).
+// Header-level %: equal-weighted average across POs — (SOT_PO1 + SOT_PO2 + ...) / count(POs).
+// Every PO counts the same regardless of line count or quantity. Used for both SOT and OTIF.
+export function aggregateByPOHeader(lines: PurchaseLine[], perLine: (line: PurchaseLine) => boolean | null): number | null {
+  const byPO = new Map<string, boolean[]>();
+  for (const line of lines) {
+    const result = perLine(line);
+    if (result === null) continue;
+    if (!byPO.has(line.po)) byPO.set(line.po, []);
+    byPO.get(line.po)!.push(result);
   }
+  if (byPO.size === 0) return null;
 
-  // this week: ok if Shiptify confirms shipping this week, otherwise slipping
-  if (pgrdWeek.getTime() === cw.getTime()) {
-    if (esdWeek && esdWeek.getTime() === cw.getTime()) return 'on-track';
-    return 'future-backlog';
-  }
-
-  const nw1 = addWeeks(cw, 1);
-  const nw2 = addWeeks(cw, 2);
-  const nw3 = addWeeks(cw, 3);
-
-  if ((pgrdWeek.getTime() === nw1.getTime() || pgrdWeek.getTime() === nw2.getTime()) && !line.esd)
-    return 'future-backlog'; // due in 1-2 weeks, nothing booked yet
-
-  if (pgrdWeek >= nw3 && !line.esd)
-    return 'on-track'; // 3+ weeks out, too early to worry
-
-  if (!line.asd && line.esd && line.pgrd && line.esd > line.pgrd)
-    return 'future-backlog'; // ESD already slipped past PGRD
-
-  return 'on-track';
+  let sumOfPORates = 0;
+  byPO.forEach((results) => {
+    sumOfPORates += results.filter(Boolean).length / results.length;
+  });
+  return Math.round((sumOfPORates / byPO.size) * 100);
 }
 
-// uses ESD (Shiptify booking date) to predict if a not-yet-shipped line will be SOT
-export function computeExpectedSOT(line: PurchaseLine): boolean | null {
-  if (line.asd) return null; // already shipped, use actual SOT
-  if (!line.esd || !line.pgrd) return null;
-  return weekOf(line.esd) <= weekOf(line.pgrd);
+export function aggregateSOTRate(lines: PurchaseLine[], isChinaSupplier: IsChinaSupplier, today: Date): number | null {
+  return aggregateByPOHeader(lines, (l) => computeSOTLine(l, isChinaSupplier(l.vendorCode), today));
+}
+
+export function aggregateOTIFRate(lines: PurchaseLine[], isChinaSupplier: IsChinaSupplier): number | null {
+  return aggregateByPOHeader(lines, (l) => computeOTIFLine(l, isChinaSupplier(l.vendorCode)).otif);
 }
 
 export const SOT_TARGET = 90;
 export const OTIF_TARGET = 90;
 
-// From WK27 2026 (PGRD ≥ June 29, 2026) the SOT aggregation method changed:
-// — Before WK27: SOT = Σ lines YES / Σ lines  (every PO line counted equally)
-// — WK27 onwards: SOT = Σ(SOT% per PO) / Σ POs  (every PO counted equally regardless of line count)
-// Per-line SOT YES/NO is unchanged — only the aggregation formula changed.
-export const SOT_PO_HEADER_CUTOFF = new Date(2026, 5, 29); // June 29, 2026 = first day of WK27 2026
+// Backlog definition (Section 4): PGRD in the past AND ASD still empty.
+export function isBacklog(line: PurchaseLine, today: Date): boolean {
+  if (!line.pgrd) return false;
+  return weekOf(line.pgrd) < weekOf(today) && !line.asd;
+}
 
-// today: used to classify lines with no ASD.
-// — If PGRD week < current week → SOT failure (week closed, line never shipped).
-// — If PGRD week ≥ current week → exclude (still open, not yet determined).
-export function aggregateSOTRate(lines: PurchaseLine[], today?: Date): number | null {
-  const currentWeekStart = today ? weekOf(today) : null;
-  let numOld = 0, denOld = 0;
-  const byPO = new Map<string, { yes: number; total: number }>();
-
-  for (const l of lines) {
-    if (!l.pgrd) continue; // no PGRD = can't categorize
-
-    let result: boolean;
-    if (!l.asd) {
-      // No shipment yet: failure if the PGRD week is already closed, otherwise skip.
-      if (currentWeekStart && weekOf(l.pgrd) < currentWeekStart) {
-        result = false;
-      } else {
-        continue;
-      }
-    } else {
-      const r = computeSOT(l);
-      if (r === null) continue;
-      result = r;
-    }
-
-    if (l.pgrd < SOT_PO_HEADER_CUTOFF) {
-      // Pre-WK27: line-count weighted
-      denOld++;
-      if (result) numOld++;
-    } else {
-      // WK27+: PO-header weighted — every PO counts equally
-      if (!byPO.has(l.po)) byPO.set(l.po, { yes: 0, total: 0 });
-      const e = byPO.get(l.po)!;
-      e.total++;
-      if (result) e.yes++;
-    }
-  }
-
-  const denNew = byPO.size;
-  if (!denOld && !denNew) return null;
-
-  // Each PO in the new period contributes its SOT rate (0–1) as one "vote"
-  let rateNew = 0;
-  byPO.forEach(e => { rateNew += e.yes / e.total; });
-
-  return Math.round((numOld + rateNew) / (denOld + denNew) * 100);
+// Expected backlog: PGRD in the future but ESD already booked for a date AFTER PGRD.
+export function isExpectedBacklog(line: PurchaseLine, today: Date): boolean {
+  if (!line.pgrd || !line.esd) return false;
+  return weekOf(line.pgrd) > weekOf(today) && line.esd > line.pgrd;
 }

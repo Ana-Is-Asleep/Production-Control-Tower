@@ -4,10 +4,14 @@ import { useState } from 'react';
 import { useData } from '../context/DataContext';
 import { NavTabs } from './shared/NavTabs';
 import { useFilters } from '../hooks/useFilters';
+import { useKPIs } from '../hooks/useKPIs';
 import { UploadPanel } from './upload/UploadPanel';
 import { formatFilterSummary } from '../lib/filterSummary';
 import type { PurchaseLine } from '../types';
 import type { InvoiceRow } from '../types/invoice';
+
+// wired to the real Airtable-backed lookup in a follow-up commit
+const NOT_CHINA = () => false;
 
 // NOTE: this is a thin shell — SOT/OTIF, Root Cause, Missing ESD, Backlog, Invoices and
 // Lead Time sections are added incrementally in follow-up commits as each is rebuilt.
@@ -17,6 +21,7 @@ export function Dashboard() {
 
   const { filters, setFilters: _setFilters, filteredLines, weekRangeLines, weeksInRange, allSuppliers } =
     useFilters(allLines, globalFilters);
+  const kpis = useKPIs(weekRangeLines, weeksInRange, NOT_CHINA);
 
   const setFilters = (f: typeof filters) => {
     _setFilters(f);
@@ -66,6 +71,7 @@ export function Dashboard() {
           <p className="text-xs text-[#9c9794]">
             {weekRangeLines.length.toLocaleString()} lines in range · {filteredLines.length.toLocaleString()} total filtered ·
             {' '}{allSuppliers.length} suppliers · {invoices.length.toLocaleString()} invoice rows · {weeksInRange.length} weeks in view
+            {' '}· SOT {kpis.overallSOT ?? '—'}% · OTIF {kpis.overallOTIF ?? '—'}%
           </p>
           {/* sections mount here — see follow-up commits */}
         </div>

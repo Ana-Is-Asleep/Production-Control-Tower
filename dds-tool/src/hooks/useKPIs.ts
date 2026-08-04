@@ -1,152 +1,117 @@
 'use client';
 
 import { useMemo } from 'react';
-import { getISOWeek, getISOWeekYear, lastCompletedWeek } from '../lib/dateUtils';
-import { computeKPI, computeExpectedSOT, classifyBacklog, aggregateSOTRate, SOT_TARGET, OTIF_TARGET } from '../lib/kpiFormulas';
-import type { PurchaseLine, WeeklyKPIPoint, BacklogSummary } from '../types';
+import { getISOWeek, getISOWeekYear } from '../lib/dateUtils';
+import {
+  computeSOTLine, computeOTIFLine, computeLineResult,
+  aggregateByPOHeader, SOT_TARGET, OTIF_TARGET,
+  type IsChinaSupplier,
+} from '../lib/kpiFormulas';
+import type { WeekInRange } from './useFilters';
+import type { PurchaseLine } from '../types';
 
-export function useKPIs(weeklyLines: PurchaseLine[], accumulatingLines: PurchaseLine[], allD2cLines?: PurchaseLine[]) {
+export interface TopGraphPoint {
+  offset: number;
+  weekLabel: string;
+  week: number;
+  year: number;
+  isCurrent: boolean;
+  isFuture: boolean;
+  totalPOs: number;
+  shippedPOs: number;
+  backlogPOs: number;
+  sotPastPct: number | null;
+  sotFuturePct: number | null;
+  otifPastPct: number | null;
+  otifFuturePct: number | null;
+}
+
+export interface DeepDiveRow {
+  po: string;
+  supplier: string;
+  isChina: boolean;
+  pgrd: Date | null;
+  asd: Date | null;
+  esd: Date | null;
+  egrd: Date | null;
+  sot: boolean | null;
+  otif: boolean | null;
+}
+
+// The Top Graph: PGRD-week bars (PO volume, shipped vs backlog) + SOT/OTIF % lines, driven by
+// the global weekRange filter rather than a fixed 10-week window.
+export function useKPIs(lines: PurchaseLine[], weeksInRange: WeekInRange[], isChinaSupplier: IsChinaSupplier) {
   const today = useMemo(() => new Date(), []);
-  const { week: lastWeek, year: lastYear } = lastCompletedWeek();
 
-  const scored = useMemo(
-    () => weeklyLines.map(l => ({ line: l, kpi: computeKPI(l) })),
-    [weeklyLines]
-  );
+  const topGraph = useMemo((): TopGraphPoint[] => {
+    return weeksInRange.map(({ offset, week, year, isCurrent, isFuture, label }) => {
+      const weekLines = lines.filter(l => l.pgrd && getISOWeek(l.pgrd) === week && getISOWeekYear(l.pgrd) === year);
+      const totalPOs = new Set(weekLines.map(l => l.po)).size;
 
-  // only lines that actually have the dates needed to evaluate each KPI
-  const sotLines  = useMemo(() => scored.filter(r => r.kpi.sotResult !== null), [scored]);
-  const otifLines = useMemo(() => scored.filter(r => r.kpi.otif !== null), [scored]);
-
-  // Uses PO-header weighting for PGRD ≥ WK27 2026, line-count for earlier periods.
-  // today passed so unshipped lines in closed PGRD weeks count as SOT failures.
-  const sotPct = useMemo(() => aggregateSOTRate(weeklyLines, today), [weeklyLines, today]);
-
-  const otifPct = useMemo(() => {
-    if (!otifLines.length) return null;
-    return Math.round(otifLines.filter(r => r.kpi.otif).length / otifLines.length * 100);
-  }, [otifLines]);
-
-  const failingLines = useMemo(
-    () => scored.filter(r => r.kpi.sotFail || r.kpi.otifFail).map(r => r.line),
-    [scored]
-  );
-
-  // 10-week window: 6 past + current + 3 future
-  // future weeks get estimated SOT from ESD, OTIF can't be predicted so it stays null
-  // the modulo handles rollover from W52 → W01 — don't simplify this or year boundaries break
-  const weeklyTrend = useMemo((): WeeklyKPIPoint[] => {
-    const points: WeeklyKPIPoint[] = [];
-
-    for (let offset = -6; offset <= 3; offset++) {
-      const raw = lastWeek + offset;
-      const week = ((raw - 1 + 52) % 52) + 1;
-      const year = raw <= 0 ? lastYear - 1 : raw > 52 ? lastYear + 1 : lastYear;
-      const isFuture = offset > 0;
-
-      const src = isFuture && allD2cLines ? allD2cLines : (allD2cLines ?? accumulatingLines);
-      const wLines = src.filter(l => l.pgrd && getISOWeek(l.pgrd) === week && getISOWeekYear(l.pgrd) === year);
-      const kpis = wLines.map(computeKPI);
-
-      // SOT uses PO-header weighting for WK27+ PGRD, line-count for earlier weeks.
-      // Pass today so that unshipped lines in closed PGRD weeks count as failures.
-      const sotPct_  = isFuture ? null : aggregateSOTRate(wLines, today);
-      // OTIF: actual for past weeks, predicted for future weeks using EGRD vs PGRD + cqty
-      const otif = kpis.filter(k => k.otif !== null);
-      const otifPct_ = otif.length ? Math.round(otif.filter(k => k.otif).length / otif.length * 100) : null;
-
-      // for future weeks, estimate SOT from Shiptify ESD vs PGRD
-      const expLines = isFuture ? wLines.filter(l => computeExpectedSOT(l) !== null) : [];
-      const expSot   = expLines.length ? Math.round(expLines.filter(l => computeExpectedSOT(l)).length / expLines.length * 100) : null;
-
-      // stacked bar values — using distinct POs
-      // unshipped "as of week W" = no ASD, or ASD came in a later week
-      const wasUnshippedAsOf = (l: PurchaseLine) => !l.asd || (getISOWeekYear(l.asd) > year || (getISOWeekYear(l.asd) === year && getISOWeek(l.asd) > week));
-      const allSrc = allD2cLines ?? accumulatingLines;
-
-      const thisWeekPOs = new Set(wLines.map(l => l.po));
-
-      // Shipped this week (has ASD in week W) — includes SOT YES and NOK, but not backlog
-      const posShipped = isFuture ? 0 : new Set(
-        wLines.filter(l => l.asd && !wasUnshippedAsOf(l)).map(l => l.po)
-      ).size;
-
-      // PGRD = this week, not yet shipped by end of week W
-      // For future weeks: exclude POs predicted on track (ESD ≤ PGRD)
-      const posBacklog = new Set(wLines.filter(l => {
-        if (!wasUnshippedAsOf(l)) return false;
-        if (isFuture && computeExpectedSOT(l) === true) return false;
-        return true;
-      }).map(l => l.po)).size;
-
-      // Future weeks only: POs predicted to ship on time (ESD ≤ PGRD)
-      const posPredictedSOT = isFuture
-        ? new Set(wLines.filter(l => computeExpectedSOT(l) === true).map(l => l.po)).size
-        : 0;
-
-      // Accumulated backlog from earlier PGRD weeks.
-      // Past weeks: use wasUnshippedAsOf (real historical state).
-      // Future weeks: include POs with no ASD where ESD hasn't passed yet
-      // (ESD = when Shiptify expects shipment — once ESD week < bar week the PO should have cleared).
-      const pastPOBacklog = new Set(
-        allSrc.filter(l => {
-          if (!l.pgrd || l.pgrd.getFullYear() < 2026) return false;
-          if (getISOWeekYear(l.pgrd) > year || (getISOWeekYear(l.pgrd) === year && getISOWeek(l.pgrd) >= week)) return false;
-          if (thisWeekPOs.has(l.po)) return false;
-          if (isFuture) {
-            // For future bar weeks: only count POs still expected to be unshipped
-            if (l.asd) return false; // already shipped
-            if (!l.esd) return true; // no booking — assume still outstanding
-            // Include if ESD is this week or later (clears on ESD week)
-            return getISOWeekYear(l.esd) > year ||
-              (getISOWeekYear(l.esd) === year && getISOWeek(l.esd) >= week);
-          }
-          return wasUnshippedAsOf(l);
-        }).map(l => l.po)
-      ).size;
-
-      points.push({
-        isoWeek:       `${year}-W${String(week).padStart(2, '0')}`,
-        weekLabel:     `W${String(week).padStart(2, '0')}`,
-        sotPct:        isFuture ? expSot  : sotPct_,
-        otifPct:       otifPct_,  // predicted for future weeks (uses EGRD vs PGRD + cqty), actual for past
-        totalLines:    wLines.length,
-        totalPOs:      new Set(wLines.map(l => l.po)).size,
-        posShipped,
-        posBacklog,
-        pastPOBacklog,
-        posPredictedSOT,
-        isCurrent:     offset === 0,
-        isFuture,
+      // shipped subset: PO has at least one line whose relevant date falls in this same PGRD week
+      const shippedPOSet = new Set<string>();
+      weekLines.forEach(l => {
+        const relevant = isFuture ? l.esd : l.asd;
+        if (relevant && getISOWeek(relevant) === week && getISOWeekYear(relevant) === year) {
+          shippedPOSet.add(l.po);
+        }
       });
-    }
+      const shippedPOs = shippedPOSet.size;
 
-    return points;
-  }, [accumulatingLines, lastWeek, lastYear, allD2cLines]);
+      const sotPct = aggregateByPOHeader(weekLines, (l) => computeSOTLine(l, isChinaSupplier(l.vendorCode), today));
+      const otifPct = aggregateByPOHeader(weekLines, (l) => computeOTIFLine(l, isChinaSupplier(l.vendorCode)).otif);
 
-  const backlogSummary = useMemo((): BacklogSummary => {
-    const critical: PurchaseLine[] = [];
-    const recent: PurchaseLine[]   = [];
-    const futureBacklog: PurchaseLine[] = [];
+      return {
+        offset, week, year, isCurrent, isFuture,
+        weekLabel: label,
+        totalPOs,
+        shippedPOs,
+        backlogPOs: totalPOs - shippedPOs,
+        // isCurrent week appears on both series so the solid/dashed line segments connect visually
+        sotPastPct: !isFuture || isCurrent ? sotPct : null,
+        sotFuturePct: isFuture || isCurrent ? sotPct : null,
+        otifPastPct: !isFuture || isCurrent ? otifPct : null,
+        otifFuturePct: isFuture || isCurrent ? otifPct : null,
+      };
+    });
+  }, [lines, weeksInRange, isChinaSupplier, today]);
 
-    // use allD2cLines when available so future-PGRD POs (next 1-3 weeks) also show in future backlog
-    // accumulatingLines only goes up to lastWeek so it misses upcoming POs with no ESD booked
-    const src = allD2cLines ?? accumulatingLines;
-    for (const line of src) {
-      const type = classifyBacklog(line, today);
-      if      (type === 'backlog-critical') critical.push(line);
-      else if (type === 'backlog-recent')   recent.push(line);
-      else if (type === 'future-backlog')   futureBacklog.push(line);
-    }
+  // per-PO deep-dive rows for the whole active week range (Top Graph slide-over)
+  const deepDiveRows = useMemo((): DeepDiveRow[] => {
+    const byPO = new Map<string, PurchaseLine[]>();
+    lines.forEach(l => {
+      if (!byPO.has(l.po)) byPO.set(l.po, []);
+      byPO.get(l.po)!.push(l);
+    });
 
-    return { critical, recent, futureBacklog };
-  }, [accumulatingLines, allD2cLines, today]);
+    return [...byPO.entries()].map(([po, poLines]) => {
+      const results = poLines.map(l => computeLineResult(l, isChinaSupplier, today));
+      const sotVals = results.map(r => r.sot).filter((v): v is boolean => v !== null);
+      const otifVals = results.map(r => r.otif).filter((v): v is boolean => v !== null);
+      const first = poLines[0];
+      return {
+        po,
+        supplier: first.supplier,
+        isChina: isChinaSupplier(first.vendorCode),
+        pgrd: first.pgrd,
+        asd: poLines.find(l => l.asd)?.asd ?? null,
+        esd: poLines.find(l => l.esd)?.esd ?? null,
+        egrd: poLines.find(l => l.egrd)?.egrd ?? null,
+        // PO-level result = its lines' Yes/No average rounded to a pass/fail (matches the PO-level % definition)
+        sot: sotVals.length ? sotVals.filter(Boolean).length / sotVals.length >= 0.5 : null,
+        otif: otifVals.length ? otifVals.filter(Boolean).length / otifVals.length >= 0.5 : null,
+      };
+    }).sort((a, b) => (a.pgrd?.getTime() ?? 0) - (b.pgrd?.getTime() ?? 0));
+  }, [lines, isChinaSupplier, today]);
 
-  // EDD (not ESD) is the Shiptify booking indicator — ESD is Expected Receipt Date which is always filled
-  const notBookedLines = useMemo(
-    () => accumulatingLines.filter(l => !l.asd && !l.edd),
-    [accumulatingLines]
+  const overallSOT = useMemo(
+    () => aggregateByPOHeader(lines, (l) => computeSOTLine(l, isChinaSupplier(l.vendorCode), today)),
+    [lines, isChinaSupplier, today]
+  );
+  const overallOTIF = useMemo(
+    () => aggregateByPOHeader(lines, (l) => computeOTIFLine(l, isChinaSupplier(l.vendorCode)).otif),
+    [lines, isChinaSupplier]
   );
 
-  return { sotPct, otifPct, sotTarget: SOT_TARGET, otifTarget: OTIF_TARGET, failingLines, scored, weeklyTrend, backlogSummary, notBookedLines };
+  return { topGraph, deepDiveRows, overallSOT, overallOTIF, sotTarget: SOT_TARGET, otifTarget: OTIF_TARGET };
 }
