@@ -54,6 +54,22 @@ export function formatDateMedium(date: Date | null): string {
   return format(date, 'dd MMM yyyy');
 }
 
+// current ISO week (this week, not last-completed) — used as the anchor for the global weekRange filter
+export function currentISOWeek(): { week: number; year: number } {
+  const today = new Date();
+  return { week: getISOWeek(today), year: getISOWeekYear(today) };
+}
+
+// shifts a date by N ISO weeks and returns the resulting ISO week/year — robust across year boundaries
+// (avoids the mod-52 rollover hack, which breaks on 53-week ISO years)
+export function shiftISOWeek(week: number, year: number, offset: number): { week: number; year: number; weekStart: Date } {
+  const jan4 = new Date(year, 0, 4);
+  const startOfWeek1 = startOfISOWeek(jan4);
+  const anchor = addWeeks(startOfWeek1, week - 1);
+  const shifted = addWeeks(anchor, offset);
+  return { week: getISOWeek(shifted), year: getISOWeekYear(shifted), weekStart: shifted };
+}
+
 export function weekRangeFor(week: number, year: number): { start: Date; end: Date } {
   const jan4 = new Date(year, 0, 4);
   const startOfWeek1 = startOfISOWeek(jan4);

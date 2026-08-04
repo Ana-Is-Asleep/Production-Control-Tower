@@ -3,7 +3,6 @@
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { DataProvider } from '../context/DataContext';
-import { GlobalFilterBadge } from '../components/shared/GlobalFilterBadge';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -13,7 +12,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans antialiased bg-[#f5f2ee] text-[#403833]">
         <DataProvider>
           {children}
-          <GlobalFilterBadge />
         </DataProvider>
       </body>
     </html>

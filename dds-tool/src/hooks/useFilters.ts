@@ -1,69 +1,90 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { getISOWeek, getISOWeekYear, lastCompletedWeek } from '../lib/dateUtils';
+import { currentISOWeek, shiftISOWeek, getISOWeek, getISOWeekYear } from '../lib/dateUtils';
 import { categorizeSKU, type SKUCategory } from '../lib/skuUtils';
+import { getChannel, type Channel } from '../lib/channelUtils';
 import type { PurchaseLine } from '../types';
 
-// only D2C warehouses — don't add others without checking with the team
-const D2C = ['DS0_FR', 'GXO1_FR', 'LN_IT', 'DS_ES', 'DSV1_UK', 'MS_IE', 'HA_DE'];
+export const WEEK_RANGE_MIN = -13;
+export const WEEK_RANGE_MAX = 5;
+export const WEEK_RANGE_DEFAULT: { start: number; end: number } = { start: -7, end: 3 };
 
 export interface ActiveFilters {
+  weekRange: { start: number; end: number }; // offsets from current ISO week, bounded [-13, 5]
   suppliers: string[];
+  channels: Channel[];
   categories: SKUCategory[];
-  pgrdWeek: number | null;
 }
 
-function applyFilters(lines: PurchaseLine[], suppliers: string[], categories: SKUCategory[]) {
+export const DEFAULT_FILTERS: ActiveFilters = {
+  weekRange: WEEK_RANGE_DEFAULT,
+  suppliers: [],
+  channels: [],
+  categories: [],
+};
+
+export interface WeekInRange {
+  offset: number;
+  week: number;
+  year: number;
+  weekStart: Date;
+  label: string;
+  isCurrent: boolean;
+  isFuture: boolean;
+}
+
+function applyFilters(lines: PurchaseLine[], filters: ActiveFilters) {
   let result = lines;
-  if (suppliers.length) result = result.filter(l => suppliers.includes(l.supplier));
-  if (categories.length) result = result.filter(l => categories.includes(categorizeSKU(l.sku)));
+  if (filters.suppliers.length) result = result.filter(l => filters.suppliers.includes(l.supplier));
+  if (filters.channels.length) result = result.filter(l => filters.channels.includes(getChannel(l.destination)));
+  if (filters.categories.length) result = result.filter(l => filters.categories.includes(categorizeSKU(l.sku)));
   return result;
 }
 
 export function useFilters(allLines: PurchaseLine[], initialFilters?: ActiveFilters) {
-  const [filters, setFilters] = useState<ActiveFilters>(
-    initialFilters ?? { suppliers: [], categories: [], pgrdWeek: null }
+  const [filters, setFilters] = useState<ActiveFilters>(initialFilters ?? DEFAULT_FILTERS);
+
+  const { week: curWeek, year: curYear } = useMemo(() => currentISOWeek(), []);
+
+  // every week (offset, week, year) covered by the active weekRange filter
+  const weeksInRange = useMemo((): WeekInRange[] => {
+    const weeks: WeekInRange[] = [];
+    for (let offset = filters.weekRange.start; offset <= filters.weekRange.end; offset++) {
+      const { week, year, weekStart } = shiftISOWeek(curWeek, curYear, offset);
+      weeks.push({
+        offset, week, year, weekStart,
+        label: `W${String(week).padStart(2, '0')}`,
+        isCurrent: offset === 0,
+        isFuture: offset > 0,
+      });
+    }
+    return weeks;
+  }, [filters.weekRange, curWeek, curYear]);
+
+  const weekKeySet = useMemo(
+    () => new Set(weeksInRange.map(w => `${w.year}-${w.week}`)),
+    [weeksInRange]
   );
 
-  const { week: lastWeek, year: lastYear } = lastCompletedWeek();
+  // lines matching supplier/channel/category selections, regardless of week — used by sections
+  // that need a different week window than the global range (e.g. Backlog clearance table)
+  const filteredLines = useMemo(() => applyFilters(allLines, filters), [allLines, filters]);
 
-  // hard filters first — D2C locations only, 2026 PGRDs only
-  const d2c = useMemo(
-    () => allLines.filter(l => D2C.includes(l.destination) && l.pgrd?.getFullYear() === 2026),
-    [allLines]
+  // filteredLines further restricted to the active weekRange (by PGRD week)
+  const weekRangeLines = useMemo(
+    () => filteredLines.filter(l => l.pgrd && weekKeySet.has(`${getISOWeekYear(l.pgrd)}-${getISOWeek(l.pgrd)}`)),
+    [filteredLines, weekKeySet]
   );
 
-  // week filter overrides the default last-completed-week
-  const activeWeek = filters.pgrdWeek ?? lastWeek;
-
-  const rawWeekly = useMemo(
-    () => d2c.filter(l => l.pgrd && getISOWeek(l.pgrd) === activeWeek && l.pgrd.getFullYear() === 2026),
-    [d2c, activeWeek]
-  );
-
-  // accumulating = W01 through last completed week, for trend charts and backlog
-  const rawAccumulating = useMemo(
-    () => d2c.filter(l => l.pgrd && l.pgrd.getFullYear() === lastYear && getISOWeek(l.pgrd) <= lastWeek),
-    [d2c, lastWeek, lastYear]
-  );
-
-  const weeklyLines      = useMemo(() => applyFilters(rawWeekly,      filters.suppliers, filters.categories), [rawWeekly,      filters.suppliers, filters.categories]);
-  const accumulatingLines= useMemo(() => applyFilters(rawAccumulating,filters.suppliers, filters.categories), [rawAccumulating,filters.suppliers, filters.categories]);
-  const allD2cLines      = useMemo(() => applyFilters(d2c,            filters.suppliers, filters.categories), [d2c,            filters.suppliers, filters.categories]);
-
-  const allSuppliers = useMemo(() => [...new Set(d2c.map(l => l.supplier))].sort(), [d2c]);
-  const availableWeeks = useMemo(() => {
-    const weeks = new Set(d2c.map(l => l.pgrd ? getISOWeek(l.pgrd) : null).filter(Boolean) as number[]);
-    return [...weeks].sort((a, b) => a - b);
-  }, [d2c]);
+  const allSuppliers = useMemo(() => [...new Set(allLines.map(l => l.supplier).filter(Boolean))].sort(), [allLines]);
 
   return {
     filters, setFilters,
-    weeklyLines, accumulatingLines, allD2cLines,
-    allSuppliers, availableWeeks,
-    lastWeek,   // always the real last completed week — used for dropdown default label
-    activeWeek, // the currently viewed week — may differ when user picks a specific week
-    lastYear,
+    filteredLines,
+    weekRangeLines,
+    weeksInRange,
+    allSuppliers,
+    curWeek, curYear,
   };
 }

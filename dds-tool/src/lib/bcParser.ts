@@ -29,6 +29,9 @@ function parseLines(rows: unknown[][]): PurchaseLine[] {
   const confStatusCol = col('confirmed status');
   const lossReasonCol = col('loss reason code');
   const vendorNameCol = col('vendor name');
+  const vendorCodeCol = col('buy-from vendor no.') !== -1 ? col('buy-from vendor no.')
+    : col('vendor no.') !== -1 ? col('vendor no.')
+    : col('vendor code');
   const purchaserCol  = col('purchaser code') !== -1 ? col('purchaser code') : col('purchaser');
   const orderDateCol  = col('order date');
   const esdCol        = col('expected shipping date') !== -1 ? col('expected shipping date') : col('expected receipt date');
@@ -60,6 +63,7 @@ function parseLines(rows: unknown[][]): PurchaseLine[] {
       edd:             parseDate(r[eddCol !== -1 ? eddCol    : 33]),
       asd:             parseDate(r[asdCol]),
       supplier:        vendorNameCol !== -1 ? String(r[vendorNameCol] ?? '') : '',
+      vendorCode:      vendorCodeCol !== -1 ? String(r[vendorCodeCol] ?? '') : '',
       purchaser:       purchaserCol  !== -1 ? String(r[purchaserCol]  ?? '') : '',
       orderDate:       orderDateCol  !== -1 ? parseDate(r[orderDateCol]) : null,
     });

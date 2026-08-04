@@ -22,6 +22,7 @@ export interface PurchaseLine {
   confirmedStatus: string;
   lossReasonCode: string;
   supplier: string;
+  vendorCode: string; // BC "Buy-from Vendor No." — used to look up China-origin via Airtable vendor mapping
   purchaser: string;
   orderDate: Date | null;
 }
@@ -36,25 +37,6 @@ export interface KPIResult {
 }
 
 export type BacklogType = 'backlog-critical' | 'backlog-recent' | 'future-backlog' | 'on-track' | 'shipped';
-
-export interface AnnotationEntry {
-  poLine: string;
-  reason: ReasonCode;
-  tmComment: string;
-  scmComment: string;
-  annotatedAt: Date;
-}
-
-export type ReasonCode =
-  | 'supplier_delay'
-  | 'capacity_constraints'
-  | 'material_shortage'
-  | 'quality_issues'
-  | 'documentation_issue'
-  | 'transit_delay'
-  | 'booking_not_made'
-  | 'data_issue'
-  | 'other';
 
 export interface WeeklyKPIPoint {
   isoWeek: string;
@@ -84,14 +66,4 @@ export interface ActionItem {
   status: 'open' | 'in_progress' | 'done';
   linkedPO?: string;
   assignedTo: string;
-}
-
-export interface FilterState {
-  suppliers: string[];
-  timeWindow: 'weekly' | 'monthly' | 'quarterly' | 'ytd' | 'custom';
-  customStart: Date | null;
-  customEnd: Date | null;
-  categories: string[];
-  channels: string[];
-  production: string[];
 }
