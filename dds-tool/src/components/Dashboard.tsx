@@ -11,6 +11,7 @@ import { GlobalFilterBar } from './shared/GlobalFilterBar';
 import { TopGraphSection } from './sections/TopGraphSection';
 import { RootCauseSection } from './sections/RootCauseSection';
 import { MissingESDSection } from './sections/MissingESDSection';
+import { BacklogSection } from './sections/BacklogSection';
 import { formatFilterSummary } from '../lib/filterSummary';
 import type { PurchaseLine } from '../types';
 import type { InvoiceRow } from '../types/invoice';
@@ -81,10 +82,11 @@ export function Dashboard() {
             />
             <RootCauseSection lines={weekRangeLines} weeksInRange={weeksInRange} />
             <MissingESDSection lines={weekRangeLines} weeksInRange={weeksInRange} supplierFilterActive={filters.suppliers.length > 0} />
+            <BacklogSection lines={filteredLines} />
             <p className="text-xs text-[#9c9794]">
               {filteredLines.length.toLocaleString()} total filtered lines · {invoices.length.toLocaleString()} invoice rows
             </p>
-            {/* Backlog, Invoices and Lead Time sections mount here — see follow-up commits */}
+            {/* Invoices and Lead Time sections mount here — see follow-up commit */}
           </div>
         </div>
       )}
