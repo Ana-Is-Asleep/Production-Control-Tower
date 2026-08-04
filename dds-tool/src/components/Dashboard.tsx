@@ -7,12 +7,14 @@ import { useFilters } from '../hooks/useFilters';
 import { useKPIs } from '../hooks/useKPIs';
 import { useVendorMapping } from '../hooks/useVendorMapping';
 import { UploadPanel } from './upload/UploadPanel';
+import { GlobalFilterBar } from './shared/GlobalFilterBar';
+import { TopGraphSection } from './sections/TopGraphSection';
 import { formatFilterSummary } from '../lib/filterSummary';
 import type { PurchaseLine } from '../types';
 import type { InvoiceRow } from '../types/invoice';
 
-// NOTE: this is a thin shell — SOT/OTIF, Root Cause, Missing ESD, Backlog, Invoices and
-// Lead Time sections are added incrementally in follow-up commits as each is rebuilt.
+// NOTE: Root Cause, Missing ESD, Backlog, Invoices and Lead Time sections are added
+// incrementally in follow-up commits as each is rebuilt.
 export function Dashboard() {
   const { allLines, setAllLines, invoices, setInvoices, globalFilters, setGlobalFilters } = useData();
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -66,13 +68,20 @@ export function Dashboard() {
       )}
 
       {hasData && (
-        <div className="page-enter px-4 py-4 space-y-3">
-          <p className="text-xs text-[#9c9794]">
-            {weekRangeLines.length.toLocaleString()} lines in range · {filteredLines.length.toLocaleString()} total filtered ·
-            {' '}{allSuppliers.length} suppliers · {invoices.length.toLocaleString()} invoice rows · {weeksInRange.length} weeks in view
-            {' '}· SOT {kpis.overallSOT ?? '—'}% · OTIF {kpis.overallOTIF ?? '—'}%
-          </p>
-          {/* sections mount here — see follow-up commits */}
+        <div className="page-enter">
+          <GlobalFilterBar filters={filters} onChange={setFilters} allSuppliers={allSuppliers} />
+          <div className="px-4 py-3 space-y-3">
+            <TopGraphSection
+              points={kpis.topGraph}
+              deepDiveRows={kpis.deepDiveRows}
+              sotTarget={kpis.sotTarget}
+              otifTarget={kpis.otifTarget}
+            />
+            <p className="text-xs text-[#9c9794]">
+              {filteredLines.length.toLocaleString()} total filtered lines · {invoices.length.toLocaleString()} invoice rows
+            </p>
+            {/* Root Cause, Missing ESD, Backlog, Invoices and Lead Time sections mount here — see follow-up commits */}
+          </div>
         </div>
       )}
 
