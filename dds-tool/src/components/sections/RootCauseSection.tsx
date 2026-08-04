@@ -111,8 +111,9 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
                   stackId="reasons"
                   fill={CATEGORY_PALETTE[cat]}
                   fillOpacity={0.85}
-                  onClick={(data: { weekLabel?: string }) => {
-                    if (data?.weekLabel) setSelected({ week: data.weekLabel, category: cat });
+                  onClick={(data: unknown) => {
+                    const week = (data as { payload?: { weekLabel?: string } } | undefined)?.payload?.weekLabel;
+                    if (week) setSelected({ week, category: cat });
                   }}
                   style={{ cursor: 'pointer' }}
                 />
