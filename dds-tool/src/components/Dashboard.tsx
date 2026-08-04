@@ -10,6 +10,7 @@ import { UploadPanel } from './upload/UploadPanel';
 import { GlobalFilterBar } from './shared/GlobalFilterBar';
 import { TopGraphSection } from './sections/TopGraphSection';
 import { RootCauseSection } from './sections/RootCauseSection';
+import { MissingESDSection } from './sections/MissingESDSection';
 import { formatFilterSummary } from '../lib/filterSummary';
 import type { PurchaseLine } from '../types';
 import type { InvoiceRow } from '../types/invoice';
@@ -79,10 +80,11 @@ export function Dashboard() {
               otifTarget={kpis.otifTarget}
             />
             <RootCauseSection lines={weekRangeLines} weeksInRange={weeksInRange} />
+            <MissingESDSection lines={weekRangeLines} weeksInRange={weeksInRange} supplierFilterActive={filters.suppliers.length > 0} />
             <p className="text-xs text-[#9c9794]">
               {filteredLines.length.toLocaleString()} total filtered lines · {invoices.length.toLocaleString()} invoice rows
             </p>
-            {/* Missing ESD, Backlog, Invoices and Lead Time sections mount here — see follow-up commits */}
+            {/* Backlog, Invoices and Lead Time sections mount here — see follow-up commits */}
           </div>
         </div>
       )}
