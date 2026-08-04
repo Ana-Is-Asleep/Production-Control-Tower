@@ -3,8 +3,9 @@
 import { useState, useCallback } from 'react';
 import { SlideOver } from '../shared/SlideOver';
 import { Button } from '../shared/Button';
-import { parsePurchaseLines } from '../../lib/bcParser';
+import { detectBCFileKind, parseLinesFromRows, parseHeadersFromRows, joinLinesWithHeaders } from '../../lib/bcParser';
 import { parseInvoiceFile } from '../../lib/invoiceParser';
+import { readXlsxFile } from '../../lib/xlsxUtils';
 import type { PurchaseLine } from '../../types';
 import type { InvoiceRow } from '../../types/invoice';
 
@@ -29,6 +30,7 @@ interface Result {
 
 export function UploadPanel({ open, onClose, onLoad }: UploadPanelProps) {
   const [result, setResult]             = useState<Result | null>(null);
+  const [headerJoined, setHeaderJoined] = useState(false);
   const [invoiceCount, setInvoiceCount] = useState<number | null>(null);
   const [invoiceRows, setInvoiceRows]   = useState<InvoiceRow[]>([]);
   const [error, setError]               = useState<string | null>(null);
@@ -42,15 +44,26 @@ export function UploadPanel({ open, onClose, onLoad }: UploadPanelProps) {
     setLoading(true);
     try {
       const invoiceFile = xlsx.find(looksLikeInvoice);
-      const linesFile   = xlsx.find((f) => !looksLikeInvoice(f));
+      const bcCandidates = xlsx.filter((f) => f !== invoiceFile);
+
+      // BC exports share the same generic filename pattern, so the Purchase Header vs Purchase
+      // Line file can only be told apart by content (the report title in row 1).
+      const bcFiles = await Promise.all(bcCandidates.map(async (file) => ({ file, ...(await readXlsxFile(file)) })));
+      const linesFile  = bcFiles.find((f) => detectBCFileKind(f.rows) === 'lines');
+      const headerFile = bcFiles.find((f) => detectBCFileKind(f.rows) === 'header');
+
       if (!linesFile) { setError('Could not identify a Purchase Order Lines file.'); setLoading(false); return; }
 
-      const [bcResult, parsedInvoices] = await Promise.all([
-        parsePurchaseLines(linesFile),
-        invoiceFile ? parseInvoiceFile(invoiceFile) : Promise.resolve([]),
-      ]);
+      let lines = parseLinesFromRows(linesFile.rows);
+      if (headerFile) {
+        lines = joinLinesWithHeaders(lines, parseHeadersFromRows(headerFile.rows));
+      }
+      const suppliers = [...new Set(lines.map((l) => l.supplier).filter(Boolean))];
 
-      setResult(bcResult);
+      const parsedInvoices = invoiceFile ? await parseInvoiceFile(invoiceFile) : [];
+
+      setResult({ lines, lineCount: lines.length, suppliers });
+      setHeaderJoined(!!headerFile);
       setInvoiceRows(parsedInvoices);
       setInvoiceCount(invoiceFile ? parsedInvoices.length : null);
     } catch (e) {
@@ -76,7 +89,7 @@ export function UploadPanel({ open, onClose, onLoad }: UploadPanelProps) {
         >
           <div className="text-3xl mb-3">📂</div>
           <p className="text-sm text-dark font-medium">Drag & drop your XLSX files here</p>
-          <p className="text-xs text-muted mt-1">Purchase Order Lines · Invoices (optional)</p>
+          <p className="text-xs text-muted mt-1">Purchase Lines · Purchase Header (optional, for vendor names) · Invoices (optional)</p>
           <input id="file-input" type="file" accept=".xlsx" multiple className="hidden"
             onChange={(e) => handleFiles(Array.from(e.target.files ?? []))} />
         </div>
@@ -91,6 +104,13 @@ export function UploadPanel({ open, onClose, onLoad }: UploadPanelProps) {
                 <div className="flex items-center gap-2"><span className="text-green-600">✓</span><span className="text-sm text-dark">Purchase Lines</span></div>
                 <span className="text-xs text-muted">{result.lineCount.toLocaleString()} rows</span>
               </div>
+              <div className="flex items-center justify-between px-4 py-2.5">
+                <div className="flex items-center gap-2">
+                  <span className={headerJoined ? 'text-green-600' : 'text-[#c8c0bb]'}>{headerJoined ? '✓' : '—'}</span>
+                  <span className="text-sm text-dark">Purchase Header</span>
+                </div>
+                <span className="text-xs text-muted">{headerJoined ? 'vendor names joined' : 'not uploaded'}</span>
+              </div>
               {invoiceCount !== null && (
                 <div className="flex items-center justify-between px-4 py-2.5">
                   <div className="flex items-center gap-2"><span className="text-green-600">✓</span><span className="text-sm text-dark">Invoices</span></div>
@@ -98,6 +118,11 @@ export function UploadPanel({ open, onClose, onLoad }: UploadPanelProps) {
                 </div>
               )}
             </div>
+            {!headerJoined && (
+              <div className="bg-warn-bg text-warn-text text-xs px-3 py-2 rounded-lg">
+                No Purchase Header file detected — vendor names will be blank. Upload it alongside the Lines file to fix this.
+              </div>
+            )}
             <div className="text-xs text-muted space-y-1">
               <div className="flex justify-between"><span>Vendors</span><span className="font-medium text-dark">{result.suppliers.length}</span></div>
               <div className="flex justify-between"><span>D2C lines (2026)</span><span className="font-medium text-brand">{d2cCount.toLocaleString()}</span></div>
