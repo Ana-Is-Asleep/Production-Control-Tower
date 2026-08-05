@@ -50,7 +50,7 @@ export function InvoicesSection({ invoices, supplierFilter }: InvoicesSectionPro
 
   return (
     <>
-      <div onClick={() => setOpen(true)} className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-4 cursor-pointer" style={{ boxShadow: 'var(--shadow-card)' }}>
+      <div onClick={() => setOpen(true)} className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-4 cursor-pointer h-full" style={{ boxShadow: 'var(--shadow-card)' }}>
         <div className="flex items-center justify-between mb-2">
           <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Invoices</p>
           <p className="text-[10px] text-brand font-semibold">Drill down →</p>

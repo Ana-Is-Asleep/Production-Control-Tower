@@ -59,6 +59,7 @@ function SupplierBreakdownHover({ pos }: { pos: QualifyingPO[] }) {
 }
 
 export function MissingESDSection({ lines, weeksInRange, supplierFilterActive }: MissingESDSectionProps) {
+  const [open, setOpen] = useState(false);
   const [detailWeek, setDetailWeek] = useState<WeekRow | null>(null);
 
   const rows = useMemo((): WeekRow[] => {
@@ -83,6 +84,12 @@ export function MissingESDSection({ lines, weeksInRange, supplierFilterActive }:
     });
   }, [lines, weeksInRange]);
 
+  const totalMissing = useMemo(() => rows.reduce((s, r) => s + r.pos.length, 0), [rows]);
+  const worstWeek = useMemo(
+    () => [...rows].sort((a, b) => b.pos.length - a.pos.length)[0] ?? null,
+    [rows]
+  );
+
   const columns: Column<WeekRow>[] = [
     { key: 'week', header: 'PGRD Week', render: (r) => r.weekLabel },
     { key: 'when', header: 'When', render: (r) => (r.isFuture ? 'Future' : r.offset === 0 ? 'Current' : 'Past') },
@@ -90,7 +97,7 @@ export function MissingESDSection({ lines, weeksInRange, supplierFilterActive }:
       key: 'count',
       header: 'POs missing ESD (qty > 1)',
       render: (r) => (
-        <button onClick={() => setDetailWeek(r)} className="cursor-pointer">
+        <button onClick={(e) => { e.stopPropagation(); setDetailWeek(r); }} className="cursor-pointer">
           {supplierFilterActive || r.pos.length === 0
             ? <span className={`kpi-number font-extrabold text-lg ${r.pos.length ? 'text-fail' : 'text-[#b5aaa5]'}`}>{r.pos.length}</span>
             : <SupplierBreakdownHover pos={r.pos} />}
@@ -101,16 +108,31 @@ export function MissingESDSection({ lines, weeksInRange, supplierFilterActive }:
 
   return (
     <>
-      <div className="kpi-card bg-white rounded-lg border border-[#e9e3df] overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
-        <div className="px-5 py-3 border-b border-[#f4f1ef]">
-          <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Missing ESD — by PGRD week</p>
+      <div
+        onClick={() => setOpen(true)}
+        className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col justify-between h-full"
+        style={{ boxShadow: 'var(--shadow-card)' }}
+      >
+        <div className="flex items-start justify-between">
+          <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Missing ESD</p>
+          <p className="text-[10px] text-brand font-semibold">Drill down →</p>
         </div>
-        <DataTable columns={columns} data={rows} rowKey={(r) => r.weekLabel + r.offset} />
+        <div className="mt-1">
+          <p className={`kpi-number font-extrabold text-3xl leading-none ${totalMissing === 0 ? 'text-pass' : 'text-fail'}`}>{totalMissing}</p>
+          <p className="text-[10px] text-[#9c9794] mt-1">POs missing ESD (qty &gt; 1) across range</p>
+          {worstWeek && worstWeek.pos.length > 0 && (
+            <p className="text-xs mt-2 text-[#7b7571]">
+              Worst week: <span className="font-semibold text-[#403833]">{worstWeek.weekLabel}</span> ({worstWeek.pos.length})
+            </p>
+          )}
+        </div>
       </div>
 
-      <SlideOver open={!!detailWeek} onClose={() => setDetailWeek(null)} title={detailWeek ? `Missing ESD — ${detailWeek.weekLabel}` : ''}>
+      <SlideOver open={open} onClose={() => { setOpen(false); setDetailWeek(null); }} title="Missing ESD — by PGRD week" width="w-[760px]">
+        <DataTable columns={columns} data={rows} rowKey={(r) => r.weekLabel + r.offset} />
         {detailWeek && (
-          <div className="p-5 space-y-2">
+          <div className="p-5 space-y-2 border-t border-[#f4f1ef]">
+            <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-1">{detailWeek.weekLabel} — qualifying POs</p>
             {detailWeek.pos.map((p) => (
               <div key={p.po} className="flex items-center justify-between border border-[#e9e3df] rounded-lg px-3 py-2 text-sm">
                 <div>

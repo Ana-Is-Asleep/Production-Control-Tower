@@ -55,7 +55,7 @@ export function TopGraphSection({ points, deepDiveRows, sotTarget, otifTarget }:
     <>
       <div
         onClick={() => setOpen(true)}
-        className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col"
+        className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full"
         style={{ boxShadow: 'var(--shadow-card)' }}
       >
         <div className="flex items-start justify-between mb-1">
@@ -75,7 +75,7 @@ export function TopGraphSection({ points, deepDiveRows, sotTarget, otifTarget }:
           </div>
           <p className="text-xs text-brand font-semibold">Drill down →</p>
         </div>
-        <div className="flex-1 min-h-[220px]">
+        <div className="flex-1 min-h-0">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={points} margin={{ top: 8, right: 16, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="2 4" stroke={COLOR.border} vertical={false} />

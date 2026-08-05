@@ -19,6 +19,8 @@ interface BacklogPO {
   esd: Date | null;
 }
 
+type Group = 'recent' | 'accumulated' | 'expected';
+
 function groupByPO(lines: PurchaseLine[]): Map<string, PurchaseLine[]> {
   const map = new Map<string, PurchaseLine[]>();
   lines.forEach((l) => {
@@ -29,7 +31,8 @@ function groupByPO(lines: PurchaseLine[]): Map<string, PurchaseLine[]> {
 }
 
 export function BacklogSection({ lines }: BacklogSectionProps) {
-  const [detailGroup, setDetailGroup] = useState<'recent' | 'accumulated' | 'expected' | null>(null);
+  const [open, setOpen] = useState(false);
+  const [activeGroup, setActiveGroup] = useState<Group>('recent');
   const today = useMemo(() => new Date(), []);
 
   const { recent, accumulated, expected, noEsdCount, clearance, outliers } = useMemo(() => {
@@ -91,7 +94,8 @@ export function BacklogSection({ lines }: BacklogSectionProps) {
     return { recent, accumulated, expected, noEsdCount, clearance, outliers };
   }, [lines, today]);
 
-  const groupData: Record<'recent' | 'accumulated' | 'expected', BacklogPO[]> = { recent, accumulated, expected };
+  const groupData: Record<Group, BacklogPO[]> = { recent, accumulated, expected };
+  const maxClearance = Math.max(1, ...clearance.map((c) => c.count));
 
   const columns: Column<BacklogPO>[] = [
     { key: 'po', header: 'PO', render: (r) => r.po },
@@ -100,62 +104,83 @@ export function BacklogSection({ lines }: BacklogSectionProps) {
     { key: 'esd', header: 'ESD', render: (r) => r.esd ? formatDateShort(r.esd) : <span className="text-fail font-semibold">Not booked</span> },
   ];
 
+  const openGroup = (g: Group) => { setActiveGroup(g); setOpen(true); };
+
   return (
     <>
-      <div className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4" style={{ boxShadow: 'var(--shadow-card)' }}>
-        <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-3">Backlog</p>
-        <div className="grid grid-cols-3 gap-4 mb-4">
+      <div
+        onClick={() => setOpen(true)}
+        className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col justify-between h-full"
+        style={{ boxShadow: 'var(--shadow-card)' }}
+      >
+        <div className="flex items-start justify-between mb-2">
+          <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Backlog</p>
+          <p className="text-[10px] text-brand font-semibold">Drill down →</p>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
           {([
-            { key: 'recent' as const, label: 'Recent backlog', sub: 'PGRD within last 2 weeks', color: 'text-warn' },
-            { key: 'accumulated' as const, label: 'Accumulated backlog', sub: 'PGRD older than 2 weeks', color: 'text-fail' },
-            { key: 'expected' as const, label: 'Expected backlog', sub: 'ESD booked after PGRD (forward-looking)', color: 'text-brand' },
+            { key: 'recent' as const, label: 'Recent', color: 'text-warn' },
+            { key: 'accumulated' as const, label: 'Accumulated', color: 'text-fail' },
+            { key: 'expected' as const, label: 'Expected', color: 'text-brand' },
           ]).map((c) => (
             <button
               key={c.key}
-              onClick={() => setDetailGroup(c.key)}
-              className="text-left border border-[#e9e3df] rounded-lg p-3 hover:border-brand transition-colors"
+              onClick={(e) => { e.stopPropagation(); openGroup(c.key); }}
+              className="text-left rounded-lg px-2 py-1.5 hover:bg-[#f9f7f6] transition-colors"
             >
-              <p className="text-[10px] uppercase tracking-widest text-[#9c9794]">{c.label}</p>
-              <p className={`kpi-number font-extrabold text-3xl leading-none mt-1 ${c.color}`}>{groupData[c.key].length}</p>
-              <p className="text-[10px] text-[#b5aaa5] mt-1">{c.sub}</p>
+              <p className="text-[9px] uppercase tracking-widest text-[#9c9794] truncate">{c.label}</p>
+              <p className={`kpi-number font-extrabold text-2xl leading-none mt-0.5 ${c.color}`}>{groupData[c.key].length}</p>
             </button>
           ))}
         </div>
-
-        <div>
-          <p className="text-[10px] uppercase tracking-widest text-[#9c9794] mb-2">Clearance breakdown — by ESD week</p>
-          {clearance.length === 0 ? (
-            <p className="text-xs text-[#b5aaa5]">No ESD-booked backlog to project.</p>
-          ) : (
-            <div className="flex items-end gap-3 flex-wrap">
-              {clearance.map((c) => (
-                <div key={c.weekLabel} className="text-center">
-                  <div className="w-10 bg-brand rounded-t" style={{ height: `${8 + c.count * 6}px` }} />
-                  <p className="text-[10px] text-[#7b7571] mt-1">{c.weekLabel}</p>
-                  <p className="text-[10px] font-semibold text-[#403833]">{c.count}</p>
-                </div>
-              ))}
-            </div>
-          )}
-          {outliers.length > 0 && (
-            <p className="text-[10px] text-[#b5aaa5] mt-2">
-              * {outliers.length} PO{outliers.length > 1 ? 's' : ''} with ESD far beyond the bulk clearance window (not shown above): {outliers.map((o) => o.po).join(', ')}
-            </p>
-          )}
-        </div>
-
-        <p className="text-xs text-[#9c9794] mt-4 pt-3 border-t border-[#f4f1ef]">
-          <span className="font-semibold text-fail">{noEsdCount}</span> POs in backlog with no expectation to clear
+        <p className="text-[11px] text-[#9c9794] mt-2 pt-2 border-t border-[#f4f1ef]">
+          <span className="font-semibold text-fail">{noEsdCount}</span> with no expectation to clear
         </p>
       </div>
 
-      <SlideOver
-        open={!!detailGroup}
-        onClose={() => setDetailGroup(null)}
-        title={detailGroup ? `Backlog — ${detailGroup}` : ''}
-        width="w-[760px]"
-      >
-        {detailGroup && <DataTable columns={columns} data={groupData[detailGroup]} rowKey={(r) => r.po} />}
+      <SlideOver open={open} onClose={() => setOpen(false)} title="Backlog" width="w-[800px]">
+        <div className="p-5 space-y-5">
+          <div className="flex gap-2">
+            {([
+              { key: 'recent' as const, label: `Recent (${recent.length})`, sub: 'PGRD within last 2 weeks' },
+              { key: 'accumulated' as const, label: `Accumulated (${accumulated.length})`, sub: 'PGRD older than 2 weeks' },
+              { key: 'expected' as const, label: `Expected (${expected.length})`, sub: 'ESD booked after PGRD' },
+            ]).map((g) => (
+              <button
+                key={g.key}
+                onClick={() => setActiveGroup(g.key)}
+                className={`flex-1 text-left border rounded-lg px-3 py-2 transition-colors ${activeGroup === g.key ? 'border-brand bg-[#fff7ed]' : 'border-[#e9e3df] hover:border-brand'}`}
+              >
+                <p className="text-sm font-semibold text-[#403833]">{g.label}</p>
+                <p className="text-[10px] text-[#9c9794]">{g.sub}</p>
+              </button>
+            ))}
+          </div>
+
+          <DataTable columns={columns} data={groupData[activeGroup]} rowKey={(r) => r.po} />
+
+          <div className="border-t border-[#f4f1ef] pt-4">
+            <p className="text-[10px] uppercase tracking-widest text-[#9c9794] mb-2">Clearance breakdown — by ESD week</p>
+            {clearance.length === 0 ? (
+              <p className="text-xs text-[#b5aaa5]">No ESD-booked backlog to project.</p>
+            ) : (
+              <div className="flex items-end gap-3 flex-wrap">
+                {clearance.map((c) => (
+                  <div key={c.weekLabel} className="text-center">
+                    <div className="w-10 bg-brand rounded-t" style={{ height: `${8 + (c.count / maxClearance) * 80}px` }} />
+                    <p className="text-[10px] text-[#7b7571] mt-1">{c.weekLabel}</p>
+                    <p className="text-[10px] font-semibold text-[#403833]">{c.count}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {outliers.length > 0 && (
+              <p className="text-[10px] text-[#b5aaa5] mt-2">
+                * {outliers.length} PO{outliers.length > 1 ? 's' : ''} with ESD far beyond the bulk clearance window (not shown above): {outliers.map((o) => o.po).join(', ')}
+              </p>
+            )}
+          </div>
+        </div>
       </SlideOver>
     </>
   );
