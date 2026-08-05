@@ -47,3 +47,58 @@ export function hashReason(raw: string): string {
   }
   return hash.toString(36);
 }
+
+// Deterministic keyword-based classifier — no AI dependency, no API key, no network call, no cost.
+// Rules are ordered by specificity/priority; the first match wins. Built from the real raw loss-reason
+// text seen in production exports (damaged packaging, quantity shortfalls, missing labels, etc.).
+const KEYWORD_RULES: { category: ReasonCategory; patterns: RegExp[] }[] = [
+  {
+    category: 'quality_issue',
+    patterns: [/damag/, /defect/, /broken/, /overturned/, /poor condition/, /mauvais état/, /robbery/, /stolen/, /theft/],
+  },
+  {
+    category: 'material_shortage',
+    patterns: [
+      /not receiv/, /no receiv/, /haven'?t receiv/, /didn'?t receiv/, /did not receiv/,
+      /only received/, /instead of/, /missing (unit|item|piece|box|pallet)/, /short(age)?/, /we do not receiv/,
+    ],
+  },
+  {
+    category: 'documentation_delay',
+    patterns: [/without (supplier )?label/, /without identification/, /no label/, /missing (document|paperwork|invoice)/, /packing list/],
+  },
+  {
+    category: 'customs_delay',
+    patterns: [/customs/, /duty/, /duties/, /clearance/],
+  },
+  {
+    category: 'carrier_issue',
+    patterns: [/carrier/, /courier/, /driver/, /not in truck/, /wrong truck/],
+  },
+  {
+    category: 'booking_not_made',
+    patterns: [/not booked/, /no booking/, /booking not made/, /shiptify/],
+  },
+  {
+    category: 'transit_delay',
+    patterns: [/transit/, /in truck/, /delay(ed)?/, /late/, /held up/, /traffic/, /route/],
+  },
+  {
+    category: 'supplier_capacity',
+    patterns: [/capacity/, /overbook/, /factory/, /production (delay|issue)/, /understaff/],
+  },
+  {
+    category: 'transit_delay',
+    patterns: [/transferred to (the )?new po/, /po-e-\d+/i],
+  },
+];
+
+export function classifyReasonByKeywords(raw: string): ClassifiedReason {
+  const normalized = normalizeReason(raw);
+  for (const rule of KEYWORD_RULES) {
+    if (rule.patterns.some((p) => p.test(normalized))) {
+      return { category: rule.category, cleaned_summary: raw.trim() };
+    }
+  }
+  return { category: 'other', cleaned_summary: raw.trim() };
+}
