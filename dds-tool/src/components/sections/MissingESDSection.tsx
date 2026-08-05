@@ -75,9 +75,7 @@ export function MissingESDSection({ lines, weeksInRange, supplierFilterActive }:
 
       const pos: QualifyingPO[] = [];
       byPO.forEach((poLines, po) => {
-        // "ESD" here means the Shiptify booking date (edd) — line.esd is just an EGRD alias in
-        // real exports and is (almost) always populated, which would make this section always read 0.
-        const noESD = poLines.every((l) => !l.edd);
+        const noESD = poLines.every((l) => !l.esd);
         const totalQty = poLines.reduce((s, l) => s + l.cqty, 0);
         if (noESD && totalQty > 1) pos.push({ po, supplier: poLines[0].supplier, qty: totalQty });
       });

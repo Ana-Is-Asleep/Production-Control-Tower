@@ -50,15 +50,16 @@ export function parseLinesFromRows(rows: unknown[][]): PurchaseLine[] {
     : col('vendor code');
   const purchaserCol  = col('purchaser code') !== -1 ? col('purchaser code') : col('purchaser');
   const orderDateCol  = col('order date');
-  const esdCol        = col('expected shipping date') !== -1 ? col('expected shipping date') : col('expected receipt date');
   const eddCol        = col('expected delivery date');
-  // Real exports have two columns named "Actual Shipping Date" — the first one carries the
-  // real value, the second is consistently empty (verified against a live export).
-  const asdCol        = (() => {
-    const all: number[] = [];
-    headerRow.forEach((h, i) => { if (h.toLowerCase().trim() === 'actual shipping date') all.push(i); });
-    return all.length >= 1 ? all[0] : 15;
-  })();
+  // Real exports mislabel BOTH columns "Actual Shipping Date" — confirmed with the team that the
+  // FIRST one is actually the Expected Shipping Date (can be empty — not yet booked), and the
+  // SECOND is the real Actual Shipping Date (when it actually shipped).
+  const actualShippingDateCols: number[] = [];
+  headerRow.forEach((h, i) => { if (h.toLowerCase().trim() === 'actual shipping date') actualShippingDateCols.push(i); });
+  const esdCol = col('expected shipping date') !== -1
+    ? col('expected shipping date')
+    : (actualShippingDateCols[0] ?? col('expected receipt date'));
+  const asdCol = actualShippingDateCols.length >= 2 ? actualShippingDateCols[1] : (actualShippingDateCols[0] ?? 15);
 
   const results: PurchaseLine[] = [];
   for (let i = hIdx + 1; i < rows.length; i++) {

@@ -45,9 +45,7 @@ export function BacklogSection({ lines }: BacklogSectionProps) {
       const pgrd = poLines.find((l) => l.pgrd)?.pgrd;
       if (!pgrd) return;
       const supplier = poLines[0].supplier;
-      // "ESD" here means the Shiptify booking date (edd) — line.esd is just an EGRD alias in
-      // real exports and is (almost) always populated, which would make backlog never clear.
-      const esd = poLines.find((l) => l.edd)?.edd ?? null;
+      const esd = poLines.find((l) => l.esd)?.esd ?? null;
       const hasAnyASD = poLines.some((l) => l.asd);
       const isPast = weekOf(pgrd) < weekOf(today);
       const isFuture = weekOf(pgrd) > weekOf(today);

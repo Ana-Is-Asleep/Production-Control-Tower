@@ -19,11 +19,10 @@ export interface LineResult {
 
 // SOT (Shipped On Time), per line:
 // — on-time if the relevant ship date is on/before the threshold week.
-// — past PGRD week: compare ASD. future PGRD week: compare the Shiptify booking date (no booking
-//   yet ⇒ undetermined). Real BC exports have no distinct "Expected Shipping Date" column — the
-//   actual can-be-empty booking signal is "Expected Delivery Date" (line.edd), not line.esd, which
-//   is only ever a fallback alias of Expected Receipt Date and is therefore always populated.
-// — China suppliers: threshold is PGRD - 1 week instead of PGRD (for both ASD and booking-date comparisons).
+// — past PGRD week: compare ASD. future PGRD week: compare ESD (no ESD yet ⇒ undetermined).
+//   Real exports mislabel both ASD-lookalike columns "Actual Shipping Date" — bcParser.ts maps
+//   the first occurrence to line.esd (confirmed with the team) and the second to line.asd.
+// — China suppliers: threshold is PGRD - 1 week instead of PGRD (for both ASD and ESD comparisons).
 // A past-PGRD-week line with no ASD at all is a hard SOT failure (the week has closed, it never shipped).
 export function computeSOTLine(line: PurchaseLine, isChina: boolean, today: Date): boolean | null {
   if (!line.pgrd) return null;
@@ -32,8 +31,8 @@ export function computeSOTLine(line: PurchaseLine, isChina: boolean, today: Date
   const isFutureWeek = pgrdW > weekOf(today);
 
   if (isFutureWeek) {
-    if (!line.edd) return null; // not yet booked — undetermined, doesn't count either way
-    return weekOf(line.edd) <= thresholdW;
+    if (!line.esd) return null; // not yet booked — undetermined, doesn't count either way
+    return weekOf(line.esd) <= thresholdW;
   }
   if (!line.asd) return false; // week has closed with no shipment — SOT failure
   return weekOf(line.asd) <= thresholdW;
@@ -96,9 +95,8 @@ export function isBacklog(line: PurchaseLine, today: Date): boolean {
   return weekOf(line.pgrd) < weekOf(today) && !line.asd;
 }
 
-// Expected backlog: PGRD in the future but the Shiptify booking date (edd) is already booked
-// for a date AFTER PGRD.
+// Expected backlog: PGRD in the future but ESD already booked for a date AFTER PGRD.
 export function isExpectedBacklog(line: PurchaseLine, today: Date): boolean {
-  if (!line.pgrd || !line.edd) return false;
-  return weekOf(line.pgrd) > weekOf(today) && line.edd > line.pgrd;
+  if (!line.pgrd || !line.esd) return false;
+  return weekOf(line.pgrd) > weekOf(today) && line.esd > line.pgrd;
 }
