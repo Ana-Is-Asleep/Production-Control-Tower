@@ -44,9 +44,10 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
   const linesWithReasons = useMemo(() => lines.filter((l) => l.lossReasonCode.trim()), [lines]);
   const { classifications } = useReasonClassification(linesWithReasons.map((l) => l.lossReasonCode));
 
-  const { chartData, detailByWeekCategory, categoryOrder, categoryTotals, totalFlagged } = useMemo(() => {
+  const { chartData, detailByWeekCategory, categoryOrder, categoryTotals, totalFlagged, worstWeek } = useMemo(() => {
     const detail = new Map<string, WeekCategoryDetail>();
     const categoryTotals: Record<string, number> = {};
+    const weekTotals = new Map<string, number>(weeksInRange.map((w) => [w.label, 0]));
 
     for (const week of weeksInRange) {
       for (const cat of REASON_CATEGORIES) {
@@ -68,6 +69,7 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
       d.raw.push({ reason, supplier: line.supplier, po: line.po });
       detail.set(key, d);
       categoryTotals[category] = (categoryTotals[category] ?? 0) + 1;
+      weekTotals.set(week.label, (weekTotals.get(week.label) ?? 0) + 1);
       totalFlagged += 1;
     }
 
@@ -79,10 +81,13 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
       return row;
     });
 
-    return { chartData, detailByWeekCategory: detail, categoryOrder, categoryTotals, totalFlagged };
+    const worstWeekEntry = [...weekTotals.entries()].sort((a, b) => b[1] - a[1])[0];
+    const worstWeek = worstWeekEntry && worstWeekEntry[1] > 0 ? { label: worstWeekEntry[0], count: worstWeekEntry[1] } : null;
+
+    return { chartData, detailByWeekCategory: detail, categoryOrder, categoryTotals, totalFlagged, worstWeek };
   }, [linesWithReasons, weeksInRange, classifications]);
 
-  const topCategory = categoryOrder.find((c) => (categoryTotals[c] ?? 0) > 0);
+  const topCategories = categoryOrder.filter((c) => (categoryTotals[c] ?? 0) > 0).slice(0, 3);
   const selectedDetail = selected ? detailByWeekCategory.get(`${selected.week}__${selected.category}`) : null;
 
   return (
@@ -99,14 +104,25 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
         {totalFlagged === 0 ? (
           <p className="text-xs text-[#b5aaa5] mt-2">No flagged loss reasons in range</p>
         ) : (
-          <div className="mt-1">
-            <p className="kpi-number font-extrabold text-3xl leading-none text-[#403833]">{totalFlagged}</p>
-            <p className="text-[10px] text-[#9c9794] mt-1">POs with a loss reason this range</p>
-            {topCategory && (
-              <p className="text-xs mt-2">
-                <span className="inline-block w-2 h-2 rounded-full mr-1.5" style={{ background: CATEGORY_PALETTE[topCategory] }} />
-                <span className="font-semibold text-[#403833]">{topCategory.replace(/_/g, ' ')}</span>
-                <span className="text-[#9c9794]"> — top cause ({categoryTotals[topCategory]})</span>
+          <div className="mt-1 flex flex-col gap-1.5">
+            <div className="flex items-baseline gap-2">
+              <p className="kpi-number font-extrabold text-3xl leading-none text-[#403833]">{totalFlagged}</p>
+              <p className="text-[10px] text-[#9c9794]">flagged POs this range</p>
+            </div>
+            <div className="space-y-1 mt-0.5">
+              {topCategories.map((c) => (
+                <div key={c} className="flex items-center justify-between text-xs">
+                  <span className="flex items-center min-w-0">
+                    <span className="inline-block w-2 h-2 rounded-full mr-1.5 shrink-0" style={{ background: CATEGORY_PALETTE[c] }} />
+                    <span className="font-medium text-[#403833] truncate">{c.replace(/_/g, ' ')}</span>
+                  </span>
+                  <span className="font-semibold text-[#7b7571] shrink-0 ml-2">{categoryTotals[c]}</span>
+                </div>
+              ))}
+            </div>
+            {worstWeek && (
+              <p className="text-[10px] text-[#9c9794] pt-1 border-t border-[#f4f1ef]">
+                Worst week: <span className="font-semibold text-[#403833]">{worstWeek.label}</span> ({worstWeek.count})
               </p>
             )}
           </div>
