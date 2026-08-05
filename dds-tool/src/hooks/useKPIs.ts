@@ -49,9 +49,10 @@ export function useKPIs(lines: PurchaseLine[], weeksInRange: WeekInRange[], isCh
       const totalPOs = new Set(weekLines.map(l => l.po)).size;
 
       // shipped subset: PO has at least one line whose relevant date falls in this same PGRD week
+      // (future weeks use edd — the real Shiptify booking date; l.esd is just an EGRD alias)
       const shippedPOSet = new Set<string>();
       weekLines.forEach(l => {
-        const relevant = isFuture ? l.esd : l.asd;
+        const relevant = isFuture ? l.edd : l.asd;
         if (relevant && getISOWeek(relevant) === week && getISOWeekYear(relevant) === year) {
           shippedPOSet.add(l.po);
         }
@@ -95,7 +96,7 @@ export function useKPIs(lines: PurchaseLine[], weeksInRange: WeekInRange[], isCh
         isChina: isChinaSupplier(first.vendorCode),
         pgrd: first.pgrd,
         asd: poLines.find(l => l.asd)?.asd ?? null,
-        esd: poLines.find(l => l.esd)?.esd ?? null,
+        esd: poLines.find(l => l.edd)?.edd ?? null,
         egrd: poLines.find(l => l.egrd)?.egrd ?? null,
         // PO-level result = its lines' Yes/No average rounded to a pass/fail (matches the PO-level % definition)
         sot: sotVals.length ? sotVals.filter(Boolean).length / sotVals.length >= 0.5 : null,
