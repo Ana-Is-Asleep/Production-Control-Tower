@@ -27,6 +27,17 @@ export function normalizeReason(raw: string): string {
   return raw.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
+// Filters out junk loss-reason text that doesn't actually describe a delay/issue — bare numbers,
+// single characters, or other noise from the BC export — so it never reaches the AI classifier
+// and never gets force-bucketed into "other", inflating the Root Cause counts.
+export function isSubstantiveReason(raw: string): boolean {
+  const normalized = normalizeReason(raw);
+  if (normalized.length < 4) return false;
+  if (/^\d+([.,]\d+)?$/.test(normalized)) return false; // bare number, e.g. "30"
+  if (/^[^a-z]*$/.test(normalized)) return false; // no letters at all (punctuation/digits only)
+  return true;
+}
+
 // Basic string hash (djb2 variant) — no crypto dependency needed, this is only a cache key.
 export function hashReason(raw: string): string {
   const normalized = normalizeReason(raw);

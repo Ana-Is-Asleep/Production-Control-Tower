@@ -72,7 +72,7 @@ export function Dashboard() {
       {hasData && (
         <div className="page-enter flex-1 min-h-0 flex flex-col">
           <GlobalFilterBar filters={filters} onChange={setFilters} allSuppliers={allSuppliers} />
-          <div className="px-4 py-3 flex-1 min-h-0 flex flex-col gap-3">
+          <div className="px-4 py-3 flex-1 min-h-0 flex flex-col gap-3 w-full max-w-[1400px] mx-auto">
             <div className="flex-[5] min-h-0">
               <TopGraphSection
                 points={kpis.topGraph}

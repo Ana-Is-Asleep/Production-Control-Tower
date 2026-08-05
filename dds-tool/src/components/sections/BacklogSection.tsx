@@ -110,30 +110,32 @@ export function BacklogSection({ lines }: BacklogSectionProps) {
     <>
       <div
         onClick={() => setOpen(true)}
-        className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col justify-between h-full"
+        className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full"
         style={{ boxShadow: 'var(--shadow-card)' }}
       >
-        <div className="flex items-start justify-between mb-2">
+        <div className="flex items-start justify-between shrink-0">
           <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Backlog</p>
           <p className="text-[10px] text-brand font-semibold">Drill down →</p>
         </div>
-        <div className="grid grid-cols-3 gap-2">
-          {([
-            { key: 'recent' as const, label: 'Recent', color: 'text-warn' },
-            { key: 'accumulated' as const, label: 'Accumulated', color: 'text-fail' },
-            { key: 'expected' as const, label: 'Expected', color: 'text-brand' },
-          ]).map((c) => (
-            <button
-              key={c.key}
-              onClick={(e) => { e.stopPropagation(); openGroup(c.key); }}
-              className="text-left rounded-lg px-2 py-1.5 hover:bg-[#f9f7f6] transition-colors"
-            >
-              <p className="text-[9px] uppercase tracking-widest text-[#9c9794] truncate">{c.label}</p>
-              <p className={`kpi-number font-extrabold text-2xl leading-none mt-0.5 ${c.color}`}>{groupData[c.key].length}</p>
-            </button>
-          ))}
+        <div className="flex-1 flex flex-col justify-center">
+          <div className="grid grid-cols-3 gap-2">
+            {([
+              { key: 'recent' as const, label: 'Recent', color: 'text-warn' },
+              { key: 'accumulated' as const, label: 'Accumulated', color: 'text-fail' },
+              { key: 'expected' as const, label: 'Expected', color: 'text-brand' },
+            ]).map((c) => (
+              <button
+                key={c.key}
+                onClick={(e) => { e.stopPropagation(); openGroup(c.key); }}
+                className="text-left rounded-lg px-2 py-1.5 hover:bg-[#f9f7f6] transition-colors"
+              >
+                <p className="text-[9px] uppercase tracking-widest text-[#9c9794] truncate">{c.label}</p>
+                <p className={`kpi-number font-extrabold text-2xl leading-none mt-0.5 ${c.color}`}>{groupData[c.key].length}</p>
+              </button>
+            ))}
+          </div>
         </div>
-        <p className="text-[11px] text-[#9c9794] mt-2 pt-2 border-t border-[#f4f1ef]">
+        <p className="text-[11px] text-[#9c9794] pt-2 border-t border-[#f4f1ef] shrink-0">
           <span className="font-semibold text-fail">{noEsdCount}</span> with no expectation to clear
         </p>
       </div>

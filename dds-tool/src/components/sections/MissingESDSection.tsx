@@ -110,14 +110,14 @@ export function MissingESDSection({ lines, weeksInRange, supplierFilterActive }:
     <>
       <div
         onClick={() => setOpen(true)}
-        className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col justify-between h-full"
+        className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full"
         style={{ boxShadow: 'var(--shadow-card)' }}
       >
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between shrink-0">
           <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Missing ESD</p>
           <p className="text-[10px] text-brand font-semibold">Drill down →</p>
         </div>
-        <div className="mt-1">
+        <div className="flex-1 flex flex-col justify-center">
           <p className={`kpi-number font-extrabold text-3xl leading-none ${totalMissing === 0 ? 'text-pass' : 'text-fail'}`}>{totalMissing}</p>
           <p className="text-[10px] text-[#9c9794] mt-1">POs missing ESD (qty &gt; 1) across range</p>
           {worstWeek && worstWeek.pos.length > 0 && (

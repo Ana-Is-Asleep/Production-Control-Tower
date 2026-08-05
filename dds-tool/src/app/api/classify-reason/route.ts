@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import {
-  REASON_CATEGORIES, hashReason, normalizeReason,
+  REASON_CATEGORIES, hashReason, normalizeReason, isSubstantiveReason,
   type ClassifiedReason, type ReasonCategory,
 } from '../../../lib/reasonClassification';
 
@@ -143,7 +143,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ results: [] });
     }
 
-    const uniqueRaw = [...new Set(reasons.map((r) => r.trim()).filter(Boolean))];
+    // Junk (bare numbers, single characters, etc.) never reaches the model — it's not a real
+    // loss reason and shouldn't cost an API call or get force-bucketed into "other".
+    const uniqueRaw = [...new Set(reasons.map((r) => r.trim()).filter(isSubstantiveReason))];
     const hashOf = new Map(uniqueRaw.map((r) => [r, hashReason(r)]));
 
     // 1. check Airtable cache, then in-memory fallback

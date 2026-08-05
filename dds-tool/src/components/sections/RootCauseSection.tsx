@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { SlideOver } from '../shared/SlideOver';
 import { useReasonClassification } from '../../hooks/useReasonClassification';
-import { REASON_CATEGORIES, type ReasonCategory } from '../../lib/reasonClassification';
+import { REASON_CATEGORIES, isSubstantiveReason, type ReasonCategory } from '../../lib/reasonClassification';
 import { getISOWeek, getISOWeekYear } from '../../lib/dateUtils';
 import { COLOR } from '../../lib/statusColors';
 import type { WeekInRange } from '../../hooks/useFilters';
@@ -41,7 +41,7 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<{ week: string; category: ReasonCategory } | null>(null);
 
-  const linesWithReasons = useMemo(() => lines.filter((l) => l.lossReasonCode.trim()), [lines]);
+  const linesWithReasons = useMemo(() => lines.filter((l) => isSubstantiveReason(l.lossReasonCode)), [lines]);
   const { classifications } = useReasonClassification(linesWithReasons.map((l) => l.lossReasonCode));
 
   const { chartData, detailByWeekCategory, categoryOrder, categoryTotals, totalFlagged, worstWeek } = useMemo(() => {
@@ -94,17 +94,19 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
     <>
       <div
         onClick={() => setOpen(true)}
-        className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col justify-between h-full"
+        className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full"
         style={{ boxShadow: 'var(--shadow-card)' }}
       >
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between shrink-0">
           <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Root Cause</p>
           <p className="text-[10px] text-brand font-semibold">Drill down →</p>
         </div>
         {totalFlagged === 0 ? (
-          <p className="text-xs text-[#b5aaa5] mt-2">No flagged loss reasons in range</p>
+          <div className="flex-1 flex items-center">
+            <p className="text-xs text-[#b5aaa5]">No flagged loss reasons in range</p>
+          </div>
         ) : (
-          <div className="mt-1 flex flex-col gap-1.5">
+          <div className="flex-1 flex flex-col justify-center gap-1.5">
             <div className="flex items-baseline gap-2">
               <p className="kpi-number font-extrabold text-3xl leading-none text-[#403833]">{totalFlagged}</p>
               <p className="text-[10px] text-[#9c9794]">flagged POs this range</p>

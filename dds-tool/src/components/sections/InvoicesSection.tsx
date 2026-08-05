@@ -50,21 +50,25 @@ export function InvoicesSection({ invoices, supplierFilter }: InvoicesSectionPro
 
   return (
     <>
-      <div onClick={() => setOpen(true)} className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-4 cursor-pointer h-full" style={{ boxShadow: 'var(--shadow-card)' }}>
-        <div className="flex items-center justify-between mb-2">
+      <div onClick={() => setOpen(true)} className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-4 cursor-pointer h-full flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
+        <div className="flex items-center justify-between shrink-0">
           <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Invoices</p>
           <p className="text-[10px] text-brand font-semibold">Drill down →</p>
         </div>
         {invoices.length === 0 ? (
-          <p className="text-xs text-[#b5aaa5]">Upload invoice file to see data</p>
+          <div className="flex-1 flex items-center">
+            <p className="text-xs text-[#b5aaa5]">Upload invoice file to see data</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-4 gap-3">
-            {CARDS.map((c) => (
-              <div key={c.id}>
-                <p className="text-[10px] text-[#9c9794] truncate">{c.label}</p>
-                <p className={`kpi-number font-extrabold text-2xl leading-none ${c.color}`}>{c.rows.length}</p>
-              </div>
-            ))}
+          <div className="flex-1 flex items-center">
+            <div className="grid grid-cols-4 gap-3 w-full">
+              {CARDS.map((c) => (
+                <div key={c.id}>
+                  <p className="text-[10px] text-[#9c9794] truncate">{c.label}</p>
+                  <p className={`kpi-number font-extrabold text-2xl leading-none ${c.color}`}>{c.rows.length}</p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
