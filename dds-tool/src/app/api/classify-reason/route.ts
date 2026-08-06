@@ -97,7 +97,11 @@ mattress/bed/furniture supply chain (emma Sleep, P2W EU D2C). The text is often 
 Categories and what belongs in each:
 - material_shortage: any wording about not receiving, only partially receiving, or being short on
   quantity/units/pieces/raw material — e.g. "we did not received this material", "only received 120 units
-  instead of 252", "we have not received this item", "20 unit no received", missing TPE (a material).
+  instead of 252", "we have not received this item", "20 unit no received", missing TPE (a material). ALSO
+  includes "delay in delivering <component>" (e.g. "delay in delivering covers, PO-E-52843") — this means the
+  supplier failed to supply/produce that material component, it is NOT a transit_delay just because the word
+  "delay" appears. A trailing PO number in the text (e.g. "PO-E-52843") is just cross-referencing which order
+  was affected, not a separate signal — ignore it for classification purposes.
 - quality_issue: physical damage, defects, or broken/poor-condition goods — e.g. "3 units with boxes damaged",
   "damaged pallet arrives", "les palettes en mauvais état", theft/robbery of goods in transit.
 - documentation_delay: missing or incorrect paperwork, labels, or identification — e.g. "without supplier labels",
@@ -109,8 +113,9 @@ Categories and what belongs in each:
 - truck_rounding_issue: the shipment couldn't fit / there wasn't enough space on the truck — e.g. "lack of space
   in the truck", "not enough space", "truck full" — this is a loading/capacity-fit problem, distinct from a
   carrier's own fault (carrier_issue) or a supplier's production capacity (supplier_capacity).
-- transit_delay: the shipment is late/delayed while in transit, for reasons not covered by a more specific
-  category above (traffic, route issues, generic lateness).
+- transit_delay: the shipment itself is late/delayed while physically in transit (already shipped, en route),
+  for reasons not covered by a more specific category above — do NOT use this just because the word "delay"
+  appears; check first whether it's actually about a material/component not being ready (material_shortage).
 - supplier_capacity: "over capacity" — the PO quantity placed with the supplier exceeds what they can actually
   produce/handle — or general factory/staffing capacity constraints, overbooking.
 - other: use ONLY when the text genuinely doesn't describe a supply-chain delay/issue (e.g. an unrelated

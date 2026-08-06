@@ -63,6 +63,11 @@ const KEYWORD_RULES: { category: ReasonCategory; patterns: RegExp[] }[] = [
       /not receiv/, /no receiv/, /haven'?t receiv/, /didn'?t receiv/, /did not receiv/,
       /only received/, /instead of/, /missing (unit|item|piece|box|pallet)/, /short(age)?/, /we do not receiv/,
       /\btpe\b/,
+      // "delay in delivering <component>" is the supplier failing to supply/produce that material —
+      // not a shipping/transit delay, even though the word "delay" is present. A trailing PO number
+      // (e.g. "PO-E-52843") is just cross-referencing which order, not a separate signal.
+      /delay.*deliver(ing|y)?.*(cover|foam|spring|fabric|material|component|zipper|base|frame)/,
+      /(cover|foam|spring|fabric|material|component|zipper|base|frame).*delay/,
     ],
   },
   {
@@ -92,10 +97,6 @@ const KEYWORD_RULES: { category: ReasonCategory; patterns: RegExp[] }[] = [
   {
     category: 'supplier_capacity',
     patterns: [/over ?capacity/, /capacity/, /overbook/, /factory/, /production (delay|issue)/, /understaff/],
-  },
-  {
-    category: 'transit_delay',
-    patterns: [/transferred to (the )?new po/, /po-e-\d+/i],
   },
 ];
 
