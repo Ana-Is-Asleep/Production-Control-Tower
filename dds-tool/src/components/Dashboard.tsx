@@ -39,7 +39,7 @@ export function Dashboard() {
   const hasData = allLines.length > 0;
 
   return (
-    <div className="h-screen w-full bg-[#f5f2ee] flex flex-col overflow-hidden">
+    <div className="h-screen w-full bg-[#f5f2ee] flex flex-col overflow-y-auto">
       <header className="bg-white border-b border-[#e9e3df] px-5 py-2.5 flex items-center gap-3 shrink-0">
         <span className="font-bold text-brand text-xl shrink-0 tracking-tight">emma<span className="text-[#403833]">.</span></span>
         <span className="text-[#d5cdc6]">|</span>
@@ -72,8 +72,8 @@ export function Dashboard() {
       {hasData && (
         <div className="page-enter flex-1 min-h-0 flex flex-col">
           <GlobalFilterBar filters={filters} onChange={setFilters} allSuppliers={allSuppliers} />
-          <div className="px-4 py-3 flex-1 min-h-0 flex flex-col gap-3 w-full max-w-[1400px] mx-auto">
-            <div className="flex-[5] min-h-0">
+          <div className="px-4 py-3 flex-1 flex flex-col gap-3 w-full max-w-[1400px] mx-auto">
+            <div className="flex-[5] min-h-[280px]">
               <TopGraphSection
                 points={kpis.topGraph}
                 deepDiveRows={kpis.deepDiveRows}
@@ -81,12 +81,12 @@ export function Dashboard() {
                 otifTarget={kpis.otifTarget}
               />
             </div>
-            <div className="flex-[3] min-h-0 grid grid-cols-3 gap-3">
+            <div className="flex-[3] min-h-[180px] grid grid-cols-3 gap-3">
               <RootCauseSection lines={weekRangeLines} weeksInRange={weeksInRange} />
               <MissingESDSection lines={weekRangeLines} weeksInRange={weeksInRange} supplierFilterActive={filters.suppliers.length > 0} />
               <BacklogSection lines={filteredLines} />
             </div>
-            <div className="flex-[2] min-h-0 grid grid-cols-2 gap-3">
+            <div className="flex-[2] min-h-[140px] grid grid-cols-2 gap-3">
               <InvoicesSection invoices={invoices} supplierFilter={filters.suppliers} />
               <LeadTimeSection lines={weekRangeLines} />
             </div>
