@@ -49,8 +49,12 @@ function applyFilters(lines: PurchaseLine[], filters: ActiveFilters) {
 export function useFilters(rawLines: PurchaseLine[], initialFilters?: ActiveFilters) {
   const [filters, setFilters] = useState<ActiveFilters>(initialFilters ?? DEFAULT_FILTERS);
 
-  // drop anything with PGRD before 2026 before it reaches any section/calculation
-  const allLines = useMemo(() => rawLines.filter(l => l.pgrd && l.pgrd >= DATA_FLOOR), [rawLines]);
+  // drop anything with PGRD before 2026, and Comps/Other SKUs (out of scope for this version),
+  // before it reaches any section/calculation
+  const allLines = useMemo(
+    () => rawLines.filter(l => l.pgrd && l.pgrd >= DATA_FLOOR && categorizeSKU(l.sku) !== 'Comps/Other'),
+    [rawLines]
+  );
 
   const { week: curWeek, year: curYear } = useMemo(() => currentISOWeek(), []);
 
