@@ -1,9 +1,11 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { DataTable, type Column } from '../shared/DataTable';
 import { SlideOver } from '../shared/SlideOver';
 import { getISOWeek, getISOWeekYear } from '../../lib/dateUtils';
+import { COLOR } from '../../lib/statusColors';
 import type { WeekInRange } from '../../hooks/useFilters';
 import type { PurchaseLine } from '../../types';
 
@@ -85,10 +87,7 @@ export function MissingESDSection({ lines, weeksInRange, supplierFilterActive }:
   }, [lines, weeksInRange]);
 
   const totalMissing = useMemo(() => rows.reduce((s, r) => s + r.pos.length, 0), [rows]);
-  const worstWeek = useMemo(
-    () => [...rows].sort((a, b) => b.pos.length - a.pos.length)[0] ?? null,
-    [rows]
-  );
+  const chartData = useMemo(() => rows.map((r) => ({ weekLabel: r.weekLabel, count: r.pos.length, row: r })), [rows]);
 
   const columns: Column<WeekRow>[] = [
     { key: 'week', header: 'PGRD Week', render: (r) => r.weekLabel },
@@ -110,21 +109,42 @@ export function MissingESDSection({ lines, weeksInRange, supplierFilterActive }:
     <>
       <div
         onClick={() => setOpen(true)}
-        className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full"
+        className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full overflow-hidden"
         style={{ boxShadow: 'var(--shadow-card)' }}
       >
         <div className="flex items-start justify-between shrink-0">
-          <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Missing ESD</p>
+          <div className="flex items-baseline gap-2">
+            <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Missing ESD</p>
+            <span className={`text-xs font-semibold ${totalMissing === 0 ? 'text-pass' : 'text-[#403833]'}`}>{totalMissing}</span>
+          </div>
           <p className="text-[10px] text-brand font-semibold">Drill down →</p>
         </div>
-        <div className="flex-1 flex flex-col justify-center">
-          <p className={`kpi-number font-extrabold text-3xl leading-none ${totalMissing === 0 ? 'text-pass' : 'text-fail'}`}>{totalMissing}</p>
-          <p className="text-[10px] text-[#9c9794] mt-1">POs missing ESD (qty &gt; 1) across range</p>
-          {worstWeek && worstWeek.pos.length > 0 && (
-            <p className="text-xs mt-2 text-[#7b7571]">
-              Worst week: <span className="font-semibold text-[#403833]">{worstWeek.weekLabel}</span> ({worstWeek.pos.length})
-            </p>
-          )}
+        <div className="flex-1 min-h-0 mt-1">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+              <XAxis dataKey="weekLabel" tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} interval={0} />
+              <YAxis tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} allowDecimals={false} width={20} />
+              <Tooltip
+                contentStyle={{ background: COLOR.navy, border: 'none', borderRadius: 8, fontSize: 11, padding: '6px 10px' }}
+                labelStyle={{ color: COLOR.brandSoft, fontWeight: 700 }}
+                itemStyle={{ color: '#f9f7f6' }}
+                formatter={(value) => [`${value} POs`, 'Missing ESD']}
+              />
+              <Bar
+                dataKey="count"
+                radius={[2, 2, 0, 0]}
+                onClick={(data: unknown) => {
+                  const row = (data as { payload?: { row?: WeekRow } } | undefined)?.payload?.row;
+                  if (row) { setDetailWeek(row); setOpen(true); }
+                }}
+                style={{ cursor: 'pointer' }}
+              >
+                {chartData.map((d) => (
+                  <Cell key={d.weekLabel} fill={d.count > 0 ? COLOR.fail : COLOR.border} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 

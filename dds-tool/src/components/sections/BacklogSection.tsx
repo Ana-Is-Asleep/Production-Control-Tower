@@ -110,7 +110,7 @@ export function BacklogSection({ lines }: BacklogSectionProps) {
     <>
       <div
         onClick={() => setOpen(true)}
-        className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full"
+        className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full overflow-hidden"
         style={{ boxShadow: 'var(--shadow-card)' }}
       >
         <div className="flex items-start justify-between shrink-0">

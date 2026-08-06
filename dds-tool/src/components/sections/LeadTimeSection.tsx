@@ -71,7 +71,7 @@ export function LeadTimeSection({ lines }: LeadTimeSectionProps) {
 
   return (
     <>
-      <div onClick={() => setOpen(true)} className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-4 cursor-pointer flex items-center justify-between h-full" style={{ boxShadow: 'var(--shadow-card)' }}>
+      <div onClick={() => setOpen(true)} className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-4 cursor-pointer flex items-center justify-between h-full overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
         <div>
           <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-1">Production Lead Time</p>
           <p className={`kpi-number font-extrabold text-3xl leading-none ${summary.avgProductionLT !== null && summary.avgProductionLT <= summary.avgAgreedLT ? 'text-pass' : 'text-fail'}`}>

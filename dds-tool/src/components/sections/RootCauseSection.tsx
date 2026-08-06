@@ -44,10 +44,9 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
   const linesWithReasons = useMemo(() => lines.filter((l) => isSubstantiveReason(l.lossReasonCode)), [lines]);
   const { classifications } = useReasonClassification(linesWithReasons.map((l) => l.lossReasonCode));
 
-  const { chartData, detailByWeekCategory, categoryOrder, categoryTotals, totalFlagged, worstWeek } = useMemo(() => {
+  const { chartData, detailByWeekCategory, categoryOrder, totalFlagged } = useMemo(() => {
     const detail = new Map<string, WeekCategoryDetail>();
     const categoryTotals: Record<string, number> = {};
-    const weekTotals = new Map<string, number>(weeksInRange.map((w) => [w.label, 0]));
 
     for (const week of weeksInRange) {
       for (const cat of REASON_CATEGORIES) {
@@ -69,7 +68,6 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
       d.raw.push({ reason, supplier: line.supplier, po: line.po });
       detail.set(key, d);
       categoryTotals[category] = (categoryTotals[category] ?? 0) + 1;
-      weekTotals.set(week.label, (weekTotals.get(week.label) ?? 0) + 1);
       totalFlagged += 1;
     }
 
@@ -81,24 +79,23 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
       return row;
     });
 
-    const worstWeekEntry = [...weekTotals.entries()].sort((a, b) => b[1] - a[1])[0];
-    const worstWeek = worstWeekEntry && worstWeekEntry[1] > 0 ? { label: worstWeekEntry[0], count: worstWeekEntry[1] } : null;
-
-    return { chartData, detailByWeekCategory: detail, categoryOrder, categoryTotals, totalFlagged, worstWeek };
+    return { chartData, detailByWeekCategory: detail, categoryOrder, totalFlagged };
   }, [linesWithReasons, weeksInRange, classifications]);
 
-  const topCategories = categoryOrder.filter((c) => (categoryTotals[c] ?? 0) > 0).slice(0, 3);
   const selectedDetail = selected ? detailByWeekCategory.get(`${selected.week}__${selected.category}`) : null;
 
   return (
     <>
       <div
         onClick={() => setOpen(true)}
-        className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full"
+        className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full overflow-hidden"
         style={{ boxShadow: 'var(--shadow-card)' }}
       >
         <div className="flex items-start justify-between shrink-0">
-          <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Root Cause</p>
+          <div className="flex items-baseline gap-2">
+            <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Root Cause</p>
+            {totalFlagged > 0 && <span className="text-xs font-semibold text-[#403833]">{totalFlagged}</span>}
+          </div>
           <p className="text-[10px] text-brand font-semibold">Drill down →</p>
         </div>
         {totalFlagged === 0 ? (
@@ -106,27 +103,36 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
             <p className="text-xs text-[#b5aaa5]">No flagged loss reasons in range</p>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col justify-center gap-1.5">
-            <div className="flex items-baseline gap-2">
-              <p className="kpi-number font-extrabold text-3xl leading-none text-[#403833]">{totalFlagged}</p>
-              <p className="text-[10px] text-[#9c9794]">flagged POs this range</p>
-            </div>
-            <div className="space-y-1 mt-0.5">
-              {topCategories.map((c) => (
-                <div key={c} className="flex items-center justify-between text-xs">
-                  <span className="flex items-center min-w-0">
-                    <span className="inline-block w-2 h-2 rounded-full mr-1.5 shrink-0" style={{ background: CATEGORY_PALETTE[c] }} />
-                    <span className="font-medium text-[#403833] truncate">{c.replace(/_/g, ' ')}</span>
-                  </span>
-                  <span className="font-semibold text-[#7b7571] shrink-0 ml-2">{categoryTotals[c]}</span>
-                </div>
-              ))}
-            </div>
-            {worstWeek && (
-              <p className="text-[10px] text-[#9c9794] pt-1 border-t border-[#f4f1ef]">
-                Worst week: <span className="font-semibold text-[#403833]">{worstWeek.label}</span> ({worstWeek.count})
-              </p>
-            )}
+          <div className="flex-1 min-h-0 mt-1">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                <XAxis dataKey="weekLabel" tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} interval={0} />
+                <YAxis tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} allowDecimals={false} width={20} />
+                <Tooltip
+                  contentStyle={{ background: COLOR.navy, border: 'none', borderRadius: 8, fontSize: 11, padding: '8px 10px', maxWidth: 260 }}
+                  labelStyle={{ color: COLOR.brandSoft, fontWeight: 700 }}
+                  itemStyle={{ color: '#f9f7f6' }}
+                  formatter={(value, name) => {
+                    const cat = String(name) as ReasonCategory;
+                    return [`${value} POs`, cat.replace(/_/g, ' ')];
+                  }}
+                />
+                {categoryOrder.map((cat) => (
+                  <Bar
+                    key={cat}
+                    dataKey={cat}
+                    stackId="reasons"
+                    fill={CATEGORY_PALETTE[cat]}
+                    fillOpacity={0.85}
+                    onClick={(data: unknown) => {
+                      const week = (data as { payload?: { weekLabel?: string } } | undefined)?.payload?.weekLabel;
+                      if (week) { setSelected({ week, category: cat }); setOpen(true); }
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         )}
       </div>
