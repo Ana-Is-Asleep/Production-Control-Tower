@@ -8,6 +8,7 @@ export const REASON_CATEGORIES = [
   'booking_not_made',
   'carrier_issue',
   'customs_delay',
+  'truck_rounding_issue',
   'other',
 ] as const;
 
@@ -61,7 +62,12 @@ const KEYWORD_RULES: { category: ReasonCategory; patterns: RegExp[] }[] = [
     patterns: [
       /not receiv/, /no receiv/, /haven'?t receiv/, /didn'?t receiv/, /did not receiv/,
       /only received/, /instead of/, /missing (unit|item|piece|box|pallet)/, /short(age)?/, /we do not receiv/,
+      /\btpe\b/,
     ],
+  },
+  {
+    category: 'truck_rounding_issue',
+    patterns: [/lack of space/, /no space in (the )?truck/, /not enough space/, /truck.*(full|space)/, /truck rounding/, /space.*truck/],
   },
   {
     category: 'documentation_delay',
@@ -85,7 +91,7 @@ const KEYWORD_RULES: { category: ReasonCategory; patterns: RegExp[] }[] = [
   },
   {
     category: 'supplier_capacity',
-    patterns: [/capacity/, /overbook/, /factory/, /production (delay|issue)/, /understaff/],
+    patterns: [/over ?capacity/, /capacity/, /overbook/, /factory/, /production (delay|issue)/, /understaff/],
   },
   {
     category: 'transit_delay',

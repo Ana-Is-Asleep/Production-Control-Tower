@@ -24,6 +24,7 @@ const CATEGORY_PALETTE: Record<ReasonCategory, string> = {
   booking_not_made: '#8A8A8A',
   carrier_issue: '#0891b2',
   customs_delay: '#a855f7',
+  truck_rounding_issue: '#c026d3',
   other: '#9c9794',
 };
 
@@ -35,6 +36,32 @@ interface WeekCategoryDetail {
 
 function emptyDetail(): WeekCategoryDetail {
   return { count: 0, suppliers: new Map(), raw: [] };
+}
+
+interface TooltipPayloadEntry {
+  dataKey?: string;
+  value?: number;
+  color?: string;
+}
+
+// Only lists categories that actually have a count for this week — with 9 possible categories,
+// showing every zero entry made the tooltip tall/wide enough to spill past the compact card.
+function NonZeroTooltip({ active, payload, label }: { active?: boolean; payload?: TooltipPayloadEntry[]; label?: string }) {
+  if (!active || !payload?.length) return null;
+  const present = payload.filter((p) => (p.value ?? 0) > 0);
+  if (present.length === 0) return null;
+
+  return (
+    <div style={{ background: COLOR.navy, borderRadius: 8, fontSize: 11, padding: '8px 10px', maxWidth: 220 }}>
+      <p style={{ color: COLOR.brandSoft, fontWeight: 700, margin: 0, marginBottom: 4 }}>{label}</p>
+      {present.map((p) => (
+        <p key={p.dataKey} style={{ color: '#f9f7f6', margin: 0 }}>
+          <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 4, background: p.color, marginRight: 6 }} />
+          {String(p.dataKey).replace(/_/g, ' ')}: {p.value} POs
+        </p>
+      ))}
+    </div>
+  );
 }
 
 export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps) {
@@ -108,15 +135,7 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
               <BarChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
                 <XAxis dataKey="weekLabel" tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} interval={0} />
                 <YAxis tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} allowDecimals={false} width={20} />
-                <Tooltip
-                  contentStyle={{ background: COLOR.navy, border: 'none', borderRadius: 8, fontSize: 11, padding: '8px 10px', maxWidth: 260 }}
-                  labelStyle={{ color: COLOR.brandSoft, fontWeight: 700 }}
-                  itemStyle={{ color: '#f9f7f6' }}
-                  formatter={(value, name) => {
-                    const cat = String(name) as ReasonCategory;
-                    return [`${value} POs`, cat.replace(/_/g, ' ')];
-                  }}
-                />
+                <Tooltip content={<NonZeroTooltip />} allowEscapeViewBox={{ x: false, y: false }} wrapperStyle={{ zIndex: 60 }} />
                 {categoryOrder.map((cat) => (
                   <Bar
                     key={cat}
@@ -145,15 +164,7 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
                 <CartesianGrid strokeDasharray="2 4" stroke={COLOR.border} vertical={false} />
                 <XAxis dataKey="weekLabel" tick={{ fill: COLOR.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: COLOR.muted, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip
-                  contentStyle={{ background: COLOR.navy, border: 'none', borderRadius: 8, fontSize: 11, padding: '8px 10px', maxWidth: 260 }}
-                  labelStyle={{ color: COLOR.brandSoft, fontWeight: 700 }}
-                  itemStyle={{ color: '#f9f7f6' }}
-                  formatter={(value, name) => {
-                    const cat = String(name) as ReasonCategory;
-                    return [`${value} POs`, cat.replace(/_/g, ' ')];
-                  }}
-                />
+                <Tooltip content={<NonZeroTooltip />} />
                 <Legend
                   verticalAlign="top" align="right" iconSize={8}
                   formatter={(v) => <span style={{ color: COLOR.muted, fontSize: 11 }}>{String(v).replace(/_/g, ' ')}</span>}

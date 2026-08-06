@@ -96,8 +96,8 @@ mattress/bed/furniture supply chain (emma Sleep, P2W EU D2C). The text is often 
 
 Categories and what belongs in each:
 - material_shortage: any wording about not receiving, only partially receiving, or being short on
-  quantity/units/pieces — e.g. "we did not received this material", "only received 120 units instead of 252",
-  "we have not received this item", "20 unit no received".
+  quantity/units/pieces/raw material — e.g. "we did not received this material", "only received 120 units
+  instead of 252", "we have not received this item", "20 unit no received", missing TPE (a material).
 - quality_issue: physical damage, defects, or broken/poor-condition goods — e.g. "3 units with boxes damaged",
   "damaged pallet arrives", "les palettes en mauvais état", theft/robbery of goods in transit.
 - documentation_delay: missing or incorrect paperwork, labels, or identification — e.g. "without supplier labels",
@@ -106,11 +106,16 @@ Categories and what belongs in each:
 - carrier_issue: a problem caused by the carrier/courier/driver specifically (wrong truck, carrier error) —
   distinct from generic transit delay.
 - booking_not_made: no Shiptify/carrier booking was made for the shipment at all.
+- truck_rounding_issue: the shipment couldn't fit / there wasn't enough space on the truck — e.g. "lack of space
+  in the truck", "not enough space", "truck full" — this is a loading/capacity-fit problem, distinct from a
+  carrier's own fault (carrier_issue) or a supplier's production capacity (supplier_capacity).
 - transit_delay: the shipment is late/delayed while in transit, for reasons not covered by a more specific
   category above (traffic, route issues, generic lateness).
-- supplier_capacity: the supplier's own production/factory capacity, overbooking, or staffing caused the delay.
+- supplier_capacity: "over capacity" — the PO quantity placed with the supplier exceeds what they can actually
+  produce/handle — or general factory/staffing capacity constraints, overbooking.
 - other: use ONLY when the text genuinely doesn't describe a supply-chain delay/issue (e.g. an unrelated
-  administrative note) — do not use "other" just because you're unsure; pick the closest real category above.
+  administrative note, or a note simply referencing another PO/line as the real cause without describing what
+  that cause was) — do not use "other" just because you're unsure; pick the closest real category above first.
 
 Respond with ONLY a raw JSON object of the exact shape {"results": [{"category": string, "cleaned_summary": string}, ...]}
 — one entry per input reason, in the same order, no markdown, no code fences, no commentary. "category" MUST be
