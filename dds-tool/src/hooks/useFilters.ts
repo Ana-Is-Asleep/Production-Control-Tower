@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { currentISOWeek, shiftISOWeek, getISOWeek, getISOWeekYear } from '../lib/dateUtils';
+import { lastCompletedWeek, shiftISOWeek, getISOWeek, getISOWeekYear } from '../lib/dateUtils';
 import { categorizeSKU, type SKUCategory } from '../lib/skuUtils';
 import { getChannel, type Channel } from '../lib/channelUtils';
 import type { PurchaseLine } from '../types';
@@ -56,7 +56,9 @@ export function useFilters(rawLines: PurchaseLine[], initialFilters?: ActiveFilt
     [rawLines]
   );
 
-  const { week: curWeek, year: curYear } = useMemo(() => currentISOWeek(), []);
+  // anchor offset 0 to the last fully completed week, not the in-progress current week —
+  // otherwise SOT/OTIF for the still-open week looks artificially low (most POs haven't shipped yet)
+  const { week: curWeek, year: curYear } = useMemo(() => lastCompletedWeek(), []);
 
   // every week (offset, week, year) covered by the active weekRange filter
   const weeksInRange = useMemo((): WeekInRange[] => {

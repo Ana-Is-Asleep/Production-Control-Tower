@@ -112,9 +112,9 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
 
   const selectedDetail = selected ? detailByWeekCategory.get(`${selected.week}__${selected.category}`) : null;
 
-  // only categories with at least one PO in range — with up to 10 possible categories, a full
-  // legend would overflow the compact card
-  const activeCategories = categoryOrder.filter((cat) => chartData.some((d) => (d[cat] as number) > 0));
+  // top 5 categories by count for the period — categoryOrder is already sorted descending by
+  // total, and a full legend of all 10 possible categories would overflow the compact card
+  const activeCategories = categoryOrder.filter((cat) => chartData.some((d) => (d[cat] as number) > 0)).slice(0, 5);
 
   return (
     <>
