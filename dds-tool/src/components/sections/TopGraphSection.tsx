@@ -6,6 +6,7 @@ import {
 } from 'recharts';
 import { SlideOver } from '../shared/SlideOver';
 import { DataTable, type Column } from '../shared/DataTable';
+import { MiniLegend } from '../shared/MiniLegend';
 import { formatDateShort } from '../../lib/dateUtils';
 import { BAR_TOTAL, BAR_SHIPPED, LINE_SOT, LINE_OTIF, COLOR } from '../../lib/statusColors';
 import type { TopGraphPoint, DeepDiveRow } from '../../hooks/useKPIs';
@@ -75,13 +76,24 @@ export function TopGraphSection({ points, deepDiveRows, sotTarget, otifTarget }:
           </div>
           <p className="text-xs text-brand font-semibold">Drill down →</p>
         </div>
+        <div className="flex items-center justify-between mb-1 shrink-0">
+          <MiniLegend
+            items={[
+              { label: 'Shipped POs', color: BAR_SHIPPED, type: 'bar' },
+              { label: 'Remaining POs', color: BAR_TOTAL, type: 'bar' },
+              { label: 'SOT %', color: LINE_SOT, type: 'line' },
+              { label: 'OTIF %', color: LINE_OTIF, type: 'line' },
+            ]}
+          />
+          <span className="text-[9px] text-[#b5aaa5] shrink-0">dashed = projected</span>
+        </div>
         <div className="flex-1 min-h-0">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={points} margin={{ top: 8, right: 16, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="2 4" stroke={COLOR.border} vertical={false} />
               <XAxis dataKey="weekLabel" tick={{ fill: COLOR.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis yAxisId="pct" domain={[0, 100]} tick={{ fill: COLOR.muted, fontSize: 11 }} unit="%" axisLine={false} tickLine={false} />
-              <YAxis yAxisId="pos" orientation="right" hide />
+              <YAxis yAxisId="pct" orientation="right" domain={[0, 100]} tick={{ fill: COLOR.muted, fontSize: 11 }} unit="%" axisLine={false} tickLine={false} />
+              <YAxis yAxisId="pos" orientation="left" tick={{ fill: COLOR.muted, fontSize: 11 }} allowDecimals={false} axisLine={false} tickLine={false} />
               <ReferenceLine yAxisId="pct" y={90} stroke={COLOR.border} strokeDasharray="4 4" />
               <Bar yAxisId="pos" dataKey="shippedPOs" stackId="poStack" fill={BAR_SHIPPED} radius={[0, 0, 0, 0]} name="Shipped POs" />
               <Bar yAxisId="pos" dataKey="backlogPOs" stackId="poStack" fill={BAR_TOTAL} radius={[2, 2, 0, 0]} name="Remaining POs" />

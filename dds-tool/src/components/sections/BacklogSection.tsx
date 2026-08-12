@@ -142,9 +142,9 @@ export function BacklogSection({ lines }: BacklogSectionProps) {
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={clearance} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+              <BarChart data={clearance} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                 <XAxis dataKey="weekLabel" tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} interval={0} />
-                <YAxis tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} allowDecimals={false} width={20} />
+                <YAxis tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} allowDecimals={false} width={24} />
                 <Tooltip
                   contentStyle={{ background: COLOR.navy, border: 'none', borderRadius: 8, fontSize: 11, padding: '6px 10px' }}
                   labelStyle={{ color: COLOR.brandSoft, fontWeight: 700 }}

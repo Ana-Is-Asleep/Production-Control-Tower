@@ -124,11 +124,14 @@ export function LeadTimeSection({ lines }: LeadTimeSectionProps) {
                   <YAxis tick={{ fill: '#9c9794', fontSize: 11 }} axisLine={false} tickLine={false} unit="d" domain={[0, 'auto']} />
                   <ReferenceLine y={TARGET_LT} stroke="#DC3545" strokeDasharray="5 4" strokeWidth={1.5} />
                   <Tooltip contentStyle={{ background: '#403833', border: 'none', borderRadius: 8, fontSize: 12 }} labelStyle={{ color: '#FF8900', fontWeight: 700 }} itemStyle={{ color: '#f9f7f6' }} formatter={(v: unknown, n: unknown) => [`${Number(v)}d`, String(n)]} />
+                  {selectedCat === 'All' && (
+                    <Legend verticalAlign="top" align="right" iconSize={8} formatter={(v) => <span style={{ color: '#58524e', fontSize: 11 }}>{v}</span>} />
+                  )}
                   {selectedCat === 'All' ? (
                     <>
-                      <Bar dataKey="Mattresses" fill="#FF8900" fillOpacity={0.82} radius={[3, 3, 0, 0]} maxBarSize={22} />
-                      <Bar dataKey="Beds" fill="#6469aa" fillOpacity={0.82} radius={[3, 3, 0, 0]} maxBarSize={22} />
-                      <Bar dataKey="Accessories" fill="#34A853" fillOpacity={0.82} radius={[3, 3, 0, 0]} maxBarSize={22} />
+                      <Bar dataKey="Mattresses" name="Mattresses" fill="#FF8900" fillOpacity={0.82} radius={[3, 3, 0, 0]} maxBarSize={22} />
+                      <Bar dataKey="Beds" name="Beds" fill="#6469aa" fillOpacity={0.82} radius={[3, 3, 0, 0]} maxBarSize={22} />
+                      <Bar dataKey="Accessories" name="Accessories" fill="#34A853" fillOpacity={0.82} radius={[3, 3, 0, 0]} maxBarSize={22} />
                     </>
                   ) : (
                     <Bar dataKey={selectedCat} fill={selectedCat === 'Mattresses' ? '#FF8900' : selectedCat === 'Beds' ? '#6469aa' : '#34A853'} radius={[3, 3, 0, 0]} maxBarSize={30} />

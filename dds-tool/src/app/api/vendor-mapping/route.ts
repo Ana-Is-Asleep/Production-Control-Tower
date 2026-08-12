@@ -16,6 +16,7 @@ interface AirtableRecord {
     location_code?: string;
     channels?: string[];
     vendor_code?: string;
+    'id_vendor_emm (from vendor_code_link)'?: string;
   };
 }
 
@@ -67,10 +68,13 @@ export async function GET() {
     }
 
     const records = await fetchAllRecords();
+    // id_vendor_emm is the lookup that mirrors the real Business Central vendor number —
+    // vendor_code is a separate internal identifier and does NOT match BC exports, so it's
+    // only used as a fallback for records where the emm lookup is empty.
     const data: VendorMappingEntry[] = records
-      .filter((r) => r.fields.vendor_code)
+      .filter((r) => r.fields['id_vendor_emm (from vendor_code_link)'] || r.fields.vendor_code)
       .map((r) => ({
-        vendorCode: String(r.fields.vendor_code ?? ''),
+        vendorCode: String(r.fields['id_vendor_emm (from vendor_code_link)'] || r.fields.vendor_code || ''),
         locationCode: String(r.fields.location_code ?? ''),
         channels: r.fields.channels ?? [],
       }));

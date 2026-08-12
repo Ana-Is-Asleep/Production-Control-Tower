@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { SlideOver } from '../shared/SlideOver';
+import { MiniLegend } from '../shared/MiniLegend';
 import { useReasonClassification } from '../../hooks/useReasonClassification';
 import { REASON_CATEGORIES, isSubstantiveReason, type ReasonCategory } from '../../lib/reasonClassification';
 import { getISOWeek, getISOWeekYear } from '../../lib/dateUtils';
@@ -111,6 +112,10 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
 
   const selectedDetail = selected ? detailByWeekCategory.get(`${selected.week}__${selected.category}`) : null;
 
+  // only categories with at least one PO in range — with up to 10 possible categories, a full
+  // legend would overflow the compact card
+  const activeCategories = categoryOrder.filter((cat) => chartData.some((d) => (d[cat] as number) > 0));
+
   return (
     <>
       <div
@@ -130,11 +135,16 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
             <p className="text-xs text-[#b5aaa5]">No flagged loss reasons in range</p>
           </div>
         ) : (
-          <div className="flex-1 min-h-0 mt-1">
+          <div className="flex-1 min-h-0 mt-1 flex flex-col">
+            <MiniLegend
+              className="mb-1 shrink-0"
+              items={activeCategories.map((cat) => ({ label: cat.replace(/_/g, ' '), color: CATEGORY_PALETTE[cat], type: 'bar' as const }))}
+            />
+            <div className="flex-1 min-h-0">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+              <BarChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                 <XAxis dataKey="weekLabel" tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} interval={0} />
-                <YAxis tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} allowDecimals={false} width={20} />
+                <YAxis tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} allowDecimals={false} width={24} />
                 <Tooltip content={<NonZeroTooltip />} allowEscapeViewBox={{ x: false, y: false }} wrapperStyle={{ zIndex: 60 }} />
                 {categoryOrder.map((cat) => (
                   <Bar
@@ -152,6 +162,7 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
                 ))}
               </BarChart>
             </ResponsiveContainer>
+            </div>
           </div>
         )}
       </div>
