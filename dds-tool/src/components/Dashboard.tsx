@@ -18,6 +18,7 @@ import { LeadTimeSection } from './sections/LeadTimeSection';
 import { ActionsBadgeDrawer } from './actions/ActionsBadgeDrawer';
 import { ActionsSidePanel } from './actions/ActionsSidePanel';
 import { formatFilterSummary } from '../lib/filterSummary';
+import { buildSotOtifHref } from '../lib/sotOtifParams';
 import type { PurchaseLine } from '../types';
 import type { InvoiceRow } from '../types/invoice';
 
@@ -100,9 +101,9 @@ export function Dashboard() {
               <div className="flex-[5] min-h-0 overflow-hidden">
                 <TopGraphSection
                   points={kpis.topGraph}
-                  deepDiveRows={kpis.deepDiveRows}
                   sotTarget={kpis.sotTarget}
                   otifTarget={kpis.otifTarget}
+                  drillDownHref={buildSotOtifHref(filters)}
                 />
               </div>
               <div className="flex-[3] min-h-0 grid grid-cols-3 gap-3 overflow-hidden">
