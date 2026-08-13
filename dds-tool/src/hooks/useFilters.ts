@@ -14,6 +14,12 @@ export const WEEK_RANGE_DEFAULT: { start: number; end: number } = { start: -7, e
 // section (including the AI Root Cause classifier, which shouldn't waste calls categorizing stale data)
 const DATA_FLOOR = new Date(2026, 0, 1);
 
+// Component/packaging suppliers that should be treated as Comps/Other regardless of what an
+// individual SKU categorizes as — BekaertDeslee's real SKU "EACON200200CAA" coincidentally matches
+// categorizeSKU's startsWith('EAC') Beds rule (meant for actual bed-frame SKUs), which let this
+// packaging/textile-component vendor leak into the app as if it were a bed supplier.
+const EXCLUDED_COMPONENT_VENDOR_CODES = ['9700148']; // BekaertDeslee NV
+
 export interface ActiveFilters {
   weekRange: { start: number; end: number }; // offsets from current ISO week, bounded [-13, 5]
   suppliers: string[];
@@ -52,7 +58,11 @@ export function useFilters(rawLines: PurchaseLine[], initialFilters?: ActiveFilt
   // drop anything with PGRD before 2026, and Comps/Other SKUs (out of scope for this version),
   // before it reaches any section/calculation
   const allLines = useMemo(
-    () => rawLines.filter(l => l.pgrd && l.pgrd >= DATA_FLOOR && categorizeSKU(l.sku) !== 'Comps/Other'),
+    () => rawLines.filter(l =>
+      l.pgrd && l.pgrd >= DATA_FLOOR &&
+      categorizeSKU(l.sku) !== 'Comps/Other' &&
+      !EXCLUDED_COMPONENT_VENDOR_CODES.includes(l.vendorCode)
+    ),
     [rawLines]
   );
 
