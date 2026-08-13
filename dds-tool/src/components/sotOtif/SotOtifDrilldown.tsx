@@ -14,6 +14,7 @@ import { ScorecardMatrix } from './ScorecardMatrix';
 import { RiskRadar } from './RiskRadar';
 import { ConcentrationAnalysis } from './ConcentrationAnalysis';
 import { WeekStrip } from './WeekStrip';
+import { SupplierHeaderBar } from './SupplierHeaderBar';
 import { POList } from './POList';
 import { rollupByPO } from '../../lib/poAggregation';
 import { aggregateSOTRate, aggregateOTIFRate } from '../../lib/kpiFormulas';
@@ -74,6 +75,15 @@ export function SotOtifDrilldown() {
 
   const isModeB = filters.suppliers.length === 1;
   const selectedSupplier = isModeB ? filters.suppliers[0] : null;
+
+  // Mode B should never load with nothing selected — default to the most recent completed week
+  // (falling back to the last week in range if the range doesn't include it) so the PO list
+  // appears immediately without the user needing to click a tile first.
+  useEffect(() => {
+    if (!isModeB || selectedWeek || weeksInRange.length === 0) return;
+    const defaultWeek = weeksInRange.find((w) => w.isCurrent) ?? weeksInRange[weeksInRange.length - 1];
+    setSelectedWeek(defaultWeek);
+  }, [isModeB, selectedWeek, weeksInRange]);
 
   // scope for the KPI strip + Mode A's risk/concentration sections: the selected week's POs, or
   // the full period in view when no week is selected
@@ -148,6 +158,7 @@ export function SotOtifDrilldown() {
           totalPOs={scopeRollups.length}
           onTimeCount={onTimeCount}
           lateCount={lateCount}
+          compact={isModeB}
         />
       </div>
 
@@ -182,7 +193,13 @@ export function SotOtifDrilldown() {
           </div>
         ) : (
           <div className="p-4 space-y-3">
-            <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">{selectedSupplier}</p>
+            <SupplierHeaderBar
+              supplier={selectedSupplier!}
+              lines={weekRangeLines.filter((l) => l.supplier === selectedSupplier)}
+              weeksInRange={weeksInRange}
+              isChinaSupplier={isChinaSupplier}
+              today={today}
+            />
             <WeekStrip
               lines={weekRangeLines.filter((l) => l.supplier === selectedSupplier)}
               weeksInRange={weeksInRange}
@@ -194,7 +211,7 @@ export function SotOtifDrilldown() {
             {selectedWeek ? (
               <POList rollups={supplierWeekRollups} today={today} />
             ) : (
-              <p className="text-xs text-[#9c9794] text-center py-10">Select a week above to see its POs</p>
+              <p className="text-xs text-[#9c9794] px-1">Select a week above to see its POs</p>
             )}
           </div>
         )}

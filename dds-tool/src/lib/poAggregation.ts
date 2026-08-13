@@ -19,6 +19,16 @@ export function sotTierColor(pct: number | null): { bg: string; text: string } {
   return { bg: '#f5f2ee', text: COLOR.muted };
 }
 
+// Same tiers, but also gives a solid "selected" variant (dark bg + white text) for tiles/badges
+// that need an active state, not just a static light-tint reading.
+export function sotTierPalette(pct: number | null): { lightBg: string; lightText: string; darkBg: string } {
+  const tier = sotTier(pct);
+  if (tier === 'good') return { lightBg: COLOR.passBg, lightText: COLOR.pass, darkBg: COLOR.pass };
+  if (tier === 'warn') return { lightBg: COLOR.warnBg, lightText: COLOR.warn, darkBg: COLOR.warn };
+  if (tier === 'bad') return { lightBg: COLOR.failBg, lightText: COLOR.fail, darkBg: COLOR.fail };
+  return { lightBg: '#f5f2ee', lightText: COLOR.muted, darkBg: COLOR.muted };
+}
+
 export interface PORollup {
   po: string;
   supplier: string;
