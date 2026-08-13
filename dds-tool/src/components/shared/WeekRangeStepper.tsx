@@ -1,6 +1,7 @@
 'use client';
 
 import { shiftISOWeek } from '../../lib/dateUtils';
+import { WEEK_RANGE_DEFAULT } from '../../hooks/useFilters';
 
 interface WeekRangeStepperProps {
   min: number;
@@ -17,52 +18,59 @@ function weekLabelFor(curWeek: number, curYear: number, offset: number): string 
   return `W${String(week).padStart(2, '0')}`;
 }
 
-function Stepper({ value, min, max, onChange, label }: { value: number; min: number; max: number; onChange: (n: number) => void; label: string }) {
+function WeekSelect({ value, min, max, onChange, curWeek, curYear }: {
+  value: number; min: number; max: number; onChange: (n: number) => void; curWeek: number; curYear: number;
+}) {
+  const options: number[] = [];
+  for (let n = min; n <= max; n++) options.push(n);
+
   return (
-    <div className="flex items-center gap-1">
-      <button
-        onClick={() => onChange(Math.max(min, value - 1))}
-        disabled={value <= min}
-        aria-label="Earlier week"
-        className="w-5 h-5 flex items-center justify-center rounded border border-[#e9e3df] text-[#58524e] hover:border-brand hover:text-brand disabled:opacity-30 disabled:hover:border-[#e9e3df] disabled:hover:text-[#58524e]"
-      >
-        −
-      </button>
-      <span className="text-[11px] font-semibold text-[#403833] w-9 text-center tabular-nums">{label}</span>
-      <button
-        onClick={() => onChange(Math.min(max, value + 1))}
-        disabled={value >= max}
-        aria-label="Later week"
-        className="w-5 h-5 flex items-center justify-center rounded border border-[#e9e3df] text-[#58524e] hover:border-brand hover:text-brand disabled:opacity-30 disabled:hover:border-[#e9e3df] disabled:hover:text-[#58524e]"
-      >
-        +
-      </button>
-    </div>
+    <select
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      className="text-[11px] font-semibold text-[#403833] border border-[#e9e3df] rounded px-1.5 py-1 bg-white hover:border-brand cursor-pointer"
+    >
+      {options.map((n) => (
+        <option key={n} value={n}>{weekLabelFor(curWeek, curYear, n)}</option>
+      ))}
+    </select>
   );
 }
 
-// Two independent +/- steppers instead of a dual-thumb slider — same full flexibility (any
-// exact start/end week), but each thumb is its own button instead of two overlapping
-// <input type="range"> elements fighting for the same drag gesture, which is hard to grab
-// precisely once the handles are close together.
+// Two independent dropdowns instead of a dual-thumb slider — full flexibility (any exact
+// start/end week), but a select is far easier to hit precisely than dragging two overlapping
+// native range-input thumbs. A reset button restores the default range in one click.
 export function WeekRangeStepper({ min, max, value, onChange, curWeek, curYear, className = '' }: WeekRangeStepperProps) {
+  const isDefault = value.start === WEEK_RANGE_DEFAULT.start && value.end === WEEK_RANGE_DEFAULT.end;
+
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      <Stepper
+      <WeekSelect
         value={value.start}
         min={min}
         max={value.end}
         onChange={(n) => onChange({ start: n, end: value.end })}
-        label={weekLabelFor(curWeek, curYear, value.start)}
+        curWeek={curWeek}
+        curYear={curYear}
       />
       <span className="text-[#c8c0bb]">→</span>
-      <Stepper
+      <WeekSelect
         value={value.end}
         min={value.start}
         max={max}
         onChange={(n) => onChange({ start: value.start, end: n })}
-        label={weekLabelFor(curWeek, curYear, value.end)}
+        curWeek={curWeek}
+        curYear={curYear}
       />
+      {!isDefault && (
+        <button
+          onClick={() => onChange(WEEK_RANGE_DEFAULT)}
+          title="Reset to default range"
+          className="text-[11px] text-[#9c9794] hover:text-brand transition-colors"
+        >
+          Reset
+        </button>
+      )}
     </div>
   );
 }
