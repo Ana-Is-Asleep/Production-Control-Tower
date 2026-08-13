@@ -11,19 +11,21 @@ const FILTER_OPTIONS: { key: POFilter; label: string }[] = [
   { key: 'sot', label: 'Shipped on time' },
   { key: 'not_otif', label: 'Not OTIF' },
   { key: 'otif', label: 'OTIF' },
-  { key: 'awaiting_confirmation', label: 'Awaiting confirmation' },
+  { key: 'awaiting_confirmation', label: 'ASD pending confirmation' },
 ];
 
-function isAwaitingConfirmation(r: PORollup) {
-  return !!r.esd && !r.asd;
+// Booking exists (ESD filled) and that booked date has already passed with no confirmed ASD yet —
+// not just any unconfirmed booking, only ones that are already overdue for confirmation.
+function isAwaitingConfirmation(r: PORollup, today: Date) {
+  return !!r.esd && r.esd < today && !r.asd;
 }
 
-function matchesFilter(r: PORollup, f: POFilter): boolean {
+function matchesFilter(r: PORollup, f: POFilter, today: Date): boolean {
   if (f === 'not_sot') return r.sot === false;
   if (f === 'sot') return r.sot === true;
   if (f === 'not_otif') return r.otif === false;
   if (f === 'otif') return r.otif === true;
-  return isAwaitingConfirmation(r);
+  return isAwaitingConfirmation(r, today);
 }
 
 // Sort priority: late with no ASD at all first (worst), then late but at least shipped, then
@@ -77,7 +79,7 @@ function LineDetail({ rollup }: { rollup: PORollup }) {
   );
 }
 
-export function POList({ rollups }: { rollups: PORollup[] }) {
+export function POList({ rollups, today }: { rollups: PORollup[]; today: Date }) {
   const [activeFilters, setActiveFilters] = useState<Set<POFilter>>(new Set());
   const [search, setSearch] = useState('');
   const [expandedPO, setExpandedPO] = useState<string | null>(null);
@@ -93,14 +95,14 @@ export function POList({ rollups }: { rollups: PORollup[] }) {
   const visible = useMemo(() => {
     let result = rollups;
     if (activeFilters.size > 0) {
-      result = result.filter((r) => [...activeFilters].some((f) => matchesFilter(r, f)));
+      result = result.filter((r) => [...activeFilters].some((f) => matchesFilter(r, f, today)));
     }
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       result = result.filter((r) => r.po.toLowerCase().includes(q));
     }
     return [...result].sort((a, b) => sortRank(a) - sortRank(b));
-  }, [rollups, activeFilters, search]);
+  }, [rollups, activeFilters, search, today]);
 
   return (
     <div className="bg-white rounded-lg border border-[#e9e3df] overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
@@ -130,6 +132,7 @@ export function POList({ rollups }: { rollups: PORollup[] }) {
             <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">PO Number</th>
             <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">SOT</th>
             <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">OTIF</th>
+            <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">PGRD</th>
             <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">EGRD</th>
             <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">ESD</th>
             <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">ASD</th>
@@ -139,7 +142,7 @@ export function POList({ rollups }: { rollups: PORollup[] }) {
         </thead>
         <tbody>
           {visible.length === 0 && (
-            <tr><td colSpan={8} className="text-center py-6 text-[#9c9794]">No POs match the current filters</td></tr>
+            <tr><td colSpan={9} className="text-center py-6 text-[#9c9794]">No POs match the current filters</td></tr>
           )}
           {visible.map((r) => {
             const hasLineData = r.lines.some((l) => l.sku);
@@ -156,13 +159,14 @@ export function POList({ rollups }: { rollups: PORollup[] }) {
                   </td>
                   <td className="px-3 py-2 text-center"><YesNo value={r.sot} /></td>
                   <td className="px-3 py-2 text-center"><YesNo value={r.otif} /></td>
+                  <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{formatDateShort(r.pgrd)}</td>
                   <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{formatDateShort(r.egrd)}</td>
                   <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{r.esd ? formatDateShort(r.esd) : '—'}</td>
                   <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{r.asd ? formatDateShort(r.asd) : '—'}</td>
                   <td className="px-3 py-2 whitespace-nowrap">
-                    {isAwaitingConfirmation(r) && (
+                    {isAwaitingConfirmation(r, today) && (
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E]">
-                        Awaiting confirmation
+                        ASD pending confirmation
                       </span>
                     )}
                   </td>
@@ -170,7 +174,7 @@ export function POList({ rollups }: { rollups: PORollup[] }) {
                 </tr>
                 {isExpanded && hasLineData && (
                   <tr>
-                    <td colSpan={8} className="p-0"><LineDetail rollup={r} /></td>
+                    <td colSpan={9} className="p-0"><LineDetail rollup={r} /></td>
                   </tr>
                 )}
               </Fragment>

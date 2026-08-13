@@ -192,7 +192,7 @@ export function SotOtifDrilldown() {
               onSelectWeek={handleSelectWeek}
             />
             {selectedWeek ? (
-              <POList rollups={supplierWeekRollups} />
+              <POList rollups={supplierWeekRollups} today={today} />
             ) : (
               <p className="text-xs text-[#9c9794] text-center py-10">Select a week above to see its POs</p>
             )}
