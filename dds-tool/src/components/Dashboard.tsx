@@ -21,13 +21,13 @@ import { formatFilterSummary } from '../lib/filterSummary';
 import type { PurchaseLine } from '../types';
 import type { InvoiceRow } from '../types/invoice';
 
-// Switch between the two Actions UI variants during testing — 'badge' (floating badge + slide-in
-// drawer) or 'panel' (always-visible right panel that shrinks the main content area).
-const ACTIONS_UI_MODE: 'badge' | 'panel' = 'badge';
-
 export function Dashboard() {
   const { allLines, setAllLines, invoices, setInvoices, globalFilters, setGlobalFilters } = useData();
   const [uploadOpen, setUploadOpen] = useState(false);
+  // Switch between the two Actions UI variants — 'badge' (floating badge + slide-in drawer) or
+  // 'panel' (always-visible right panel that shrinks the main content area). Toggled live via
+  // the header button below rather than a code constant, so both are actually reachable in the UI.
+  const [actionsUiMode, setActionsUiMode] = useState<'badge' | 'panel'>('badge');
   const { actions, runRules, addAction, updateAction } = useActions();
 
   const { filters, setFilters: _setFilters, filteredLines, weekRangeLines, weeksInRange, allSuppliers, curWeek, curYear } =
@@ -63,6 +63,15 @@ export function Dashboard() {
           <span className="text-xs text-[#7b7571] font-medium truncate">{formatFilterSummary(filters)}</span>
         )}
         <div className="flex-1" />
+        {hasData && (
+          <button
+            onClick={() => setActionsUiMode((m) => (m === 'badge' ? 'panel' : 'badge'))}
+            title="Switch Actions UI variant"
+            className="text-xs border border-[#e9e3df] rounded-lg px-3 py-1.5 text-[#58524e] hover:border-brand hover:text-brand shrink-0"
+          >
+            Actions: {actionsUiMode === 'badge' ? 'Badge' : 'Panel'}
+          </button>
+        )}
         <button onClick={() => setUploadOpen(true)} className="filter-pill text-xs border border-[#e9e3df] rounded-lg px-3 py-1.5 text-[#58524e] hover:border-brand hover:text-brand shrink-0">
           ↑ Upload
         </button>
@@ -107,13 +116,13 @@ export function Dashboard() {
               </div>
             </div>
           </div>
-          {ACTIONS_UI_MODE === 'panel' && (
+          {actionsUiMode === 'panel' && (
             <ActionsSidePanel actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers} />
           )}
         </div>
       )}
 
-      {hasData && ACTIONS_UI_MODE === 'badge' && (
+      {hasData && actionsUiMode === 'badge' && (
         <ActionsBadgeDrawer actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers} />
       )}
 
