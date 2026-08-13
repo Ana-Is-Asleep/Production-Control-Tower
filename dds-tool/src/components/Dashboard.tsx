@@ -6,6 +6,7 @@ import { NavTabs } from './shared/NavTabs';
 import { useFilters } from '../hooks/useFilters';
 import { useKPIs } from '../hooks/useKPIs';
 import { useVendorMapping } from '../hooks/useVendorMapping';
+import { useActions } from '../hooks/useActions';
 import { UploadPanel } from './upload/UploadPanel';
 import { GlobalFilterBar } from './shared/GlobalFilterBar';
 import { TopGraphSection } from './sections/TopGraphSection';
@@ -14,12 +15,20 @@ import { MissingESDSection } from './sections/MissingESDSection';
 import { BacklogSection } from './sections/BacklogSection';
 import { InvoicesSection } from './sections/InvoicesSection';
 import { LeadTimeSection } from './sections/LeadTimeSection';
+import { ActionsBadgeDrawer } from './actions/ActionsBadgeDrawer';
+import { ActionsSidePanel } from './actions/ActionsSidePanel';
 import { formatFilterSummary } from '../lib/filterSummary';
 import type { PurchaseLine } from '../types';
 import type { InvoiceRow } from '../types/invoice';
+
+// Switch between the two Actions UI variants during testing — 'badge' (floating badge + slide-in
+// drawer) or 'panel' (always-visible right panel that shrinks the main content area).
+const ACTIONS_UI_MODE: 'badge' | 'panel' = 'badge';
+
 export function Dashboard() {
   const { allLines, setAllLines, invoices, setInvoices, globalFilters, setGlobalFilters } = useData();
   const [uploadOpen, setUploadOpen] = useState(false);
+  const { actions, runRules, addAction, updateAction } = useActions();
 
   const { filters, setFilters: _setFilters, filteredLines, weekRangeLines, weeksInRange, allSuppliers, curWeek, curYear } =
     useFilters(allLines, globalFilters);
@@ -34,6 +43,7 @@ export function Dashboard() {
   const handleLoad = (lines: PurchaseLine[], inv?: InvoiceRow[]) => {
     setAllLines(lines);
     if (inv) setInvoices(inv);
+    runRules(lines);
   };
 
   const hasData = allLines.length > 0;
@@ -70,28 +80,37 @@ export function Dashboard() {
       )}
 
       {hasData && (
-        <div className="page-enter flex-1 min-h-0 flex flex-col">
-          <GlobalFilterBar filters={filters} onChange={setFilters} allSuppliers={allSuppliers} curWeek={curWeek} curYear={curYear} />
-          <div className="px-4 py-3 flex-1 min-h-0 flex flex-col gap-3 w-full max-w-[1400px] mx-auto overflow-hidden">
-            <div className="flex-[5] min-h-0 overflow-hidden">
-              <TopGraphSection
-                points={kpis.topGraph}
-                deepDiveRows={kpis.deepDiveRows}
-                sotTarget={kpis.sotTarget}
-                otifTarget={kpis.otifTarget}
-              />
-            </div>
-            <div className="flex-[3] min-h-0 grid grid-cols-3 gap-3 overflow-hidden">
-              <RootCauseSection lines={weekRangeLines} weeksInRange={weeksInRange} />
-              <MissingESDSection lines={weekRangeLines} weeksInRange={weeksInRange} supplierFilterActive={filters.suppliers.length > 0} />
-              <BacklogSection lines={filteredLines} />
-            </div>
-            <div className="flex-[2] min-h-0 grid grid-cols-2 gap-3 overflow-hidden">
-              <InvoicesSection invoices={invoices} supplierFilter={filters.suppliers} />
-              <LeadTimeSection lines={weekRangeLines} />
+        <div className="page-enter flex-1 min-h-0 flex overflow-hidden">
+          <div className="flex-1 min-w-0 flex flex-col">
+            <GlobalFilterBar filters={filters} onChange={setFilters} allSuppliers={allSuppliers} curWeek={curWeek} curYear={curYear} />
+            <div className="px-4 py-3 flex-1 min-h-0 flex flex-col gap-3 w-full max-w-[1400px] mx-auto overflow-hidden">
+              <div className="flex-[5] min-h-0 overflow-hidden">
+                <TopGraphSection
+                  points={kpis.topGraph}
+                  deepDiveRows={kpis.deepDiveRows}
+                  sotTarget={kpis.sotTarget}
+                  otifTarget={kpis.otifTarget}
+                />
+              </div>
+              <div className="flex-[3] min-h-0 grid grid-cols-3 gap-3 overflow-hidden">
+                <RootCauseSection lines={weekRangeLines} weeksInRange={weeksInRange} />
+                <MissingESDSection lines={weekRangeLines} weeksInRange={weeksInRange} supplierFilterActive={filters.suppliers.length > 0} />
+                <BacklogSection lines={filteredLines} />
+              </div>
+              <div className="flex-[2] min-h-0 grid grid-cols-2 gap-3 overflow-hidden">
+                <InvoicesSection invoices={invoices} supplierFilter={filters.suppliers} />
+                <LeadTimeSection lines={weekRangeLines} />
+              </div>
             </div>
           </div>
+          {ACTIONS_UI_MODE === 'panel' && (
+            <ActionsSidePanel actions={actions} onSave={updateAction} onAddOpenPoint={addAction} />
+          )}
         </div>
+      )}
+
+      {hasData && ACTIONS_UI_MODE === 'badge' && (
+        <ActionsBadgeDrawer actions={actions} onSave={updateAction} onAddOpenPoint={addAction} />
       )}
 
       <UploadPanel open={uploadOpen} onClose={() => setUploadOpen(false)} onLoad={handleLoad} />
