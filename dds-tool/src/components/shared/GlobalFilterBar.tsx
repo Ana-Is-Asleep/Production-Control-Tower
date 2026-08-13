@@ -1,6 +1,6 @@
 'use client';
 
-import { RangeSlider } from './RangeSlider';
+import { WeekRangeStepper } from './WeekRangeStepper';
 import { VendorDropdown } from './VendorDropdown';
 import { SKU_CATEGORIES, type SKUCategory } from '../../lib/skuUtils';
 import { CATEGORY_COLORS } from '../../lib/statusColors';
@@ -11,11 +11,13 @@ interface GlobalFilterBarProps {
   filters: ActiveFilters;
   onChange: (f: ActiveFilters) => void;
   allSuppliers: string[];
+  curWeek: number;
+  curYear: number;
 }
 
 const CHANNELS: Channel[] = ['Offline', 'D2C'];
 
-export function GlobalFilterBar({ filters, onChange, allSuppliers }: GlobalFilterBarProps) {
+export function GlobalFilterBar({ filters, onChange, allSuppliers, curWeek, curYear }: GlobalFilterBarProps) {
   const toggleChannel = (c: Channel) => {
     const next = filters.channels.includes(c) ? filters.channels.filter((x) => x !== c) : [...filters.channels, c];
     onChange({ ...filters, channels: next });
@@ -29,13 +31,13 @@ export function GlobalFilterBar({ filters, onChange, allSuppliers }: GlobalFilte
 
   return (
     <div className="px-4 py-2.5 border-b border-[#e9e3df] flex items-center gap-3 flex-wrap bg-white">
-      <RangeSlider
+      <WeekRangeStepper
         min={WEEK_RANGE_MIN}
         max={WEEK_RANGE_MAX}
         value={filters.weekRange}
         onChange={(weekRange) => onChange({ ...filters, weekRange })}
-        formatLabel={(n) => (n >= 0 ? `+${n}` : `${n}`)}
-        className="w-[220px]"
+        curWeek={curWeek}
+        curYear={curYear}
       />
       <span className="text-[#e9e3df]">|</span>
       <VendorDropdown allSuppliers={allSuppliers} selected={filters.suppliers} onChange={(s) => onChange({ ...filters, suppliers: s })} />

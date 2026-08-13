@@ -21,7 +21,7 @@ export function Dashboard() {
   const { allLines, setAllLines, invoices, setInvoices, globalFilters, setGlobalFilters } = useData();
   const [uploadOpen, setUploadOpen] = useState(false);
 
-  const { filters, setFilters: _setFilters, filteredLines, weekRangeLines, weeksInRange, allSuppliers } =
+  const { filters, setFilters: _setFilters, filteredLines, weekRangeLines, weeksInRange, allSuppliers, curWeek, curYear } =
     useFilters(allLines, globalFilters);
   const { isChinaSupplier } = useVendorMapping();
   const kpis = useKPIs(weekRangeLines, weeksInRange, isChinaSupplier);
@@ -41,7 +41,7 @@ export function Dashboard() {
   return (
     <div className="h-screen w-full bg-[#f5f2ee] flex flex-col overflow-hidden">
       <header className="bg-white border-b border-[#e9e3df] px-5 py-2.5 flex items-center gap-3 shrink-0">
-        <span className="font-bold text-brand text-xl shrink-0 tracking-tight">emma<span className="text-[#403833]">.</span></span>
+        <img src="/emma-logo.svg" alt="emma" className="h-6 w-auto shrink-0" />
         <span className="text-[#d5cdc6]">|</span>
         <span className="text-[#403833] text-sm font-semibold shrink-0">DDS</span>
         <NavTabs className="ml-2" />
@@ -71,7 +71,7 @@ export function Dashboard() {
 
       {hasData && (
         <div className="page-enter flex-1 min-h-0 flex flex-col">
-          <GlobalFilterBar filters={filters} onChange={setFilters} allSuppliers={allSuppliers} />
+          <GlobalFilterBar filters={filters} onChange={setFilters} allSuppliers={allSuppliers} curWeek={curWeek} curYear={curYear} />
           <div className="px-4 py-3 flex-1 min-h-0 flex flex-col gap-3 w-full max-w-[1400px] mx-auto overflow-hidden">
             <div className="flex-[5] min-h-0 overflow-hidden">
               <TopGraphSection
