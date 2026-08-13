@@ -133,9 +133,11 @@ export function SotOtifDrilldown() {
 
       <GlobalFilterBar filters={filters} onChange={handleFilterChange} allSuppliers={allSuppliers} curWeek={curWeek} curYear={curYear} />
 
-      {/* Top section — persistent chart + context-aware KPI cards, ~35% of screen height */}
-      <div className="shrink-0" style={{ height: '35vh' }}>
-        <div className="px-4 pt-3 h-[calc(100%-64px)]">
+      {/* Top section — persistent chart + context-aware KPI cards, ~35% of screen height.
+          A real flex column (not a hardcoded height subtraction) so the KPI row can never
+          overflow the container and spill onto the scrollable section below it. */}
+      <div className="shrink-0 flex flex-col overflow-hidden" style={{ height: '35vh' }}>
+        <div className="flex-1 min-h-0 px-4 pt-3">
           <TopGraphChart points={kpis.topGraph} onWeekClick={handleChartWeekClick} />
         </div>
         <KPICardsRow

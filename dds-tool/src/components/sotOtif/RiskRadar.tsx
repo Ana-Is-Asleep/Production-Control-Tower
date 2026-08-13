@@ -47,8 +47,9 @@ export function RiskRadar({ lines, weeksInRange, isChinaSupplier, today }: RiskR
       const recentLines = supplierLines.filter((l) => l.pgrd && l.pgrd >= recentCutoff && l.pgrd <= today);
       const last2WeekSOT = aggregateSOTRate(recentLines, isChinaSupplier, today);
 
-      const qualifies = atRiskLines.length > 0 || (last2WeekSOT !== null && last2WeekSOT < 70);
-      if (!qualifies) continue;
+      // a recent SOT% dip alone isn't shown as "at risk" without an actual unbooked PO behind it —
+      // a 0-PO row with just a low trend reads as a false alarm
+      if (atRiskLines.length === 0) continue;
 
       const atRiskPOs = new Set(atRiskLines.map((l) => l.po));
       const earliestEGRD = atRiskLines.reduce<Date | null>((min, l) => {
