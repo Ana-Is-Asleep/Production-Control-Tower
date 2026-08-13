@@ -97,10 +97,10 @@ export function TopGraphSection({ points, deepDiveRows, sotTarget, otifTarget }:
               <ReferenceLine yAxisId="pct" y={90} stroke={COLOR.border} strokeDasharray="4 4" />
               <Bar yAxisId="pos" dataKey="shippedPOs" stackId="poStack" fill={BAR_SHIPPED} radius={[0, 0, 0, 0]} name="Shipped POs" />
               <Bar yAxisId="pos" dataKey="backlogPOs" stackId="poStack" fill={BAR_TOTAL} radius={[2, 2, 0, 0]} name="Remaining POs" />
-              <Line yAxisId="pct" dataKey="sotPastPct" stroke={LINE_SOT} strokeWidth={2} dot={{ r: 3, fill: LINE_SOT, strokeWidth: 0 }} name="SOT % (actual)" connectNulls />
-              <Line yAxisId="pct" dataKey="sotFuturePct" stroke={LINE_SOT} strokeWidth={2} strokeDasharray="5 4" dot={{ r: 3, fill: LINE_SOT, strokeWidth: 0 }} name="SOT % (projected)" connectNulls />
-              <Line yAxisId="pct" dataKey="otifPastPct" stroke={LINE_OTIF} strokeWidth={2} dot={{ r: 3, fill: LINE_OTIF, strokeWidth: 0 }} name="OTIF % (actual)" connectNulls />
-              <Line yAxisId="pct" dataKey="otifFuturePct" stroke={LINE_OTIF} strokeWidth={2} strokeDasharray="5 4" dot={{ r: 3, fill: LINE_OTIF, strokeWidth: 0 }} name="OTIF % (projected)" connectNulls />
+              <Line yAxisId="pct" dataKey="sotPastPct" stroke={LINE_SOT} strokeWidth={2} dot={{ r: 3, fill: LINE_SOT, stroke: '#fff', strokeWidth: 1.5 }} name="SOT % (actual)" connectNulls />
+              <Line yAxisId="pct" dataKey="sotFuturePct" stroke={LINE_SOT} strokeWidth={2} strokeDasharray="5 4" dot={{ r: 3, fill: LINE_SOT, stroke: '#fff', strokeWidth: 1.5 }} name="SOT % (projected)" connectNulls />
+              <Line yAxisId="pct" dataKey="otifPastPct" stroke={LINE_OTIF} strokeWidth={2} dot={{ r: 3, fill: LINE_OTIF, stroke: '#fff', strokeWidth: 1.5 }} name="OTIF % (actual)" connectNulls />
+              <Line yAxisId="pct" dataKey="otifFuturePct" stroke={LINE_OTIF} strokeWidth={2} strokeDasharray="5 4" dot={{ r: 3, fill: LINE_OTIF, stroke: '#fff', strokeWidth: 1.5 }} name="OTIF % (projected)" connectNulls />
               <Tooltip
                 contentStyle={{ background: COLOR.navy, border: 'none', borderRadius: 8, fontSize: 11, padding: '6px 10px' }}
                 labelStyle={{ color: COLOR.brandSoft, fontWeight: 700 }}
