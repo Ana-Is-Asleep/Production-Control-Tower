@@ -175,7 +175,7 @@ export function SotOtifDrilldown() {
                 onSupplierClick={handleSupplierRowClick}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch" style={{ minHeight: '360px' }}>
               <RiskRadar lines={scopeLines} weeksInRange={weeksInRange} isChinaSupplier={isChinaSupplier} today={today} />
               <ConcentrationAnalysis lines={scopeLines} isChinaSupplier={isChinaSupplier} today={today} />
             </div>
