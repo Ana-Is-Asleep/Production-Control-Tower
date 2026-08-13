@@ -16,8 +16,6 @@ interface RiskRadarProps {
   today: Date;
 }
 
-const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
-const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
 
 function getWeek(l: PurchaseLine) {
@@ -26,26 +24,17 @@ function getWeek(l: PurchaseLine) {
 
 interface SupplierRisk {
   supplier: string;
-  unbookedPastCount: number;
-  unbookedFutureCount: number;
   missingPGRDCount: number;
   avgDelayWeeks: number | null;
   recentSOT: number | null;
   trend: 'up' | 'down' | 'flat';
 }
 
-// Panel A — Forward Risk. Two independent risk signals, both PGRD/EGRD-based (SOT-only, no OTIF):
-// (1) unbooked: no ESD yet, and EGRD is either already past or within the next 90 days — beyond
-//     90 days out there's nothing actionable yet, so those are excluded entirely. Split into "past"
-//     (already overdue with no booking) vs "next 90 days" (due soon, still time to book) since
-//     those need very different urgency.
-// (2) missing PGRD: has an ESD, but it lands after the PGRD — already known to miss, regardless of
-//     booking status.
-// No severity tiers — just the raw counts, ranked by total POs across both signals combined.
+// Panel A — Forward Risk. Just one signal: POs already booked (have an ESD) but that ESD lands
+// after the PGRD — already known to miss, regardless of how far out. Ranked by count, worst first.
 export function RiskRadar({ lines, weeksInRange, isChinaSupplier, today }: RiskRadarProps) {
   const rows = useMemo(() => {
-    const horizon = new Date(today.getTime() + NINETY_DAYS_MS);
-    const recentCutoff = new Date(today.getTime() - TWO_WEEKS_MS);
+    const recentCutoff = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000);
 
     const bySupplier = new Map<string, PORollup[]>();
     for (const r of rollupByPO(lines, isChinaSupplier, today)) {
@@ -56,10 +45,8 @@ export function RiskRadar({ lines, weeksInRange, isChinaSupplier, today }: RiskR
     const result: SupplierRisk[] = [];
 
     for (const [supplier, rollups] of bySupplier) {
-      const unbookedPast = rollups.filter((r) => !r.esd && r.egrd && r.egrd < today);
-      const unbookedFuture = rollups.filter((r) => !r.esd && r.egrd && r.egrd >= today && r.egrd <= horizon);
       const missingPGRD = rollups.filter((r) => r.esd && r.pgrd && r.esd > r.pgrd);
-      if (unbookedPast.length === 0 && unbookedFuture.length === 0 && missingPGRD.length === 0) continue;
+      if (missingPGRD.length === 0) continue;
 
       const delaysWeeks = missingPGRD
         .filter((r) => r.esd && r.pgrd)
@@ -71,30 +58,16 @@ export function RiskRadar({ lines, weeksInRange, isChinaSupplier, today }: RiskR
       const recentSOT = aggregateSOTRate(recentLines, isChinaSupplier, today);
       const trend = computeTrend(weeksInRange, supplierLines, isChinaSupplier, today, getWeek);
 
-      result.push({
-        supplier,
-        unbookedPastCount: unbookedPast.length,
-        unbookedFutureCount: unbookedFuture.length,
-        missingPGRDCount: missingPGRD.length,
-        avgDelayWeeks,
-        recentSOT,
-        trend,
-      });
+      result.push({ supplier, missingPGRDCount: missingPGRD.length, avgDelayWeeks, recentSOT, trend });
     }
 
-    // ranked by total POs across both buckets combined
-    return result.sort((a, b) =>
-      (b.unbookedPastCount + b.unbookedFutureCount + b.missingPGRDCount) -
-      (a.unbookedPastCount + a.unbookedFutureCount + a.missingPGRDCount)
-    );
+    return result.sort((a, b) => b.missingPGRDCount - a.missingPGRDCount);
   }, [lines, weeksInRange, today, isChinaSupplier]);
 
   return (
     <div className="bg-white rounded-lg border border-[#e9e3df] p-4 h-full overflow-hidden flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
       <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-1">Forward Risk</p>
-      <p className="text-[10px] text-[#b5aaa5] mb-3">
-        Unbooked POs with EGRD in the past or within 90 days, plus POs already confirmed to ship after PGRD.
-      </p>
+      <p className="text-[10px] text-[#b5aaa5] mb-3">POs already confirmed to ship after PGRD.</p>
       {rows.length === 0 ? (
         <p className="text-xs text-[#9c9794] flex-1 flex items-center justify-center">No suppliers at risk</p>
       ) : (
@@ -113,15 +86,9 @@ export function RiskRadar({ lines, weeksInRange, isChinaSupplier, today }: RiskR
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0 text-right">
                   <span className="text-xs font-semibold whitespace-nowrap">
-                    <span style={{ color: COLOR.fail }}>{r.unbookedPastCount}</span> unbooked in the past
-                  </span>
-                  <span className="text-xs font-semibold whitespace-nowrap">
-                    <span style={{ color: COLOR.warn }}>{r.unbookedFutureCount}</span> unbooked · next 90 days
-                  </span>
-                  <span className="text-xs font-semibold whitespace-nowrap">
                     <span style={{ color: COLOR.warn }}>{r.missingPGRDCount}</span> missing PGRD
                   </span>
-                  {r.missingPGRDCount > 0 && r.avgDelayWeeks !== null && (
+                  {r.avgDelayWeeks !== null && (
                     <span className="text-[11px] text-[#7b7571] whitespace-nowrap">
                       Avg {r.avgDelayWeeks.toFixed(1)} wks delay
                     </span>

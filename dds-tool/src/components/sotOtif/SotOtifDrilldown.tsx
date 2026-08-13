@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useData } from '../../context/DataContext';
@@ -78,12 +78,21 @@ export function SotOtifDrilldown() {
 
   // Mode B should never load with nothing selected — default to the most recent completed week
   // (falling back to the last week in range if the range doesn't include it) so the PO list
-  // appears immediately without the user needing to click a tile first.
+  // appears immediately without the user needing to click a tile first. Only auto-selects ONCE
+  // per supplier — otherwise this would immediately re-fire and override a manual "Clear" click,
+  // since that also sets selectedWeek to null.
+  const autoSelectedForSupplier = useRef<string | null>(null);
   useEffect(() => {
-    if (!isModeB || selectedWeek || weeksInRange.length === 0) return;
+    if (!isModeB || !selectedSupplier) {
+      autoSelectedForSupplier.current = null;
+      return;
+    }
+    if (autoSelectedForSupplier.current === selectedSupplier) return;
+    autoSelectedForSupplier.current = selectedSupplier;
+    if (selectedWeek || weeksInRange.length === 0) return;
     const defaultWeek = weeksInRange.find((w) => w.isCurrent) ?? weeksInRange[weeksInRange.length - 1];
     setSelectedWeek(defaultWeek);
-  }, [isModeB, selectedWeek, weeksInRange]);
+  }, [isModeB, selectedSupplier, selectedWeek, weeksInRange]);
 
   // scope for the KPI strip + Mode A's risk/concentration sections: the selected week's POs, or
   // the full period in view when no week is selected
