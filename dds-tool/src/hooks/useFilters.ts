@@ -15,10 +15,12 @@ export const WEEK_RANGE_DEFAULT: { start: number; end: number } = { start: -7, e
 const DATA_FLOOR = new Date(2026, 0, 1);
 
 // Component/packaging suppliers that should be treated as Comps/Other regardless of what an
-// individual SKU categorizes as — BekaertDeslee's real SKU "EACON200200CAA" coincidentally matches
-// categorizeSKU's startsWith('EAC') Beds rule (meant for actual bed-frame SKUs), which let this
-// packaging/textile-component vendor leak into the app as if it were a bed supplier.
-const EXCLUDED_COMPONENT_VENDOR_CODES = ['9700148']; // BekaertDeslee NV
+// individual SKU categorizes as — both hit the same coincidence: a real SKU starting with "EAC"
+// (categorizeSKU's Beds rule, meant for actual bed-frame SKUs) that isn't actually a bed product.
+const EXCLUDED_COMPONENT_VENDOR_CODES = [
+  '9700148', // BekaertDeslee NV — SKU "EACON200200CAA"
+  '9700016', // Komminform GmbH & Co. KG — SKUs "EACCU999999AAA"/"EACCU999999AAB" (spare packaging/stickers)
+];
 
 export interface ActiveFilters {
   weekRange: { start: number; end: number }; // offsets from current ISO week, bounded [-13, 5]
