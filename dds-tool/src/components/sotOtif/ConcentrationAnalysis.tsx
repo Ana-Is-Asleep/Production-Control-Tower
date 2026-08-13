@@ -48,26 +48,26 @@ export function ConcentrationAnalysis({ lines, isChinaSupplier, today }: Concent
         <p className="text-xs text-[#9c9794] flex-1 flex items-center justify-center">No late POs in scope</p>
       ) : (
         <>
-          <p className="text-sm text-[#403833] mb-4">
+          <p className="text-sm text-[#403833] mb-5">
             <span className="font-extrabold text-brand text-3xl align-middle mr-1.5">{topSupplierPct}%</span>
             of all late POs come from <span className="font-semibold">{topSupplier}</span>
           </p>
-          <div className="flex-1 min-h-0 flex flex-col justify-center gap-3">
+          <div className="space-y-4">
             {top5.map((s, i) => (
-              <div key={s.supplier} className="flex items-center gap-2">
-                <span className="text-xs text-[#403833] w-32 shrink-0 truncate" title={s.supplier}>{s.supplier}</span>
-                <div className="flex-1 h-5 bg-[#f5f2ee] rounded-r-md overflow-hidden relative min-w-0">
+              <div key={s.supplier}>
+                <div className="flex items-baseline justify-between gap-2 mb-1">
+                  <span className="text-xs font-semibold text-[#403833] truncate" title={s.supplier}>{s.supplier}</span>
+                  <span className="text-xs font-semibold text-[#58524e] shrink-0">{s.count} POs · {s.pct}%</span>
+                </div>
+                <div className="h-3 bg-[#f5f2ee] rounded-full overflow-hidden">
                   <div
-                    className="h-full rounded-r-md"
+                    className="h-full rounded-full"
                     style={{
                       width: `${Math.max(s.pct, 3)}%`,
                       background: i === 0 ? '#FF8900' : 'rgba(255,137,0,0.45)',
                     }}
                   />
                 </div>
-                <span className="text-[11px] font-semibold text-[#58524e] w-24 shrink-0 text-right whitespace-nowrap">
-                  {s.count} POs · {s.pct}%
-                </span>
               </div>
             ))}
           </div>
