@@ -3,7 +3,6 @@
 import { useMemo } from 'react';
 import { aggregateSOTRate, aggregateOTIFRate, type IsChinaSupplier } from '../../lib/kpiFormulas';
 import { rollupByPO } from '../../lib/poAggregation';
-import { getChannel } from '../../lib/channelUtils';
 import { getISOWeek, getISOWeekYear } from '../../lib/dateUtils';
 import { COLOR } from '../../lib/statusColors';
 import type { WeekInRange } from '../../hooks/useFilters';
@@ -63,13 +62,10 @@ function computeTrendSentence(weekPoints: WeekPoint[]): string {
 }
 
 export function SupplierHeaderBar({ supplier, lines, weeksInRange, isChinaSupplier, today }: SupplierHeaderBarProps) {
-  const { overallSOT, overallOTIF, totalPOs, channel, trendSentence, worst, best } = useMemo(() => {
+  const { overallSOT, overallOTIF, totalPOs, trendSentence, worst, best } = useMemo(() => {
     const rollups = rollupByPO(lines, isChinaSupplier, today);
     const overallSOT = aggregateSOTRate(lines, isChinaSupplier, today);
     const overallOTIF = aggregateOTIFRate(lines, isChinaSupplier);
-
-    const channels = new Set(lines.map((l) => getChannel(l.destination)));
-    const channel = channels.size === 1 ? [...channels][0] : channels.size > 1 ? 'Mixed' : '—';
 
     // trend/best/worst are based on actual (non-projected) weeks only — "actual week-over-week data"
     const actualWeeks = weeksInRange.filter((w) => !w.isFuture);
@@ -89,14 +85,13 @@ export function SupplierHeaderBar({ supplier, lines, weeksInRange, isChinaSuppli
       if (!best || w.pct > best.pct!) best = w;
     }
 
-    return { overallSOT, overallOTIF, totalPOs: rollups.length, channel, trendSentence, worst, best };
+    return { overallSOT, overallOTIF, totalPOs: rollups.length, trendSentence, worst, best };
   }, [lines, weeksInRange, isChinaSupplier, today]);
 
   return (
     <div className="bg-white rounded-lg border border-[#e9e3df] px-4 py-3 flex items-center gap-4" style={{ boxShadow: 'var(--shadow-card)' }}>
       <div className="flex items-center gap-2 shrink-0 min-w-0">
         <span className="text-base font-bold text-[#403833] truncate">{supplier}</span>
-        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#f5f2ee] text-[#7b7571] shrink-0">{channel}</span>
       </div>
 
       <div className="w-px h-8 bg-[#e9e3df] shrink-0" />

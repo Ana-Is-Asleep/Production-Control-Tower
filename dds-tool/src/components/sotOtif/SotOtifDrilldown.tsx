@@ -94,16 +94,26 @@ export function SotOtifDrilldown() {
     setSelectedWeek(defaultWeek);
   }, [isModeB, selectedSupplier, selectedWeek, weeksInRange]);
 
-  // scope for the KPI strip + Mode A's risk/concentration sections: the selected week's POs, or
-  // the full period in view when no week is selected
+  // scope for Mode A's risk/concentration sections: the selected week's POs, or the full period
+  // in view when no week is selected
   const scopeLines = useMemo(() => {
     if (!selectedWeek) return weekRangeLines;
     return weekRangeLines.filter((l) => l.pgrd && getISOWeek(l.pgrd) === selectedWeek.week && getISOWeekYear(l.pgrd) === selectedWeek.year);
   }, [weekRangeLines, selectedWeek]);
 
-  const scopeRollups = useMemo(() => rollupByPO(scopeLines, isChinaSupplier, today), [scopeLines, isChinaSupplier, today]);
-  const scopeSOT = useMemo(() => aggregateSOTRate(scopeLines, isChinaSupplier, today), [scopeLines, isChinaSupplier, today]);
-  const scopeOTIF = useMemo(() => aggregateOTIFRate(scopeLines, isChinaSupplier), [scopeLines, isChinaSupplier]);
+  // scope for the KPI strip specifically: the selected week's POs, or the LAST COMPLETED week
+  // (not the whole multi-week range) when no week is explicitly selected — the KPI cards are meant
+  // to read like "how did we do" not "how did we do averaged across everything in view"
+  const kpiLines = useMemo(() => {
+    if (selectedWeek) return scopeLines;
+    const lastCompleted = weeksInRange.find((w) => w.isCurrent);
+    if (!lastCompleted) return scopeLines;
+    return weekRangeLines.filter((l) => l.pgrd && getISOWeek(l.pgrd) === lastCompleted.week && getISOWeekYear(l.pgrd) === lastCompleted.year);
+  }, [selectedWeek, scopeLines, weekRangeLines, weeksInRange]);
+
+  const scopeRollups = useMemo(() => rollupByPO(kpiLines, isChinaSupplier, today), [kpiLines, isChinaSupplier, today]);
+  const scopeSOT = useMemo(() => aggregateSOTRate(kpiLines, isChinaSupplier, today), [kpiLines, isChinaSupplier, today]);
+  const scopeOTIF = useMemo(() => aggregateOTIFRate(kpiLines, isChinaSupplier), [kpiLines, isChinaSupplier]);
   const onTimeCount = scopeRollups.filter((r) => r.sot === true).length;
   const lateCount = scopeRollups.filter((r) => r.sot === false).length;
 

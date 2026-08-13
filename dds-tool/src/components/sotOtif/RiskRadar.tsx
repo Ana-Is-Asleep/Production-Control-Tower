@@ -86,7 +86,7 @@ export function RiskRadar({ lines, weeksInRange, isChinaSupplier, today }: RiskR
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0 text-right">
                   <span className="text-xs font-semibold whitespace-nowrap">
-                    <span style={{ color: COLOR.warn }}>{r.missingPGRDCount}</span> missing PGRD
+                    <span style={{ color: COLOR.warn }}>{r.missingPGRDCount}</span> Not SOT predicted
                   </span>
                   {r.avgDelayWeeks !== null && (
                     <span className="text-[11px] text-[#7b7571] whitespace-nowrap">
