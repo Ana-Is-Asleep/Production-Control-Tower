@@ -14,3 +14,14 @@ export const SCM_EMAILS = [
   'tobi.fu@emma-sleep.com',
   'valentin.lamy@emma-sleep.com',
 ] as const;
+
+// "ana.gomes@emma-sleep.com" -> "Ana Gomes" — owners are stored as email (the stable identifier)
+// but always displayed by name.
+export function emailToDisplayName(email: string): string {
+  if (!email) return '';
+  const local = email.split('@')[0];
+  return local
+    .split('.')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}

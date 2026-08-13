@@ -1,5 +1,6 @@
 import type { PurchaseLine } from '../types';
 import type { ActionItem } from '../types/actions';
+import { SUPPLIER_SCM_MAP } from './supplierScmMapping';
 
 // Rules only evaluate PO data from this date onwards, regardless of the dashboard's week filter.
 const RULES_DATA_FLOOR = new Date(2026, 0, 1);
@@ -30,7 +31,7 @@ function evaluateR001(lines: PurchaseLine[], existingActions: ActionItem[], toda
       supplierCode: line.vendorCode,
       supplierName: line.supplier,
       description: `PO ${line.po} — EGRD in the past with no booking. Delay likely.`,
-      owner: '',
+      owner: SUPPLIER_SCM_MAP[line.vendorCode] ?? '',
       comment: '',
       status: 'open',
       createdAt: now,

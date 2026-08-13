@@ -8,13 +8,17 @@ interface ActionsBadgeDrawerProps {
   actions: ActionItem[];
   onSave: (id: string, patch: Partial<ActionItem>) => void;
   onAddOpenPoint: (item: ActionItem) => void;
+  filteredPOs: Set<string>;
+  allSuppliers: string[];
 }
 
 // Version A: a persistent bottom-right badge that opens a right-side drawer. No backdrop —
 // the rest of the page stays visible and interactive while the drawer is open.
-export function ActionsBadgeDrawer({ actions, onSave, onAddOpenPoint }: ActionsBadgeDrawerProps) {
+export function ActionsBadgeDrawer({ actions, onSave, onAddOpenPoint, filteredPOs, allSuppliers }: ActionsBadgeDrawerProps) {
   const [open, setOpen] = useState(false);
-  const openCount = actions.filter((a) => a.status !== 'closed').length;
+  const openCount = actions.filter(
+    (a) => a.status !== 'closed' && (a.type === 'open_point' || !a.poReference || filteredPOs.has(a.poReference))
+  ).length;
 
   return (
     <>
@@ -35,7 +39,7 @@ export function ActionsBadgeDrawer({ actions, onSave, onAddOpenPoint }: ActionsB
             <h2 className="text-sm font-semibold text-[#403833]">Actions</h2>
             <button onClick={() => setOpen(false)} className="text-[#9c9794] hover:text-[#403833] text-lg leading-none">✕</button>
           </div>
-          <ActionsTabs actions={actions} onSave={onSave} onAddOpenPoint={onAddOpenPoint} />
+          <ActionsTabs actions={actions} onSave={onSave} onAddOpenPoint={onAddOpenPoint} filteredPOs={filteredPOs} allSuppliers={allSuppliers} />
         </div>
       )}
     </>

@@ -8,6 +8,11 @@ interface ActionsTabsProps {
   actions: ActionItem[];
   onSave: (id: string, patch: Partial<ActionItem>) => void;
   onAddOpenPoint: (item: ActionItem) => void;
+  // PO numbers that survive the dashboard's supplier/channel/category filters (deliberately NOT
+  // the week-range filter — flags evaluate their own date rule independent of the selected week).
+  // Open points aren't tied to uploaded PO data, so they're never filtered by this.
+  filteredPOs: Set<string>;
+  allSuppliers: string[];
 }
 
 function blankOpenPoint(): ActionItem {
@@ -23,11 +28,13 @@ function blankOpenPoint(): ActionItem {
   };
 }
 
-export function ActionsTabs({ actions, onSave, onAddOpenPoint }: ActionsTabsProps) {
+export function ActionsTabs({ actions, onSave, onAddOpenPoint, filteredPOs, allSuppliers }: ActionsTabsProps) {
   const [tab, setTab] = useState<ActionType>('flag');
   const [draftingNew, setDraftingNew] = useState(false);
 
-  const flags = actions.filter((a) => a.type === 'flag').sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const flags = actions
+    .filter((a) => a.type === 'flag' && (!a.poReference || filteredPOs.has(a.poReference)))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const openPoints = actions.filter((a) => a.type === 'open_point').sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const list = tab === 'flag' ? flags : openPoints;
 
@@ -62,6 +69,7 @@ export function ActionsTabs({ actions, onSave, onAddOpenPoint }: ActionsTabsProp
             action={blankOpenPoint()}
             startInEdit
             onDiscard={() => setDraftingNew(false)}
+            allSuppliers={allSuppliers}
             onSave={(patch) => {
               const now = new Date().toISOString();
               onAddOpenPoint({ ...blankOpenPoint(), ...patch, id: crypto.randomUUID(), createdAt: now, updatedAt: now });
@@ -73,7 +81,7 @@ export function ActionsTabs({ actions, onSave, onAddOpenPoint }: ActionsTabsProp
           <p className="text-xs text-[#9c9794] text-center py-6">{tab === 'flag' ? 'No flags' : 'No open points'}</p>
         )}
         {list.map((a) => (
-          <ActionCard key={a.id} action={a} onSave={(patch) => onSave(a.id, patch)} />
+          <ActionCard key={a.id} action={a} onSave={(patch) => onSave(a.id, patch)} allSuppliers={allSuppliers} />
         ))}
       </div>
     </div>

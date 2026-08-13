@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { ActionItem, ActionStatus } from '../../types/actions';
-import { SCM_EMAILS } from '../../lib/scmEmails';
+import { SCM_EMAILS, emailToDisplayName } from '../../lib/scmEmails';
 import { isoWeekLabel, getISOWeekYear } from '../../lib/dateUtils';
 
 const STATUS_STYLES: Record<ActionStatus, { label: string; bg: string; text: string }> = {
@@ -28,9 +28,10 @@ interface ActionCardProps {
   onSave: (patch: Partial<ActionItem>) => void;
   startInEdit?: boolean;
   onDiscard?: () => void; // only used for an unsaved "add open point" draft
+  allSuppliers?: string[];
 }
 
-export function ActionCard({ action, onSave, startInEdit = false, onDiscard }: ActionCardProps) {
+export function ActionCard({ action, onSave, startInEdit = false, onDiscard, allSuppliers = [] }: ActionCardProps) {
   const [editing, setEditing] = useState(startInEdit);
   const [draft, setDraft] = useState<ActionItem>(action);
 
@@ -53,7 +54,7 @@ export function ActionCard({ action, onSave, startInEdit = false, onDiscard }: A
           <StatusBadge status={action.status} />
         </div>
         <div className="flex items-center justify-between mt-2 text-[10px] text-[#9c9794] gap-2">
-          <span className="truncate">{action.owner || 'No owner'}</span>
+          <span className="truncate">{action.owner ? emailToDisplayName(action.owner) : 'No owner'}</span>
           <span className="shrink-0">{createdLabel}</span>
         </div>
         {action.comment && <p className="text-[11px] text-[#7b7571] mt-1.5 line-clamp-2">{action.comment}</p>}
@@ -73,12 +74,17 @@ export function ActionCard({ action, onSave, startInEdit = false, onDiscard }: A
             rows={2}
           />
           <div className="flex gap-2">
-            <input
+            <select
               value={draft.supplierName ?? ''}
               onChange={(e) => setDraft({ ...draft, supplierName: e.target.value })}
-              placeholder="Supplier (optional)"
               className="flex-1 min-w-0 text-xs border border-[#e9e3df] rounded px-2 py-1"
-            />
+            >
+              <option value="">No supplier</option>
+              {draft.supplierName && !allSuppliers.includes(draft.supplierName) && (
+                <option value={draft.supplierName}>{draft.supplierName}</option>
+              )}
+              {allSuppliers.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
             <input
               value={draft.poReference ?? ''}
               onChange={(e) => setDraft({ ...draft, poReference: e.target.value })}
@@ -103,7 +109,7 @@ export function ActionCard({ action, onSave, startInEdit = false, onDiscard }: A
           className="flex-1 min-w-0 text-[11px] border border-[#e9e3df] rounded px-1.5 py-1"
         >
           <option value="">No owner</option>
-          {SCM_EMAILS.map((email) => <option key={email} value={email}>{email}</option>)}
+          {SCM_EMAILS.map((email) => <option key={email} value={email}>{emailToDisplayName(email)}</option>)}
         </select>
         <select
           value={draft.status}

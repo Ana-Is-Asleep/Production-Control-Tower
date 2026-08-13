@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useData } from '../context/DataContext';
 import { NavTabs } from './shared/NavTabs';
 import { useFilters } from '../hooks/useFilters';
@@ -34,6 +34,10 @@ export function Dashboard() {
     useFilters(allLines, globalFilters);
   const { isChinaSupplier } = useVendorMapping();
   const kpis = useKPIs(weekRangeLines, weeksInRange, isChinaSupplier);
+
+  // POs surviving the supplier/channel/category filters (not the week range) — flags are
+  // filtered against this so they respect the same non-date filters as the rest of the dashboard.
+  const filteredPOs = useMemo(() => new Set(filteredLines.map((l) => l.po)), [filteredLines]);
 
   const setFilters = (f: typeof filters) => {
     _setFilters(f);
@@ -104,13 +108,13 @@ export function Dashboard() {
             </div>
           </div>
           {ACTIONS_UI_MODE === 'panel' && (
-            <ActionsSidePanel actions={actions} onSave={updateAction} onAddOpenPoint={addAction} />
+            <ActionsSidePanel actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers} />
           )}
         </div>
       )}
 
       {hasData && ACTIONS_UI_MODE === 'badge' && (
-        <ActionsBadgeDrawer actions={actions} onSave={updateAction} onAddOpenPoint={addAction} />
+        <ActionsBadgeDrawer actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers} />
       )}
 
       <UploadPanel open={uploadOpen} onClose={() => setUploadOpen(false)} onLoad={handleLoad} />

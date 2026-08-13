@@ -1,0 +1,35 @@
+// Maps vendorCode ("Buy-from Vendor No.") -> assigned SCM email, extracted from
+// "Supply Chain Managers - Email Automation.xlsx" (Emma Operations - 2600 - Transportation /
+// 13 - Automations). Where a vendor has multiple rows (different channel/category), the D2C-channel
+// row is preferred since this app is D2C-scoped.
+export const SUPPLIER_SCM_MAP: Record<string, string> = {
+  '9700000': 'lara.schafer@emma-sleep.com',
+  '9700004': 'mahmut.cagrici@emma-sleep.com',
+  '9700005': 'mahmut.cagrici@emma-sleep.com',
+  '9700148': 'tabata.cervone@emma-sleep.com',
+  '9700767': 'prithviraj.chauhan@emma-sleep.com',
+  '9701397': 'prithviraj.chauhan@emma-sleep.com',
+  '9701516': 'prithviraj.chauhan@emma-sleep.com',
+  '9701987': 'ana.gomes@emma-sleep.com',
+  '9702109': 'mario.giron@emma-sleep.com',
+  '9702324': 'mahmut.cagrici@emma-sleep.com',
+  '9702326': 'mahmut.cagrici@emma-sleep.com',
+  '9702394': 'adriana.reis@emma-sleep.com',
+  '9702471': 'mario.giron@emma-sleep.com',
+  '9702542': 'lara.schafer@emma-sleep.com',
+  '9702690': 'charlie.damore@emma-sleep.com',
+  '9703170': 'ana.gomes@emma-sleep.com',
+  '9703579': 'valentin.lamy@emma-sleep.com',
+  '9703918': 'mario.giron@emma-sleep.com',
+  '9704253': 'ana.gomes@emma-sleep.com',
+  '9704538': 'prithviraj.chauhan@emma-sleep.com',
+  '9704539': 'mario.giron@emma-sleep.com',
+  '9705324': 'mario.giron@emma-sleep.com',
+  '9705596': 'mario.giron@emma-sleep.com',
+  '9705650': 'mahmut.cagrici@emma-sleep.com',
+  '9705857': 'valentin.lamy@emma-sleep.com',
+  '9706412': 'ana.gomes@emma-sleep.com',
+  '9706486': 'ana.gomes@emma-sleep.com',
+  '9706510': 'prithviraj.chauhan@emma-sleep.com',
+  '9706531': 'valentin.lamy@emma-sleep.com',
+};
