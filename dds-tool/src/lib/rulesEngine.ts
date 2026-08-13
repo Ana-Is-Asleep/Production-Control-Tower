@@ -31,7 +31,7 @@ function evaluateR001(lines: PurchaseLine[], existingActions: ActionItem[], toda
       supplierCode: line.vendorCode,
       supplierName: line.supplier,
       description: `PO ${line.po} — EGRD in the past with no booking. Delay likely.`,
-      owner: SUPPLIER_SCM_MAP[line.vendorCode] ?? '',
+      owner: SUPPLIER_SCM_MAP[line.vendorCode?.trim()] ?? '',
       comment: '',
       status: 'open',
       createdAt: now,
