@@ -5,7 +5,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { SlideOver } from '../shared/SlideOver';
 import { MiniLegend } from '../shared/MiniLegend';
 import { useReasonClassification } from '../../hooks/useReasonClassification';
-import { REASON_CATEGORIES, isSubstantiveReason, type ReasonCategory } from '../../lib/reasonClassification';
+import { REASON_CATEGORIES, REASON_CATEGORY_LABELS, isSubstantiveReason, type ReasonCategory } from '../../lib/reasonClassification';
+import { aggregatePOReasons, type LineForAggregation } from '../../lib/poReasonAggregation';
 import { getISOWeek, getISOWeekYear } from '../../lib/dateUtils';
 import { COLOR } from '../../lib/statusColors';
 import type { WeekInRange } from '../../hooks/useFilters';
@@ -17,26 +18,30 @@ interface RootCauseSectionProps {
 }
 
 const CATEGORY_PALETTE: Record<ReasonCategory, string> = {
-  supplier_capacity: '#FF8900',
-  material_shortage: '#6469aa',
+  component_supply_delay: '#FF8900',
+  production_capacity_constraint: '#6469aa',
   quality_issue: '#dc2626',
-  documentation_delay: '#F59E0B',
-  transit_delay: '#34A853',
-  booking_not_made: '#8A8A8A',
-  carrier_issue: '#0891b2',
-  customs_delay: '#a855f7',
-  truck_rounding_issue: '#c026d3',
-  other: '#9c9794',
+  machine_production_issue: '#F59E0B',
+  holiday_plant_shutdown: '#34A853',
+  transport_warehouse_slot_capacity: '#0891b2',
+  truck_rounding_pallet_configuration_error: '#c026d3',
+  po_reshuffling_erp_issue: '#a855f7',
+  it_issue: '#2563eb',
+  forecast_order_quantity_mismatch: '#65a30d',
+  administrative_planning_error: '#b45309',
+  other_unclear: '#9c9794',
 };
 
 interface WeekCategoryDetail {
-  count: number;
+  // count of distinct POs whose final (PO-level aggregated) root cause fell into this
+  // week/category bucket — not a line count, since a PO can have multiple lines
+  poCount: number;
   suppliers: Map<string, number>;
   raw: { reason: string; supplier: string; po: string }[];
 }
 
 function emptyDetail(): WeekCategoryDetail {
-  return { count: 0, suppliers: new Map(), raw: [] };
+  return { poCount: 0, suppliers: new Map(), raw: [] };
 }
 
 interface TooltipPayloadEntry {
@@ -58,7 +63,7 @@ function NonZeroTooltip({ active, payload, label }: { active?: boolean; payload?
       {present.map((p) => (
         <p key={p.dataKey} style={{ color: '#f9f7f6', margin: 0 }}>
           <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 4, background: p.color, marginRight: 6 }} />
-          {String(p.dataKey).replace(/_/g, ' ')}: {p.value} POs
+          {REASON_CATEGORY_LABELS[p.dataKey as ReasonCategory] ?? String(p.dataKey)}: {p.value} POs
         </p>
       ))}
     </div>
@@ -82,20 +87,43 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
       }
     }
 
-    let totalFlagged = 0;
-    for (const line of linesWithReasons) {
-      if (!line.pgrd) continue;
-      const week = weeksInRange.find((w) => w.week === getISOWeek(line.pgrd!) && w.year === getISOWeekYear(line.pgrd!));
-      if (!week) continue;
+    // line-level classification (or null for blank/non-substantive lines, which Step 2a will
+    // fill in from a sibling line in the same PO) feeds the PO-level aggregation — the PO-level
+    // result, not the individual line's own reason, is what actually gets counted/charted
+    const linesForAgg: LineForAggregation[] = lines.map((l) => {
+      const reason = l.lossReasonCode.trim();
+      const category = isSubstantiveReason(reason) ? (classifications[reason]?.category ?? null) : null;
+      return { po: l.po, line: l.line, qty: l.qty, rawReason: reason, category };
+    });
+    const poResults = aggregatePOReasons(linesForAgg);
+
+    // representative week/supplier per PO (first line encountered) + the raw reason texts for
+    // that PO, so the drill-down can still show real supplier text even though the chart itself
+    // now counts POs, not lines
+    const poMeta = new Map<string, { week: WeekInRange | undefined; supplier: string; rawReasons: string[] }>();
+    for (const line of lines) {
+      if (!poMeta.has(line.po)) {
+        const week = line.pgrd
+          ? weeksInRange.find((w) => w.week === getISOWeek(line.pgrd!) && w.year === getISOWeekYear(line.pgrd!))
+          : undefined;
+        poMeta.set(line.po, { week, supplier: line.supplier, rawReasons: [] });
+      }
       const reason = line.lossReasonCode.trim();
-      const category = classifications[reason]?.category ?? 'other';
-      const key = `${week.label}__${category}`;
+      if (isSubstantiveReason(reason)) poMeta.get(line.po)!.rawReasons.push(reason);
+    }
+
+    let totalFlagged = 0;
+    for (const [po, result] of poResults) {
+      if (!result.finalCategory) continue;
+      const meta = poMeta.get(po);
+      if (!meta?.week) continue;
+      const key = `${meta.week.label}__${result.finalCategory}`;
       const d = detail.get(key) ?? emptyDetail();
-      d.count += 1;
-      d.suppliers.set(line.supplier, (d.suppliers.get(line.supplier) ?? 0) + 1);
-      d.raw.push({ reason, supplier: line.supplier, po: line.po });
+      d.poCount += 1;
+      d.suppliers.set(meta.supplier, (d.suppliers.get(meta.supplier) ?? 0) + 1);
+      meta.rawReasons.forEach((r) => d.raw.push({ reason: r, supplier: meta.supplier, po }));
       detail.set(key, d);
-      categoryTotals[category] = (categoryTotals[category] ?? 0) + 1;
+      categoryTotals[result.finalCategory] = (categoryTotals[result.finalCategory] ?? 0) + 1;
       totalFlagged += 1;
     }
 
@@ -103,12 +131,12 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
 
     const chartData = weeksInRange.map((week) => {
       const row: Record<string, number | string> = { weekLabel: week.label };
-      categoryOrder.forEach((cat) => { row[cat] = detail.get(`${week.label}__${cat}`)?.count ?? 0; });
+      categoryOrder.forEach((cat) => { row[cat] = detail.get(`${week.label}__${cat}`)?.poCount ?? 0; });
       return row;
     });
 
     return { chartData, detailByWeekCategory: detail, categoryOrder, totalFlagged };
-  }, [linesWithReasons, weeksInRange, classifications]);
+  }, [lines, weeksInRange, classifications]);
 
   const selectedDetail = selected ? detailByWeekCategory.get(`${selected.week}__${selected.category}`) : null;
 
@@ -138,7 +166,7 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
           <div className="flex-1 min-h-0 mt-1 flex flex-col">
             <MiniLegend
               className="mb-1 shrink-0"
-              items={activeCategories.map((cat) => ({ label: cat.replace(/_/g, ' '), color: CATEGORY_PALETTE[cat], type: 'bar' as const }))}
+              items={activeCategories.map((cat) => ({ label: REASON_CATEGORY_LABELS[cat], color: CATEGORY_PALETTE[cat], type: 'bar' as const }))}
             />
             <div className="flex-1 min-h-0">
             <ResponsiveContainer width="100%" height="100%">
@@ -178,7 +206,7 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
                 <Tooltip content={<NonZeroTooltip />} />
                 <Legend
                   verticalAlign="top" align="right" iconSize={8}
-                  formatter={(v) => <span style={{ color: COLOR.muted, fontSize: 11 }}>{String(v).replace(/_/g, ' ')}</span>}
+                  formatter={(v) => <span style={{ color: COLOR.muted, fontSize: 11 }}>{REASON_CATEGORY_LABELS[v as ReasonCategory] ?? String(v)}</span>}
                 />
                 {categoryOrder.map((cat) => (
                   <Bar
@@ -201,7 +229,7 @@ export function RootCauseSection({ lines, weeksInRange }: RootCauseSectionProps)
           {selectedDetail && (
             <div className="border-t border-[#f4f1ef] pt-4 space-y-4">
               <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">
-                {selected!.category.replace(/_/g, ' ')} — {selected!.week}
+                {REASON_CATEGORY_LABELS[selected!.category]} — {selected!.week}
               </p>
               <div>
                 <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-2">Top suppliers citing this reason</p>

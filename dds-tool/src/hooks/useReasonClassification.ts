@@ -1,17 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { classifyReasonByKeywords, type ReasonCategory } from '../lib/reasonClassification';
+import { classifyReasonByKeywords, type ClassifiedReason } from '../lib/reasonClassification';
 
-export interface ClassificationEntry {
-  category: ReasonCategory;
-  cleaned_summary: string;
-}
+export type ClassificationEntry = ClassifiedReason;
 
-// Classifies raw loss-reason strings via /api/classify-reason (Claude Haiku, cached server-side
-// in Airtable, keyword-fallback server-side if the AI call fails). If the fetch itself can't even
-// reach the server, falls back to the local keyword classifier so the dashboard never just shows
-// everything as unclassified.
+// Classifies raw loss-reason strings via /api/classify-reason (Claude Haiku, in-memory cache only —
+// root-cause text never gets persisted to Airtable — keyword-fallback server-side if the AI call
+// fails). If the fetch itself can't even reach the server, falls back to the local keyword
+// classifier so the dashboard never just shows everything as unclassified.
 export function useReasonClassification(rawReasons: string[]) {
   const [map, setMap] = useState<Record<string, ClassificationEntry>>({});
   const [loading, setLoading] = useState(false);
@@ -31,11 +28,14 @@ export function useReasonClassification(rawReasons: string[]) {
       body: JSON.stringify({ reasons: missing }),
     })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error('classify-reason failed'))))
-      .then((data: { results: { reason: string; category: ReasonCategory; cleaned_summary: string }[] }) => {
+      .then((data: { results: ({ reason: string } & ClassifiedReason)[] }) => {
         if (cancelled) return;
         setMap((prev) => {
           const next = { ...prev };
-          data.results.forEach((r) => { next[r.reason] = { category: r.category, cleaned_summary: r.cleaned_summary }; });
+          data.results.forEach((r) => {
+            const { reason, ...entry } = r;
+            next[reason] = entry;
+          });
           return next;
         });
       })
