@@ -5,7 +5,7 @@ function signed(n: number): string {
 }
 
 // Pure function — one summary line reflecting active global filters in plain language,
-// e.g. "D2C · Mattresses · All Suppliers · Weeks -7/+3"
+// e.g. "Online · Mattresses · All Suppliers · Weeks -7/+3"
 export function formatFilterSummary(filters: ActiveFilters): string {
   const parts: string[] = [];
 

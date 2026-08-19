@@ -17,10 +17,12 @@ import { InvoicesSection } from './sections/InvoicesSection';
 import { LeadTimeSection } from './sections/LeadTimeSection';
 import { ActionsBadgeDrawer } from './actions/ActionsBadgeDrawer';
 import { ActionsSidePanel } from './actions/ActionsSidePanel';
+import type { StatusFilter } from './actions/ActionsTabs';
 import { formatFilterSummary } from '../lib/filterSummary';
 import { buildSotOtifHref } from '../lib/sotOtifParams';
 import type { PurchaseLine } from '../types';
 import type { InvoiceRow } from '../types/invoice';
+import type { ActionType } from '../types/actions';
 
 export function Dashboard() {
   const { allLines, setAllLines, invoices, setInvoices, globalFilters, setGlobalFilters } = useData();
@@ -29,6 +31,10 @@ export function Dashboard() {
   // 'panel' (always-visible right panel that shrinks the main content area). Toggled live via
   // the header button below rather than a code constant, so both are actually reachable in the UI.
   const [actionsUiMode, setActionsUiMode] = useState<'badge' | 'panel'>('badge');
+  // tab/statusFilter live here (not inside ActionsTabs) so switching between badge and panel mode
+  // keeps the same tab and filter selected instead of resetting each time.
+  const [actionsTab, setActionsTab] = useState<ActionType>('flag');
+  const [actionsStatusFilter, setActionsStatusFilter] = useState<StatusFilter>('open');
   const { actions, runRules, addAction, updateAction } = useActions();
 
   const { filters, setFilters: _setFilters, filteredLines, weekRangeLines, weeksInRange, allSuppliers, curWeek, curYear } =
@@ -118,13 +124,19 @@ export function Dashboard() {
             </div>
           </div>
           {actionsUiMode === 'panel' && (
-            <ActionsSidePanel actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers} />
+            <ActionsSidePanel
+              actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers}
+              tab={actionsTab} onTabChange={setActionsTab} statusFilter={actionsStatusFilter} onStatusFilterChange={setActionsStatusFilter}
+            />
           )}
         </div>
       )}
 
       {hasData && actionsUiMode === 'badge' && (
-        <ActionsBadgeDrawer actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers} />
+        <ActionsBadgeDrawer
+          actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers}
+          tab={actionsTab} onTabChange={setActionsTab} statusFilter={actionsStatusFilter} onStatusFilterChange={setActionsStatusFilter}
+        />
       )}
 
       <UploadPanel open={uploadOpen} onClose={() => setUploadOpen(false)} onLoad={handleLoad} />

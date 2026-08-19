@@ -1,8 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ActionsTabs } from './ActionsTabs';
-import type { ActionItem } from '../../types/actions';
+import { ActionsTabs, type StatusFilter } from './ActionsTabs';
+import type { ActionItem, ActionType } from '../../types/actions';
 
 interface ActionsSidePanelProps {
   actions: ActionItem[];
@@ -10,11 +10,19 @@ interface ActionsSidePanelProps {
   onAddOpenPoint: (item: ActionItem) => void;
   filteredPOs: Set<string>;
   allSuppliers: string[];
+  tab: ActionType;
+  onTabChange: (t: ActionType) => void;
+  statusFilter: StatusFilter;
+  onStatusFilterChange: (f: StatusFilter) => void;
 }
 
 // Version B: always-visible right panel — the caller is responsible for shrinking the main
-// content area to make room for it (see Dashboard.tsx).
-export function ActionsSidePanel({ actions, onSave, onAddOpenPoint, filteredPOs, allSuppliers }: ActionsSidePanelProps) {
+// content area to make room for it (see Dashboard.tsx). tab/statusFilter are controlled by the
+// parent (shared with ActionsBadgeDrawer) so switching between Badge and Panel modes never
+// resets your place.
+export function ActionsSidePanel({
+  actions, onSave, onAddOpenPoint, filteredPOs, allSuppliers, tab, onTabChange, statusFilter, onStatusFilterChange,
+}: ActionsSidePanelProps) {
   const [expanded, setExpanded] = useState(false);
 
   // open (non-closed) actions per supplier — flags respect the same supplier/channel/category
@@ -61,7 +69,10 @@ export function ActionsSidePanel({ actions, onSave, onAddOpenPoint, filteredPOs,
         </div>
       )}
 
-      <ActionsTabs actions={actions} onSave={onSave} onAddOpenPoint={onAddOpenPoint} filteredPOs={filteredPOs} allSuppliers={allSuppliers} />
+      <ActionsTabs
+        actions={actions} onSave={onSave} onAddOpenPoint={onAddOpenPoint} filteredPOs={filteredPOs} allSuppliers={allSuppliers}
+        tab={tab} onTabChange={onTabChange} statusFilter={statusFilter} onStatusFilterChange={onStatusFilterChange}
+      />
     </div>
   );
 }

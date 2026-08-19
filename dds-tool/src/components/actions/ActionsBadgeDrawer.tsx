@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { ActionsTabs } from './ActionsTabs';
-import type { ActionItem } from '../../types/actions';
+import { ActionsTabs, type StatusFilter } from './ActionsTabs';
+import type { ActionItem, ActionType } from '../../types/actions';
 
 interface ActionsBadgeDrawerProps {
   actions: ActionItem[];
@@ -10,11 +10,19 @@ interface ActionsBadgeDrawerProps {
   onAddOpenPoint: (item: ActionItem) => void;
   filteredPOs: Set<string>;
   allSuppliers: string[];
+  tab: ActionType;
+  onTabChange: (t: ActionType) => void;
+  statusFilter: StatusFilter;
+  onStatusFilterChange: (f: StatusFilter) => void;
 }
 
 // Version A: a persistent bottom-right badge that opens a right-side drawer. No backdrop —
-// the rest of the page stays visible and interactive while the drawer is open.
-export function ActionsBadgeDrawer({ actions, onSave, onAddOpenPoint, filteredPOs, allSuppliers }: ActionsBadgeDrawerProps) {
+// the rest of the page stays visible and interactive while the drawer is open. tab/statusFilter
+// are controlled by the parent (shared with ActionsSidePanel) so switching between Badge and
+// Panel modes never resets your place.
+export function ActionsBadgeDrawer({
+  actions, onSave, onAddOpenPoint, filteredPOs, allSuppliers, tab, onTabChange, statusFilter, onStatusFilterChange,
+}: ActionsBadgeDrawerProps) {
   const [open, setOpen] = useState(false);
   const openCount = actions.filter(
     (a) => a.status !== 'closed' && (a.type === 'open_point' || !a.poReference || filteredPOs.has(a.poReference))
@@ -39,7 +47,10 @@ export function ActionsBadgeDrawer({ actions, onSave, onAddOpenPoint, filteredPO
             <h2 className="text-sm font-semibold text-[#403833]">Actions</h2>
             <button onClick={() => setOpen(false)} className="text-[#9c9794] hover:text-[#403833] text-lg leading-none">✕</button>
           </div>
-          <ActionsTabs actions={actions} onSave={onSave} onAddOpenPoint={onAddOpenPoint} filteredPOs={filteredPOs} allSuppliers={allSuppliers} />
+          <ActionsTabs
+            actions={actions} onSave={onSave} onAddOpenPoint={onAddOpenPoint} filteredPOs={filteredPOs} allSuppliers={allSuppliers}
+            tab={tab} onTabChange={onTabChange} statusFilter={statusFilter} onStatusFilterChange={onStatusFilterChange}
+          />
         </div>
       )}
     </>

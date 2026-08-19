@@ -15,7 +15,7 @@ interface GlobalFilterBarProps {
   curYear: number;
 }
 
-const CHANNELS: Channel[] = ['Offline', 'D2C'];
+const CHANNELS: Channel[] = ['Offline', 'Online'];
 
 export function GlobalFilterBar({ filters, onChange, allSuppliers, curWeek, curYear }: GlobalFilterBarProps) {
   const toggleChannel = (c: Channel) => {

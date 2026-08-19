@@ -22,7 +22,7 @@ export function TopGraphChart({ points, onWeekClick }: TopGraphChartProps) {
         <MiniLegend
           items={[
             { label: 'POs SOT or Expected SOT', color: BAR_SHIPPED, type: 'bar' },
-            { label: 'Placed POs', color: BAR_TOTAL, type: 'bar' },
+            { label: 'POs Requested', color: BAR_TOTAL, type: 'bar' },
             { label: 'SOT %', color: LINE_SOT, type: 'line' },
             { label: 'OTIF %', color: LINE_OTIF, type: 'line' },
           ]}
@@ -43,7 +43,7 @@ export function TopGraphChart({ points, onWeekClick }: TopGraphChartProps) {
             <YAxis yAxisId="pos" orientation="left" tick={{ fill: COLOR.muted, fontSize: 11 }} allowDecimals={false} axisLine={false} tickLine={false} />
             <ReferenceLine yAxisId="pct" y={90} stroke={COLOR.border} strokeDasharray="4 4" />
             <Bar yAxisId="pos" dataKey="shippedPOs" stackId="poStack" fill={BAR_SHIPPED} radius={[0, 0, 0, 0]} name="POs SOT or Expected SOT" />
-            <Bar yAxisId="pos" dataKey="backlogPOs" stackId="poStack" fill={BAR_TOTAL} radius={[2, 2, 0, 0]} name="Placed POs" />
+            <Bar yAxisId="pos" dataKey="backlogPOs" stackId="poStack" fill={BAR_TOTAL} radius={[2, 2, 0, 0]} name="POs Requested" />
             <Line yAxisId="pct" dataKey="sotPastPct" stroke={LINE_SOT} strokeWidth={2} dot={{ r: 3, fill: LINE_SOT, stroke: '#fff', strokeWidth: 1.5 }} name="SOT % (actual)" connectNulls />
             <Line yAxisId="pct" dataKey="sotFuturePct" stroke={LINE_SOT} strokeWidth={2} strokeDasharray="5 4" dot={{ r: 3, fill: LINE_SOT, stroke: '#fff', strokeWidth: 1.5 }} name="SOT % (projected)" connectNulls />
             <Line yAxisId="pct" dataKey="otifPastPct" stroke={LINE_OTIF} strokeWidth={2} dot={{ r: 3, fill: LINE_OTIF, stroke: '#fff', strokeWidth: 1.5 }} name="OTIF % (actual)" connectNulls />

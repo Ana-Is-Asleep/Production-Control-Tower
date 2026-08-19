@@ -34,6 +34,16 @@ interface ActionCardProps {
 export function ActionCard({ action, onSave, startInEdit = false, onDiscard, allSuppliers = [] }: ActionCardProps) {
   const [editing, setEditing] = useState(startInEdit);
   const [draft, setDraft] = useState<ActionItem>(action);
+  const [showCommentError, setShowCommentError] = useState(false);
+
+  const isClosing = draft.status === 'closed';
+  const commentMissing = isClosing && !draft.comment.trim();
+
+  const handleSave = () => {
+    if (commentMissing) { setShowCommentError(true); return; }
+    onSave(draft);
+    setEditing(false);
+  };
 
   const createdDate = new Date(action.createdAt);
   const createdLabel = isNaN(createdDate.getTime()) ? '' : `${isoWeekLabel(createdDate)} ${getISOWeekYear(createdDate)}`;
@@ -120,13 +130,25 @@ export function ActionCard({ action, onSave, startInEdit = false, onDiscard, all
         </select>
       </div>
 
-      <textarea
-        value={draft.comment}
-        onChange={(e) => setDraft({ ...draft, comment: e.target.value })}
-        placeholder="Comment…"
-        className="w-full text-xs border border-[#e9e3df] rounded px-2 py-1.5 resize-none"
-        rows={2}
-      />
+      {isClosing && (
+        <div className="bg-[#fff7ed] border border-brand/30 rounded px-2.5 py-2 text-[10px] text-[#7b7571] leading-relaxed">
+          <p className="font-semibold text-[#403833] mb-1">Before closing — capture the root cause (5 Whys):</p>
+          1. Why did this happen? → 2. Why did that happen? → 3. Why? → 4. Why? → 5. Why? (root cause)
+        </div>
+      )}
+
+      <div>
+        <textarea
+          value={draft.comment}
+          onChange={(e) => { setDraft({ ...draft, comment: e.target.value }); if (showCommentError) setShowCommentError(false); }}
+          placeholder={isClosing ? 'Required to close — what was the root cause? (walk through the 5 Whys above)' : 'Comment…'}
+          className={`w-full text-xs border rounded px-2 py-1.5 resize-none ${showCommentError && commentMissing ? 'border-fail' : 'border-[#e9e3df]'}`}
+          rows={isClosing ? 3 : 2}
+        />
+        {showCommentError && commentMissing && (
+          <p className="text-[10px] text-fail mt-1">A comment is required to close this item.</p>
+        )}
+      </div>
 
       <div className="flex justify-end gap-2">
         <button
@@ -136,7 +158,7 @@ export function ActionCard({ action, onSave, startInEdit = false, onDiscard, all
           Cancel
         </button>
         <button
-          onClick={() => { onSave(draft); setEditing(false); }}
+          onClick={handleSave}
           className="text-[11px] font-semibold text-white bg-brand rounded px-3 py-1 hover:bg-brand-soft transition-colors"
         >
           Save
