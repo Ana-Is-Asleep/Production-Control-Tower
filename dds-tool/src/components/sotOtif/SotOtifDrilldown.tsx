@@ -14,7 +14,6 @@ import { ScorecardMatrix } from './ScorecardMatrix';
 import { RiskRadar } from './RiskRadar';
 import { ConcentrationAnalysis } from './ConcentrationAnalysis';
 import { WeekStrip } from './WeekStrip';
-import { SupplierHeaderBar } from './SupplierHeaderBar';
 import { POList } from './POList';
 import { rollupByPO } from '../../lib/poAggregation';
 import { aggregateSOTRate, aggregateOTIFRate } from '../../lib/kpiFormulas';
@@ -212,13 +211,6 @@ export function SotOtifDrilldown() {
           </div>
         ) : (
           <div className="p-4 space-y-3">
-            <SupplierHeaderBar
-              supplier={selectedSupplier!}
-              lines={weekRangeLines.filter((l) => l.supplier === selectedSupplier)}
-              weeksInRange={weeksInRange}
-              isChinaSupplier={isChinaSupplier}
-              today={today}
-            />
             <WeekStrip
               lines={weekRangeLines.filter((l) => l.supplier === selectedSupplier)}
               weeksInRange={weeksInRange}
