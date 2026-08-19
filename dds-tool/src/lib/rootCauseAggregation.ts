@@ -175,22 +175,21 @@ export function computeLineDetailRows(
   classifications: Record<string, ClassificationEntry>,
   weeksInRange: WeekInRange[]
 ): LineDetailRow[] {
-  return lines
-    .map((l) => {
-      const reason = l.lossReasonCode.trim();
-      if (!isSubstantiveReason(reason)) return null;
-      const week = l.pgrd ? weeksInRange.find((w) => w.week === getISOWeek(l.pgrd!) && w.year === getISOWeekYear(l.pgrd!)) : undefined;
-      return {
-        po: l.po,
-        line: l.line,
-        supplier: l.supplier,
-        week,
-        skuCategory: categorizeSKU(l.sku),
-        shipDate: l.asd ?? l.esd ?? null,
-        qty: l.qty,
-        aiCategory: classifications[reason]?.category ?? null,
-        rawReason: reason,
-      };
-    })
-    .filter((r): r is LineDetailRow => r !== null);
+  const mapped: (LineDetailRow | null)[] = lines.map((l) => {
+    const reason = l.lossReasonCode.trim();
+    if (!isSubstantiveReason(reason)) return null;
+    const week = l.pgrd ? weeksInRange.find((w) => w.week === getISOWeek(l.pgrd!) && w.year === getISOWeekYear(l.pgrd!)) : undefined;
+    return {
+      po: l.po,
+      line: l.line,
+      supplier: l.supplier,
+      week,
+      skuCategory: categorizeSKU(l.sku),
+      shipDate: l.asd ?? l.esd ?? null,
+      qty: l.qty,
+      aiCategory: classifications[reason]?.category ?? null,
+      rawReason: reason,
+    };
+  });
+  return mapped.filter((r): r is LineDetailRow => r !== null);
 }
