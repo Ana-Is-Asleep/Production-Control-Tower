@@ -49,10 +49,15 @@ Categories:
   the covers delivery coming from Ikano", "no covers available", "defective cover" (Cover/Textile); "UK fabric's
   leadtime is longer than normal", "fabrics delivery from BD is delayed" (Fabric); "Springs delay LPT -
   PO-E-51201", "lack of springs from Agro", "L&P delays" (Springs/Metal); "TPE Delays", "TPE delay & defective
-  covers" (TPE).
+  covers", "T PE delays", "PTPE delays" (TPE — treat any spacing/spelling variant of "TPE" the same way);
+  "Bekaert delay ETA 29/07" (Bekaert is a known component supplier, so a delay attributed to them belongs here
+  even without a component keyword).
 - production_capacity_constraint: the factory/supplier does not have enough capacity for the order placed (not a
   missing component — a hard capacity ceiling). Examples: "Order > agreed Capacity", "Capacity Constraints", "over
-  capacity", "very difficult to produce", "affected by other lines".
+  capacity", "very difficult to produce", "difficult to produce", "production availability", "Line 2 pillow not
+  yet finished" (a specific line not finished in time is still a production-capacity/availability issue),
+  "affected by other lines" (plural/no specific line number — if it names one specific line, e.g. "affected by
+  line 6", that's a line-reference to resolve from that line instead, not this category).
 - holiday_plant_shutdown: stoppage due to public holidays or a seasonal shutdown. Examples: "Eid Holidays
   Pakistan", "Winter shutdown - week 52 and 1", "holiday break", "Emma shipping limited during holiday".
 - carrier_transportation_delay: the carrier itself caused the delay (rescheduled a pickup on their own, carrier-side
@@ -66,7 +71,8 @@ Categories:
 - truck_rounding_pallet_configuration_error: a miscalculation of how many units/pallets fit in a truck or
   container (truck rounding), including wrong quantity per pallet or wrong packing multiple. Examples: "Wrong
   Truck Rounding", "wrong pallet quantity", "wrong multiple - 6 units/1 pallet", "lack of space in the truck",
-  "too many pallets included in this PO, one of them has not fit into trailer".
+  "too many pallets included in this PO, one of them has not fit into trailer", "qty changed to 114 units as 116
+  is not a multiple of pallet", "one pallet not loaded as it did not fit the truck".
 - po_reshuffling_erp_issue: PO reorganization, date changes driven by an internal decision, or an ERP system
   error/limitation (not a general IT infrastructure failure). Examples: "PO reshuffling", "Rescheduling caused by
   the ERP system", "reorganization PO-E-54871", "moved to PO-E-53333", "NQ error-daily plan reorganization".
@@ -74,7 +80,8 @@ Categories:
   reorganization. Example: "IT issues".
 - forecast_order_quantity_mismatch: a gap between what was ordered, forecasted, or confirmed — at the level of
   total order quantity, not physical loading/packing. Examples: "the actual order is higher than the forecast
-  number", "we confirmed 120 in file", "fcast deviation".
+  number", "we confirmed 120 in file", "fcast deviation", "FC deviation", "ordered much more than the confirmed
+  quantity".
 - quality_issue: a product/component quality defect, distinct from equipment breakdown. Examples: "Quality
   Issues", "1pcs short shipped caused by defective covers" (when the focus is the defect itself, not the missing
   component).

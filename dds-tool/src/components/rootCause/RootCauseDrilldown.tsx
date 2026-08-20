@@ -178,6 +178,7 @@ export function RootCauseDrilldown() {
               rows={allRangeRows}
               contextWeeks={actualWeeks.slice(-6)}
               snapshotWeek={snapshotWeek}
+              onSelectWeek={(week) => setTableFilter({ week })}
               onSelectWeekCategory={(week, category) => setTableFilter({ week, category })}
             />
           ) : null}
