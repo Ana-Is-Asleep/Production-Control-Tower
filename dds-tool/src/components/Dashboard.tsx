@@ -21,6 +21,7 @@ import type { StatusFilter } from './actions/ActionsTabs';
 import { formatFilterSummary } from '../lib/filterSummary';
 import { buildSotOtifHref } from '../lib/sotOtifParams';
 import { buildRootCauseHref } from '../lib/rootCauseParams';
+import { buildMissingEsdHref } from '../lib/missingEsdParams';
 import type { PurchaseLine } from '../types';
 import type { InvoiceRow } from '../types/invoice';
 import type { ActionType } from '../types/actions';
@@ -115,7 +116,7 @@ export function Dashboard() {
               </div>
               <div className="flex-[3] min-h-0 grid grid-cols-3 gap-3 overflow-hidden">
                 <RootCauseSection lines={weekRangeLines} weeksInRange={weeksInRange} drillDownHref={buildRootCauseHref(filters)} />
-                <MissingESDSection lines={weekRangeLines} weeksInRange={weeksInRange} supplierFilterActive={filters.suppliers.length > 0} />
+                <MissingESDSection lines={weekRangeLines} weeksInRange={weeksInRange} drillDownHref={buildMissingEsdHref(filters)} />
                 <BacklogSection lines={filteredLines} />
               </div>
               <div className="flex-[2] min-h-0 grid grid-cols-2 gap-3 overflow-hidden">
