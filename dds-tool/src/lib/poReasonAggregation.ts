@@ -21,9 +21,11 @@ export interface POAggregationResult {
   linesFilledFromSibling: number;
 }
 
-// Resolves self-referencing line text ("reason in line 10000", "same as line 1") to the
-// referenced line's own category within the same PO. Falls back to leaving the line blank
-// (for Step 2a to fill from any sibling instead) if the reference can't be resolved.
+// Resolves self-referencing line text ("reason in line 10000", "same as line 1", "affected by
+// line 6 in this PO") to the referenced line's own category within the same PO — this always
+// overrides whatever category the line itself was independently classified as, since text that
+// only points at another line isn't a real root cause on its own (single-level only: if the
+// referenced line is itself a reference, its already-resolved category is used, not chased further).
 function resolveLineReferences(lines: LineForAggregation[]): LineForAggregation[] {
   const byPO = new Map<string, LineForAggregation[]>();
   for (const l of lines) {
@@ -32,7 +34,6 @@ function resolveLineReferences(lines: LineForAggregation[]): LineForAggregation[
   }
 
   return lines.map((l) => {
-    if (l.category !== null) return l;
     const refLine = extractLineReference(l.rawReason);
     if (refLine === null) return l;
     const siblings = byPO.get(l.po) ?? [];

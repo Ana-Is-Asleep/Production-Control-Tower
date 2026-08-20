@@ -5,6 +5,7 @@ export const REASON_CATEGORIES = [
   'component_supply_delay',
   'production_capacity_constraint',
   'holiday_plant_shutdown',
+  'carrier_transportation_delay',
   'transport_warehouse_slot_capacity',
   'truck_rounding_pallet_configuration_error',
   'po_reshuffling_erp_issue',
@@ -12,6 +13,7 @@ export const REASON_CATEGORIES = [
   'forecast_order_quantity_mismatch',
   'quality_issue',
   'machine_production_issue',
+  'pricing_negotiation_delay',
   'administrative_planning_error',
   'other_unclear',
 ] as const;
@@ -22,6 +24,7 @@ export const REASON_CATEGORY_LABELS: Record<ReasonCategory, string> = {
   component_supply_delay: 'Component Supply Delay',
   production_capacity_constraint: 'Production Capacity Constraint',
   holiday_plant_shutdown: 'Holiday/Plant Shutdown',
+  carrier_transportation_delay: 'Carrier/Transportation Delay',
   transport_warehouse_slot_capacity: 'Transport/Warehouse Slot Capacity',
   truck_rounding_pallet_configuration_error: 'Truck Rounding/Pallet Configuration Error',
   po_reshuffling_erp_issue: 'PO Reshuffling/Rescheduling/ERP System Issue',
@@ -29,6 +32,7 @@ export const REASON_CATEGORY_LABELS: Record<ReasonCategory, string> = {
   forecast_order_quantity_mismatch: 'Forecast/Order Quantity Mismatch',
   quality_issue: 'Quality Issue',
   machine_production_issue: 'Machine/Production Issue',
+  pricing_negotiation_delay: 'Pricing Negotiation Delay',
   administrative_planning_error: 'Administrative/Planning Error',
   other_unclear: 'Other/Unclear',
 };
@@ -43,9 +47,11 @@ export const CATEGORY_PRIORITY: ReasonCategory[] = [
   'holiday_plant_shutdown',
   'forecast_order_quantity_mismatch',
   'truck_rounding_pallet_configuration_error',
+  'carrier_transportation_delay',
   'transport_warehouse_slot_capacity',
   'po_reshuffling_erp_issue',
   'it_issue',
+  'pricing_negotiation_delay',
   'administrative_planning_error',
   'other_unclear',
 ];
@@ -86,12 +92,14 @@ export function isSubstantiveReason(raw: string): boolean {
 }
 
 // Detects text that only points at another line in the same PO instead of describing an actual
-// cause — e.g. "reason in line 10000", "see line 20000", "same as line 1", "as per line 3".
-// When matched, the referenced line's own classification should be used instead (rule 6),
-// tagged with resolutionNote: 'resolved_from_line_reference'.
+// cause — e.g. "reason in line 10000", "see line 20000", "same as line 1", "as per line 3",
+// "affected by line 6 in this PO". When matched, the referenced line's own classification should
+// be used instead (rule 6), tagged with resolutionNote: 'resolved_from_line_reference'. Plural/
+// non-specific phrasing ("affected by other lines", no number) doesn't match — there's no single
+// line to resolve from, so it's classified normally instead.
 export function extractLineReference(raw: string): number | null {
   const normalized = normalizeReason(raw);
-  const m = normalized.match(/(?:reason in|see|same as|as per|refer(?:s)? to)\s+line\s+(\d+)/);
+  const m = normalized.match(/(?:reason in|see|same as|as per|refer(?:s)? to|affected by)\s+line\s+(\d+)/);
   return m ? Number(m[1]) : null;
 }
 
@@ -118,10 +126,12 @@ const KEYWORD_RULES: { category: ReasonCategory; componentType?: ComponentType; 
   { category: 'production_capacity_constraint', patterns: [/over ?capacity/, /capacity/, /overbook/, /understaff/, /capacidad/] },
   { category: 'holiday_plant_shutdown', patterns: [/holiday/, /shutdown/, /plant closure/, /shut down/] },
   { category: 'truck_rounding_pallet_configuration_error', patterns: [/truck rounding/, /pallet quantity/, /wrong multiple/, /lack of space/, /not enough space/, /truck.*(full|space)/, /exceed(ed)? the capacity of the truck/] },
+  { category: 'carrier_transportation_delay', patterns: [/carrier/, /pickup.*resched/, /resched.*pickup/, /shiptify/] },
   { category: 'transport_warehouse_slot_capacity', patterns: [/no (inbound )?slot/, /no available slot/, /frigo/, /cooling (ctnr|container|unit)/] },
-  { category: 'po_reshuffling_erp_issue', patterns: [/reshuffl/, /reschuffl/, /rescheduling/, /reorganization/, /moved to po/, /erp/] },
+  { category: 'po_reshuffling_erp_issue', patterns: [/reshuffl/, /reschuffl/, /rescheduling/, /reorganization/, /moved to po/, /moved from po/, /erp/] },
   { category: 'it_issue', patterns: [/\bit issue/, /system(s)? (down|failure|error)/] },
   { category: 'forecast_order_quantity_mismatch', patterns: [/forecast/, /fcast/, /order.*higher than/, /confirmed \d+ in file/] },
+  { category: 'pricing_negotiation_delay', patterns: [/agree price/, /price negotiation/, /pricing discussion/, /wait for.*price/] },
   { category: 'administrative_planning_error', patterns: [/lead ?time/, /received later/, /missed in po placement/, /planning error/] },
 ];
 

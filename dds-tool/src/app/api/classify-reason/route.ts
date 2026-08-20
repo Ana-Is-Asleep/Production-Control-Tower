@@ -55,6 +55,9 @@ Categories:
   capacity", "very difficult to produce", "affected by other lines".
 - holiday_plant_shutdown: stoppage due to public holidays or a seasonal shutdown. Examples: "Eid Holidays
   Pakistan", "Winter shutdown - week 52 and 1", "holiday break", "Emma shipping limited during holiday".
+- carrier_transportation_delay: the carrier itself caused the delay (rescheduled a pickup on their own, carrier-side
+  issue), as opposed to no slot/capacity being available. Examples: "the carrier rescheduled the pickup on their
+  own", "all info in the Shiptify chat", "carrier delay".
 - transport_warehouse_slot_capacity: no slot/availability at the warehouse or on the transport leg, or the wrong
   type of transport equipment for the cargo (e.g. a refrigerated container needed). Does NOT include loading
   calculation errors — those belong to truck_rounding_pallet_configuration_error. Examples: "no inbound slot at
@@ -78,6 +81,9 @@ Categories:
 - machine_production_issue: equipment breakdown or a production-process failure that blocks manufacturing even
   though the component is available. Examples: "had to be postponed due to a defective machine", "technical issue
   with our packaging", "due to machine issues, we were unable to manufacture the extensions on time".
+- pricing_negotiation_delay: the delay is caused by a commercial price negotiation with the supplier, not a
+  physical/production/transport constraint. Examples: "3 week wait for SPQ to agree prices with Boycelik", "delay
+  while price was being negotiated".
 - administrative_planning_error: a human planning error not covered above (wrong leadtime assumption, PO received
   late on the internal side). Examples: "Wrong Leadtimes Assumptions", "PO received later", "missed in PO
   placement", "lead time not respected".
