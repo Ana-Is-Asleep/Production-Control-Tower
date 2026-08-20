@@ -1,17 +1,17 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import Link from 'next/link';
 import { differenceInCalendarWeeks } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { DataTable, type Column } from '../shared/DataTable';
-import { SlideOver } from '../shared/SlideOver';
 import { weekOf } from '../../lib/kpiFormulas';
-import { isoWeekKey, formatDateShort } from '../../lib/dateUtils';
+import { isoWeekKey } from '../../lib/dateUtils';
 import { COLOR } from '../../lib/statusColors';
 import type { PurchaseLine } from '../../types';
 
 interface BacklogSectionProps {
   lines: PurchaseLine[]; // filteredLines — NOT restricted to the global weekRange
+  drillDownHref: string;
 }
 
 interface BacklogPO {
@@ -20,8 +20,6 @@ interface BacklogPO {
   pgrd: Date;
   esd: Date | null;
 }
-
-type Group = 'recent' | 'accumulated' | 'expected';
 
 function groupByPO(lines: PurchaseLine[]): Map<string, PurchaseLine[]> {
   const map = new Map<string, PurchaseLine[]>();
@@ -32,12 +30,10 @@ function groupByPO(lines: PurchaseLine[]): Map<string, PurchaseLine[]> {
   return map;
 }
 
-export function BacklogSection({ lines }: BacklogSectionProps) {
-  const [open, setOpen] = useState(false);
-  const [activeGroup, setActiveGroup] = useState<Group>('recent');
+export function BacklogSection({ lines, drillDownHref }: BacklogSectionProps) {
   const today = useMemo(() => new Date(), []);
 
-  const { recent, accumulated, expected, noEsdCount, clearance, outliers } = useMemo(() => {
+  const { recentCount, accumulatedCount, expectedCount, noEsdCount, clearance, outliers } = useMemo(() => {
     const byPO = groupByPO(lines);
     const recent: BacklogPO[] = [];
     const accumulated: BacklogPO[] = [];
@@ -52,7 +48,6 @@ export function BacklogSection({ lines }: BacklogSectionProps) {
       const isPast = weekOf(pgrd) < weekOf(today);
       const isFuture = weekOf(pgrd) > weekOf(today);
 
-      // Backlog definition: PGRD in the past AND ASD still empty.
       if (isPast && !hasAnyASD) {
         const weeksAgo = differenceInCalendarWeeks(weekOf(today), weekOf(pgrd), { weekStartsOn: 1 });
         const entry: BacklogPO = { po, supplier, pgrd, esd };
@@ -60,7 +55,6 @@ export function BacklogSection({ lines }: BacklogSectionProps) {
         else accumulated.push(entry);
       }
 
-      // Expected backlog: PGRD in the future but ESD already booked for a date AFTER PGRD.
       if (isFuture && esd && esd > pgrd) {
         expected.push({ po, supplier, pgrd, esd });
       }
@@ -70,8 +64,6 @@ export function BacklogSection({ lines }: BacklogSectionProps) {
     const noEsdCount = currentBacklog.filter((p) => !p.esd).length;
     const withEsd = currentBacklog.filter((p) => p.esd).sort((a, b) => a.esd!.getTime() - b.esd!.getTime());
 
-    // Dynamic clearance window: cover weeks until ~90% of ESD-booked backlog clears;
-    // flag anything beyond that as an outlier footnote rather than stretching the table.
     const byWeek = new Map<string, { weekLabel: string; pos: BacklogPO[] }>();
     withEsd.forEach((p) => {
       const key = isoWeekKey(p.esd!);
@@ -93,123 +85,62 @@ export function BacklogSection({ lines }: BacklogSectionProps) {
       }
     }
 
-    return { recent, accumulated, expected, noEsdCount, clearance, outliers };
+    return { recentCount: recent.length, accumulatedCount: accumulated.length, expectedCount: expected.length, noEsdCount, clearance, outliers };
   }, [lines, today]);
 
-  const groupData: Record<Group, BacklogPO[]> = { recent, accumulated, expected };
   const maxClearance = Math.max(1, ...clearance.map((c) => c.count));
 
-  const columns: Column<BacklogPO>[] = [
-    { key: 'po', header: 'PO', render: (r) => r.po },
-    { key: 'supplier', header: 'Supplier', render: (r) => r.supplier },
-    { key: 'pgrd', header: 'PGRD', render: (r) => formatDateShort(r.pgrd) },
-    { key: 'esd', header: 'ESD', render: (r) => r.esd ? formatDateShort(r.esd) : <span className="text-fail font-semibold">Not booked</span> },
-  ];
-
-  const openGroup = (g: Group) => { setActiveGroup(g); setOpen(true); };
-
   return (
-    <>
-      <div
-        onClick={() => setOpen(true)}
-        className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full overflow-hidden"
-        style={{ boxShadow: 'var(--shadow-card)' }}
-      >
-        <div className="flex items-start justify-between shrink-0">
-          <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Backlog</p>
-          <p className="text-[10px] text-brand font-semibold">Drill down →</p>
-        </div>
-        <div className="grid grid-cols-3 gap-2 shrink-0">
-          {([
-            { key: 'recent' as const, label: 'Recent', color: 'text-warn' },
-            { key: 'accumulated' as const, label: 'Accumulated', color: 'text-fail' },
-            { key: 'expected' as const, label: 'Expected', color: 'text-brand' },
-          ]).map((c) => (
-            <button
-              key={c.key}
-              onClick={(e) => { e.stopPropagation(); openGroup(c.key); }}
-              className="text-left rounded-lg px-2 py-1 hover:bg-[#f9f7f6] transition-colors"
-            >
-              <p className="text-[9px] uppercase tracking-widest text-[#9c9794] truncate">{c.label}</p>
-              <p className={`kpi-number font-extrabold text-xl leading-none mt-0.5 ${c.color}`}>{groupData[c.key].length}</p>
-            </button>
-          ))}
-        </div>
-        <div className="flex-1 min-h-0 mt-1">
-          {clearance.length === 0 ? (
-            <div className="h-full flex items-center">
-              <p className="text-[11px] text-[#b5aaa5]">No ESD-booked backlog to project a clearance date for.</p>
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={clearance} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                <XAxis dataKey="weekLabel" tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} interval={0} />
-                <YAxis tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} allowDecimals={false} width={24} />
-                <Tooltip
-                  contentStyle={{ background: COLOR.navy, border: 'none', borderRadius: 8, fontSize: 11, padding: '6px 10px' }}
-                  labelStyle={{ color: COLOR.brandSoft, fontWeight: 700 }}
-                  itemStyle={{ color: '#f9f7f6' }}
-                  formatter={(value) => [`${value} POs`, 'Clearing']}
-                />
-                <Bar dataKey="count" radius={[2, 2, 0, 0]} onClick={() => setOpen(true)} style={{ cursor: 'pointer' }}>
-                  {clearance.map((c) => (
-                    <Cell key={c.weekLabel} fill={COLOR.brand} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-        <p className="text-[10px] text-[#9c9794] pt-1.5 border-t border-[#f4f1ef] shrink-0">
-          <span className="font-semibold text-fail">{noEsdCount}</span> with no expectation to clear
-          {outliers.length > 0 && <span> · {outliers.length} far outlier{outliers.length > 1 ? 's' : ''}</span>}
-        </p>
+    <Link
+      href={drillDownHref}
+      className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full overflow-hidden"
+      style={{ boxShadow: 'var(--shadow-card)' }}
+    >
+      <div className="flex items-start justify-between shrink-0">
+        <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Backlog</p>
+        <p className="text-[10px] text-brand font-semibold">Drill down →</p>
       </div>
-
-      <SlideOver open={open} onClose={() => setOpen(false)} title="Backlog" width="w-[800px]">
-        <div className="p-5 space-y-5">
-          <div className="flex gap-2">
-            {([
-              { key: 'recent' as const, label: `Recent (${recent.length})`, sub: 'PGRD within last 2 weeks' },
-              { key: 'accumulated' as const, label: `Accumulated (${accumulated.length})`, sub: 'PGRD older than 2 weeks' },
-              { key: 'expected' as const, label: `Expected (${expected.length})`, sub: 'ESD booked after PGRD' },
-            ]).map((g) => (
-              <button
-                key={g.key}
-                onClick={() => setActiveGroup(g.key)}
-                className={`flex-1 text-left border rounded-lg px-3 py-2 transition-colors ${activeGroup === g.key ? 'border-brand bg-[#fff7ed]' : 'border-[#e9e3df] hover:border-brand'}`}
-              >
-                <p className="text-sm font-semibold text-[#403833]">{g.label}</p>
-                <p className="text-[10px] text-[#9c9794]">{g.sub}</p>
-              </button>
-            ))}
+      <div className="grid grid-cols-3 gap-2 shrink-0">
+        {([
+          { label: 'Recent', color: 'text-warn', value: recentCount },
+          { label: 'Accumulated', color: 'text-fail', value: accumulatedCount },
+          { label: 'Expected', color: 'text-brand', value: expectedCount },
+        ]).map((c) => (
+          <div key={c.label} className="text-left rounded-lg px-2 py-1">
+            <p className="text-[9px] uppercase tracking-widest text-[#9c9794] truncate">{c.label}</p>
+            <p className={`kpi-number font-extrabold text-xl leading-none mt-0.5 ${c.color}`}>{c.value}</p>
           </div>
-
-          <DataTable columns={columns} data={groupData[activeGroup]} rowKey={(r) => r.po} />
-
-          <div className="border-t border-[#f4f1ef] pt-4">
-            <p className="text-[10px] uppercase tracking-widest text-[#9c9794] mb-2">Clearance breakdown — by ESD week</p>
-            {clearance.length === 0 ? (
-              <p className="text-xs text-[#b5aaa5]">No ESD-booked backlog to project.</p>
-            ) : (
-              <div className="flex items-end gap-3 flex-wrap">
+        ))}
+      </div>
+      <div className="flex-1 min-h-0 mt-1">
+        {clearance.length === 0 ? (
+          <div className="h-full flex items-center">
+            <p className="text-[11px] text-[#b5aaa5]">No ESD-booked backlog to project a clearance date for.</p>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={clearance} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+              <XAxis dataKey="weekLabel" tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} interval={0} />
+              <YAxis tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} allowDecimals={false} width={24} />
+              <Tooltip
+                contentStyle={{ background: COLOR.navy, border: 'none', borderRadius: 8, fontSize: 11, padding: '6px 10px' }}
+                labelStyle={{ color: COLOR.brandSoft, fontWeight: 700 }}
+                itemStyle={{ color: '#f9f7f6' }}
+                formatter={(value) => [`${value} POs`, 'Clearing']}
+              />
+              <Bar dataKey="count" radius={[2, 2, 0, 0]}>
                 {clearance.map((c) => (
-                  <div key={c.weekLabel} className="text-center">
-                    <div className="w-10 bg-brand rounded-t" style={{ height: `${8 + (c.count / maxClearance) * 80}px` }} />
-                    <p className="text-[10px] text-[#7b7571] mt-1">{c.weekLabel}</p>
-                    <p className="text-[10px] font-semibold text-[#403833]">{c.count}</p>
-                  </div>
+                  <Cell key={c.weekLabel} fill={COLOR.brand} />
                 ))}
-              </div>
-            )}
-            {outliers.length > 0 && (
-              <p className="text-[10px] text-[#b5aaa5] mt-2">
-                * {outliers.length} PO{outliers.length > 1 ? 's' : ''} with ESD far beyond the bulk clearance window (not shown above): {outliers.map((o) => o.po).join(', ')}
-              </p>
-            )}
-          </div>
-        </div>
-      </SlideOver>
-    </>
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+      <p className="text-[10px] text-[#9c9794] pt-1.5 border-t border-[#f4f1ef] shrink-0">
+        <span className="font-semibold text-fail">{noEsdCount}</span> with no expectation to clear
+        {outliers.length > 0 && <span> · {outliers.length} far outlier{outliers.length > 1 ? 's' : ''}</span>}
+      </p>
+    </Link>
   );
 }

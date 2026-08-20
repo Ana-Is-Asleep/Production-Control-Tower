@@ -22,6 +22,7 @@ import { formatFilterSummary } from '../lib/filterSummary';
 import { buildSotOtifHref } from '../lib/sotOtifParams';
 import { buildRootCauseHref } from '../lib/rootCauseParams';
 import { buildMissingEsdHref } from '../lib/missingEsdParams';
+import { buildBacklogHref } from '../lib/backlogParams';
 import type { PurchaseLine } from '../types';
 import type { InvoiceRow } from '../types/invoice';
 import type { ActionType } from '../types/actions';
@@ -117,7 +118,7 @@ export function Dashboard() {
               <div className="flex-[3] min-h-0 grid grid-cols-3 gap-3 overflow-hidden">
                 <RootCauseSection lines={weekRangeLines} weeksInRange={weeksInRange} drillDownHref={buildRootCauseHref(filters)} />
                 <MissingESDSection lines={weekRangeLines} weeksInRange={weeksInRange} drillDownHref={buildMissingEsdHref(filters)} />
-                <BacklogSection lines={filteredLines} />
+                <BacklogSection lines={filteredLines} drillDownHref={buildBacklogHref(filters)} />
               </div>
               <div className="flex-[2] min-h-0 grid grid-cols-2 gap-3 overflow-hidden">
                 <InvoicesSection invoices={invoices} supplierFilter={filters.suppliers} />
