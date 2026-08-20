@@ -4,6 +4,8 @@ import { useState, useMemo } from 'react';
 import { lastCompletedWeek, shiftISOWeek, getISOWeek, getISOWeekYear } from '../lib/dateUtils';
 import { categorizeSKU, type SKUCategory } from '../lib/skuUtils';
 import { getChannel, type Channel } from '../lib/channelUtils';
+import { useVendorMapping } from './useVendorMapping';
+import { isSameSiteLocation } from '../lib/locationUtils';
 import type { PurchaseLine } from '../types';
 
 export const WEEK_RANGE_MIN = -13;
@@ -56,16 +58,31 @@ function applyFilters(lines: PurchaseLine[], filters: ActiveFilters) {
 
 export function useFilters(rawLines: PurchaseLine[], initialFilters?: ActiveFilters) {
   const [filters, setFilters] = useState<ActiveFilters>(initialFilters ?? DEFAULT_FILTERS);
+  const { mapping } = useVendorMapping();
 
-  // drop anything with PGRD before 2026, and Comps/Other SKUs (out of scope for this version),
-  // before it reaches any section/calculation
+  // vendor's own site location code (e.g. "AQ_PT"), looked up via the Airtable vendor mapping —
+  // used below to drop internal same-site transfers (pickup site == delivery site), which aren't
+  // real inbound purchases
+  const vendorLocationByCode = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const m of mapping) if (m.vendorCode && m.locationCode) map.set(m.vendorCode, m.locationCode);
+    return map;
+  }, [mapping]);
+
+  // drop anything with PGRD before 2026, Comps/Other SKUs (out of scope for this version), and
+  // same-site "transfers" (vendor's own location == the PO's destination, or a same-site variant
+  // like AQ_PT -> AQO1_PT) — none of these are real inbound purchases, before it reaches any
+  // section/calculation
   const allLines = useMemo(
-    () => rawLines.filter(l =>
-      l.pgrd && l.pgrd >= DATA_FLOOR &&
-      categorizeSKU(l.sku) !== 'Comps/Other' &&
-      !EXCLUDED_COMPONENT_VENDOR_CODES.includes(l.vendorCode)
-    ),
-    [rawLines]
+    () => rawLines.filter(l => {
+      if (!l.pgrd || l.pgrd < DATA_FLOOR) return false;
+      if (categorizeSKU(l.sku) === 'Comps/Other') return false;
+      if (EXCLUDED_COMPONENT_VENDOR_CODES.includes(l.vendorCode)) return false;
+      const pickup = vendorLocationByCode.get(l.vendorCode);
+      if (pickup && isSameSiteLocation(pickup, l.destination)) return false;
+      return true;
+    }),
+    [rawLines, vendorLocationByCode]
   );
 
   // anchor offset 0 to the last fully completed week, not the in-progress current week —
