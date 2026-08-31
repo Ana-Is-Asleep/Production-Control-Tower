@@ -99,6 +99,15 @@ export function filterByChannel(rows: InvoiceRow[], channel: InvoiceChannel): In
   return rows.filter((r) => r.channel === channel);
 }
 
+// dashboard's global Supplier filter uses PurchaseLine supplier names, which don't always match
+// the invoice file's Name field exactly — fuzzy substring match in both directions as a bridge
+export function filterBySupplierNames(rows: InvoiceRow[], supplierNames: string[]): InvoiceRow[] {
+  if (supplierNames.length === 0) return rows;
+  return rows.filter((r) =>
+    supplierNames.some((s) => r.name.toLowerCase().includes(s.toLowerCase()) || s.toLowerCase().includes(r.name.toLowerCase()))
+  );
+}
+
 export interface SupplierBreakdown {
   name: string;
   invoiceAccount: string;
