@@ -38,7 +38,7 @@ function NonZeroTooltip({ active, payload, label }: { active?: boolean; payload?
       {present.map((p) => (
         <p key={p.dataKey} style={{ color: '#f9f7f6', margin: 0 }}>
           <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 4, background: p.color, marginRight: 6 }} />
-          {REASON_CATEGORY_LABELS[p.dataKey as ReasonCategory] ?? String(p.dataKey)}: {p.value} POs
+          {p.dataKey === 'other' ? 'Other' : REASON_CATEGORY_LABELS[p.dataKey as ReasonCategory] ?? String(p.dataKey)}: {p.value} POs
         </p>
       ))}
     </div>
@@ -49,7 +49,7 @@ export function RootCauseSection({ lines, weeksInRange, drillDownHref }: RootCau
   const linesWithReasons = useMemo(() => lines.filter((l) => isSubstantiveReason(l.lossReasonCode)), [lines]);
   const { classifications } = useReasonClassification(linesWithReasons.map((l) => l.lossReasonCode));
 
-  const { chartData, categoryOrder, totalFlagged } = useMemo(() => {
+  const { chartData, topCategories, hasOther, totalFlagged } = useMemo(() => {
     const poCounts = new Map<string, number>();
     for (const week of weeksInRange) {
       for (const cat of REASON_CATEGORIES) poCounts.set(`${week.label}__${cat}`, 0);
@@ -88,19 +88,24 @@ export function RootCauseSection({ lines, weeksInRange, drillDownHref }: RootCau
     }
 
     const categoryOrder = [...REASON_CATEGORIES].sort((a, b) => (categoryTotals[b] ?? 0) - (categoryTotals[a] ?? 0));
+    // Cap the compact card at the top 4 categories by volume, with everything else folded into a
+    // single neutral "Other" segment — with up to 14 possible categories, showing them all (or even
+    // 5) produces several similarly-toned warm colors that are hard to tell apart at this size.
+    const topCategories = categoryOrder.filter((cat) => (categoryTotals[cat] ?? 0) > 0).slice(0, 4);
+    const otherCategories = categoryOrder.filter((cat) => !topCategories.includes(cat) && (categoryTotals[cat] ?? 0) > 0);
+    const hasOther = otherCategories.length > 0;
 
     const chartData = weeksInRange.map((week) => {
       const row: Record<string, number | string> = { weekLabel: week.label };
-      categoryOrder.forEach((cat) => { row[cat] = poCounts.get(`${week.label}__${cat}`) ?? 0; });
+      topCategories.forEach((cat) => { row[cat] = poCounts.get(`${week.label}__${cat}`) ?? 0; });
+      if (hasOther) {
+        row.other = otherCategories.reduce((sum, cat) => sum + (poCounts.get(`${week.label}__${cat}`) ?? 0), 0);
+      }
       return row;
     });
 
-    return { chartData, categoryOrder, totalFlagged };
+    return { chartData, topCategories, hasOther, totalFlagged };
   }, [lines, weeksInRange, classifications]);
-
-  // top 5 categories by count for the period — categoryOrder is already sorted descending by
-  // total, and a full legend of all 10 possible categories would overflow the compact card
-  const activeCategories = categoryOrder.filter((cat) => chartData.some((d) => (d[cat] as number) > 0)).slice(0, 5);
 
   return (
     <Link
@@ -110,8 +115,8 @@ export function RootCauseSection({ lines, weeksInRange, drillDownHref }: RootCau
     >
       <div className="flex items-start justify-between shrink-0">
         <div className="flex items-baseline gap-2">
-          <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Root Cause</p>
-          {totalFlagged > 0 && <span className="text-xs font-semibold text-[#403833]">{totalFlagged}</span>}
+          <p className="text-xs font-bold uppercase tracking-wide text-[#403833]">Root Cause</p>
+          {totalFlagged > 0 && <span className="text-xs font-semibold text-[#7b7571]">{totalFlagged}</span>}
         </div>
         <p className="text-[10px] text-brand font-semibold">Drill down →</p>
       </div>
@@ -120,20 +125,24 @@ export function RootCauseSection({ lines, weeksInRange, drillDownHref }: RootCau
           <p className="text-xs text-[#b5aaa5]">No flagged loss reasons in range</p>
         </div>
       ) : (
-        <div className="flex-1 min-h-0 mt-1 flex flex-col">
+        <div className="flex-1 min-h-0 mt-3 flex flex-col">
           <MiniLegend
             className="mb-1 shrink-0"
-            items={activeCategories.map((cat) => ({ label: REASON_CATEGORY_LABELS[cat], color: CATEGORY_PALETTE[cat], type: 'bar' as const }))}
+            items={[
+              ...topCategories.map((cat) => ({ label: REASON_CATEGORY_LABELS[cat], color: CATEGORY_PALETTE[cat], type: 'bar' as const })),
+              ...(hasOther ? [{ label: 'Other', color: COLOR.muted, type: 'bar' as const }] : []),
+            ]}
           />
-          <div className="flex-1 min-h-0">
+          <div style={{ height: 140 }} className="shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                 <XAxis dataKey="weekLabel" tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} interval={0} />
                 <YAxis tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} allowDecimals={false} width={24} />
                 <Tooltip content={<NonZeroTooltip />} allowEscapeViewBox={{ x: false, y: false }} wrapperStyle={{ zIndex: 60 }} />
-                {categoryOrder.map((cat) => (
+                {topCategories.map((cat) => (
                   <Bar key={cat} dataKey={cat} stackId="reasons" fill={CATEGORY_PALETTE[cat]} fillOpacity={0.85} />
                 ))}
+                {hasOther && <Bar dataKey="other" stackId="reasons" fill={COLOR.muted} fillOpacity={0.85} />}
               </BarChart>
             </ResponsiveContainer>
           </div>

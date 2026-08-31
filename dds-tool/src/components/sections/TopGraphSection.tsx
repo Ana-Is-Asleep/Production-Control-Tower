@@ -28,7 +28,7 @@ export function TopGraphSection({ points, sotTarget, otifTarget, drillDownHref }
       className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full overflow-hidden"
       style={{ boxShadow: 'var(--shadow-card)' }}
     >
-      <div className="flex items-start justify-end mb-1 shrink-0">
+      <div className="flex items-start justify-end mb-3 shrink-0">
         <p className="text-xs text-brand font-semibold">Drill down →</p>
       </div>
       <div className="flex-1 min-h-0 flex items-stretch gap-5">

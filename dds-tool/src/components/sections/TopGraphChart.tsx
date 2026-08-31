@@ -33,7 +33,7 @@ export function TopGraphChart({ points, onWeekClick }: TopGraphChartProps) {
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={points}
-            margin={{ top: 8, right: 16, left: -10, bottom: 0 }}
+            margin={{ top: 8, right: 4, left: -10, bottom: 0 }}
             onClick={onWeekClick ? (e) => { const label = (e as unknown as { activeLabel?: string } | undefined)?.activeLabel; if (label) onWeekClick(label); } : undefined}
             style={onWeekClick ? { cursor: 'pointer' } : undefined}
           >

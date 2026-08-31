@@ -25,8 +25,8 @@ export function LeadTimeSection({ lines, drillDownHref }: LeadTimeSectionProps) 
     >
       <div className="flex items-start justify-between shrink-0">
         <div className="flex items-baseline gap-2">
-          <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Lead Time</p>
-          <span className={`text-xs font-semibold ${summary.avgProductionLT !== null && summary.avgProductionLT <= summary.avgAgreedLT ? 'text-pass' : 'text-fail'}`}>
+          <p className="text-xs font-bold uppercase tracking-wide text-[#403833]">Lead Time</p>
+          <span className="text-xs font-semibold text-[#7b7571]">
             {summary.avgProductionLT !== null ? `${summary.avgProductionLT}d avg` : '—'}
           </span>
         </div>
@@ -37,7 +37,7 @@ export function LeadTimeSection({ lines, drillDownHref }: LeadTimeSectionProps) 
           <p className="text-xs text-[#b5aaa5]">No shipped POs in range</p>
         </div>
       ) : (
-        <div className="flex-1 min-h-0 mt-1 flex flex-col">
+        <div className="flex-1 min-h-0 mt-3 flex flex-col">
           <MiniLegend
             className="mb-1 shrink-0"
             items={[

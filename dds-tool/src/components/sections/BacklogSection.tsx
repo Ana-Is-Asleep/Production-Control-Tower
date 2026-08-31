@@ -97,13 +97,13 @@ export function BacklogSection({ lines, drillDownHref }: BacklogSectionProps) {
       style={{ boxShadow: 'var(--shadow-card)' }}
     >
       <div className="flex items-start justify-between shrink-0">
-        <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">Backlog</p>
+        <p className="text-xs font-bold uppercase tracking-wide text-[#403833]">Backlog</p>
         <p className="text-[10px] text-brand font-semibold">Drill down →</p>
       </div>
-      <div className="grid grid-cols-3 gap-2 shrink-0">
+      <div className="grid grid-cols-3 gap-2 shrink-0 mt-3">
         {([
-          { label: 'Recent', color: COLOR.brand, value: recentCount },
-          { label: 'Accumulated', color: COLOR.fail, value: accumulatedCount },
+          { label: 'Recent', color: recentCount > 0 ? COLOR.warn : COLOR.navy, value: recentCount },
+          { label: 'Accumulated', color: accumulatedCount > 0 ? COLOR.fail : COLOR.navy, value: accumulatedCount },
           { label: 'Expected', color: COLOR.navy, value: expectedCount },
         ]).map((c) => (
           <div key={c.label} className="text-left rounded-lg px-2 py-1">
@@ -112,7 +112,7 @@ export function BacklogSection({ lines, drillDownHref }: BacklogSectionProps) {
           </div>
         ))}
       </div>
-      <div className="flex-1 min-h-0 mt-1">
+      <div className="flex-1 min-h-0 mt-2">
         {clearance.length === 0 ? (
           <div className="h-full flex items-center">
             <p className="text-[11px] text-[#b5aaa5]">No ESD-booked backlog to project a clearance date for.</p>
@@ -138,7 +138,7 @@ export function BacklogSection({ lines, drillDownHref }: BacklogSectionProps) {
         )}
       </div>
       <p className="text-[10px] text-[#9c9794] pt-1.5 border-t border-[#f4f1ef] shrink-0">
-        <span className="font-semibold text-fail">{noEsdCount}</span> with no expectation to clear
+        <span className={`font-semibold ${noEsdCount > 0 ? 'text-fail' : 'text-[#403833]'}`}>{noEsdCount}</span> with no expectation to clear
         {outliers.length > 0 && <span> · {outliers.length} far outlier{outliers.length > 1 ? 's' : ''}</span>}
       </p>
     </Link>
