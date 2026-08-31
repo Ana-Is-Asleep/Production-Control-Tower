@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { computeKPIs, filterBySupplierNames } from '../../lib/invoiceUtils';
+import { computeKPIs, filterBySupplierNames, formatAmountsByCurrency } from '../../lib/invoiceUtils';
 import type { InvoiceRow } from '../../types/invoice';
 
 interface InvoicesSectionProps {
@@ -14,12 +14,15 @@ interface InvoicesSectionProps {
 export function InvoicesSection({ invoices, supplierFilter, drillDownHref }: InvoicesSectionProps) {
   const scoped = useMemo(() => filterBySupplierNames(invoices, supplierFilter), [invoices, supplierFilter]);
   const kpis = useMemo(() => computeKPIs(scoped), [scoped]);
+  // only worth showing an amount on the compact card when scoped to one supplier — with
+  // multiple/no suppliers selected the total spans too many different contexts to be useful at a glance
+  const showAmount = supplierFilter.length === 1;
 
   const CARDS = [
-    { id: 1, label: 'Overdue – Pending Approval', count: kpis.overdueP2w.length, color: 'text-fail' },
-    { id: 2, label: 'Total Pending', count: kpis.totalPending.length, color: 'text-warn' },
-    { id: 3, label: 'Due by End of Week', count: kpis.dueByEndOfWeek.length, color: 'text-brand' },
-    { id: 4, label: 'Approved, Awaiting Payment', count: kpis.approvedNotPaid.length, color: 'text-pass' },
+    { id: 1, label: 'Overdue – Pending Approval', count: kpis.overdueP2w.length, rows: kpis.overdueP2w, color: 'text-fail' },
+    { id: 2, label: 'Total Pending', count: kpis.totalPending.length, rows: kpis.totalPending, color: 'text-warn' },
+    { id: 3, label: 'Due by End of Week', count: kpis.dueByEndOfWeek.length, rows: kpis.dueByEndOfWeek, color: 'text-brand' },
+    { id: 4, label: 'Approved, Awaiting Payment', count: kpis.approvedNotPaid.length, rows: kpis.approvedNotPaid, color: 'text-pass' },
   ];
 
   return (
@@ -43,6 +46,7 @@ export function InvoicesSection({ invoices, supplierFilter, drillDownHref }: Inv
               <div key={c.id}>
                 <p className="text-[10px] text-[#9c9794] truncate">{c.label}</p>
                 <p className={`kpi-number font-extrabold text-2xl leading-none ${c.color}`}>{c.count}</p>
+                {showAmount && <p className="text-[10px] text-[#7b7571] truncate mt-0.5">{formatAmountsByCurrency(c.rows)}</p>}
               </div>
             ))}
           </div>
