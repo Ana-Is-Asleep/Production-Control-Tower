@@ -106,10 +106,10 @@ export function Dashboard() {
 
       {hasData && (
         <div className="page-enter flex-1 min-h-0 flex overflow-hidden">
-          <div className="flex-1 min-w-0 flex flex-col">
+          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
             <GlobalFilterBar filters={filters} onChange={setFilters} allSuppliers={allSuppliers} curWeek={curWeek} curYear={curYear} />
-            <div className={`p-4 flex-1 min-h-0 flex flex-col gap-4 w-full max-w-[1400px] 2xl:max-w-[1680px] mx-auto overflow-hidden ${actionsUiMode === 'badge' ? 'pb-16' : ''}`}>
-              <div className="flex-[4] min-h-0 overflow-hidden">
+            <div className={`p-4 flex-1 min-h-0 flex flex-col gap-4 w-full max-w-[1400px] 2xl:max-w-[1680px] mx-auto overflow-y-auto ${actionsUiMode === 'badge' ? 'pb-16' : ''}`}>
+              <div style={{ flex: '4 0 300px' }}>
                 <TopGraphSection
                   points={kpis.topGraph}
                   sotTarget={kpis.sotTarget}
@@ -117,12 +117,12 @@ export function Dashboard() {
                   drillDownHref={buildSotOtifHref(filters)}
                 />
               </div>
-              <div className="flex-[3] min-h-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto overflow-x-hidden">
+              <div style={{ flex: '3 0 260px' }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <RootCauseSection lines={weekRangeLines} weeksInRange={weeksInRange} drillDownHref={buildRootCauseHref(filters)} />
                 <MissingESDSection lines={weekRangeLines} weeksInRange={weeksInRange} drillDownHref={buildMissingEsdHref(filters)} />
                 <BacklogSection lines={filteredLines} drillDownHref={buildBacklogHref(filters)} />
               </div>
-              <div className="flex-[2] min-h-0 grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto overflow-x-hidden">
+              <div style={{ flex: '2 0 220px' }} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <InvoicesSection invoices={invoices} supplierFilter={filters.suppliers} drillDownHref={buildInvoicesHref(filters.suppliers)} />
                 <LeadTimeSection lines={weekRangeLines} drillDownHref={buildLeadTimeHref(filters)} />
               </div>
