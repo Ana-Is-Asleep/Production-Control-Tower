@@ -28,8 +28,11 @@ export function TopGraphSection({ points, sotTarget, otifTarget, drillDownHref }
       className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full overflow-hidden"
       style={{ boxShadow: 'var(--shadow-card)' }}
     >
-      <div className="flex items-start justify-between mb-1">
-        <div className="flex items-center gap-6">
+      <div className="flex items-start justify-end mb-1 shrink-0">
+        <p className="text-xs text-brand font-semibold">Drill down →</p>
+      </div>
+      <div className="flex-1 min-h-0 flex items-stretch gap-5">
+        <div className="flex flex-col justify-center gap-4 shrink-0">
           <div>
             <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-1">SOT · {sotTarget}% target</p>
             <p className={`kpi-number font-extrabold text-4xl leading-none ${currentSOT === null ? 'text-[#c8c0bb]' : currentSOT >= sotTarget ? 'text-pass' : 'text-fail'}`}>
@@ -43,10 +46,9 @@ export function TopGraphSection({ points, sotTarget, otifTarget, drillDownHref }
             </p>
           </div>
         </div>
-        <p className="text-xs text-brand font-semibold">Drill down →</p>
-      </div>
-      <div className="flex-1 min-h-0">
-        <TopGraphChart points={points} />
+        <div className="flex-1 min-h-0 min-w-0">
+          <TopGraphChart points={points} />
+        </div>
       </div>
     </Link>
   );

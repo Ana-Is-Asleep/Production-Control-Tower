@@ -107,7 +107,7 @@ export function Dashboard() {
           <div className="flex-1 min-w-0 flex flex-col">
             <GlobalFilterBar filters={filters} onChange={setFilters} allSuppliers={allSuppliers} curWeek={curWeek} curYear={curYear} />
             <div className="px-4 py-3 flex-1 min-h-0 flex flex-col gap-3 w-full max-w-[1400px] mx-auto overflow-hidden">
-              <div className="flex-[5] min-h-0 overflow-hidden">
+              <div className="flex-[4] min-h-0 overflow-hidden">
                 <TopGraphSection
                   points={kpis.topGraph}
                   sotTarget={kpis.sotTarget}
