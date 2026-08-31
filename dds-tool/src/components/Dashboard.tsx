@@ -117,12 +117,12 @@ export function Dashboard() {
                   drillDownHref={buildSotOtifHref(filters)}
                 />
               </div>
-              <div className="flex-[3] min-h-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto">
+              <div className="flex-[3] min-h-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto overflow-x-hidden">
                 <RootCauseSection lines={weekRangeLines} weeksInRange={weeksInRange} drillDownHref={buildRootCauseHref(filters)} />
                 <MissingESDSection lines={weekRangeLines} weeksInRange={weeksInRange} drillDownHref={buildMissingEsdHref(filters)} />
                 <BacklogSection lines={filteredLines} drillDownHref={buildBacklogHref(filters)} />
               </div>
-              <div className="flex-[2] min-h-0 grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto">
+              <div className="flex-[2] min-h-0 grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto overflow-x-hidden">
                 <InvoicesSection invoices={invoices} supplierFilter={filters.suppliers} drillDownHref={buildInvoicesHref(filters.suppliers)} />
                 <LeadTimeSection lines={weekRangeLines} drillDownHref={buildLeadTimeHref(filters)} />
               </div>

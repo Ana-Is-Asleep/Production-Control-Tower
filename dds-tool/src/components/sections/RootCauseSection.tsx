@@ -133,7 +133,7 @@ export function RootCauseSection({ lines, weeksInRange, drillDownHref }: RootCau
               ...(hasOther ? [{ label: 'Other', color: COLOR.muted, type: 'bar' as const }] : []),
             ]}
           />
-          <div style={{ height: 140 }} className="shrink-0">
+          <div className="flex-1 min-h-0">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                 <XAxis dataKey="weekLabel" tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} interval={0} />
