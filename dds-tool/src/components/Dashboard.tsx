@@ -24,6 +24,7 @@ import { buildRootCauseHref } from '../lib/rootCauseParams';
 import { buildMissingEsdHref } from '../lib/missingEsdParams';
 import { buildBacklogHref } from '../lib/backlogParams';
 import { buildInvoicesHref } from '../lib/invoicesParams';
+import { buildLeadTimeHref } from '../lib/leadTimeParams';
 import type { PurchaseLine } from '../types';
 import type { InvoiceRow } from '../types/invoice';
 import type { ActionType } from '../types/actions';
@@ -123,7 +124,7 @@ export function Dashboard() {
               </div>
               <div className="flex-[2] min-h-0 grid grid-cols-2 gap-3 overflow-hidden">
                 <InvoicesSection invoices={invoices} supplierFilter={filters.suppliers} drillDownHref={buildInvoicesHref(filters.suppliers)} />
-                <LeadTimeSection lines={weekRangeLines} />
+                <LeadTimeSection lines={weekRangeLines} drillDownHref={buildLeadTimeHref(filters)} />
               </div>
             </div>
           </div>
