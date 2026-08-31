@@ -35,22 +35,6 @@ export interface ExpectedPORow {
   esd: Date;
 }
 
-// Expected is NOT backlog (PGRD hasn't passed yet) — it's a forward-looking early-warning bucket:
-// PGRD in the future, with an ESD already booked for a date after that PGRD. Kept separate from
-// the strict backlog membership rule above.
-export function computeExpectedRows(lines: PurchaseLine[], today: Date = new Date()): ExpectedPORow[] {
-  const byPO = groupByPO(lines);
-  const rows: ExpectedPORow[] = [];
-  for (const poLines of byPO.values()) {
-    const pgrd = poLines.find((l) => l.pgrd)?.pgrd ?? null;
-    if (!pgrd || pgrd <= today) continue; // PGRD must be in the future
-    const esd = poLines.find((l) => l.esd)?.esd ?? null;
-    if (!esd || esd <= pgrd) continue; // ESD must be booked for after PGRD
-    rows.push({ po: poLines[0].po, supplier: poLines[0].supplier, warehouse: poLines[0].destination, pgrd, esd });
-  }
-  return rows;
-}
-
 function groupByPO(lines: PurchaseLine[]): Map<string, PurchaseLine[]> {
   const map = new Map<string, PurchaseLine[]>();
   for (const l of lines) {
@@ -62,6 +46,8 @@ function groupByPO(lines: PurchaseLine[]): Map<string, PurchaseLine[]> {
 
 // Backlog membership: PGRD has passed AND ASD is not filled — a PO with PGRD in the future is
 // never backlog, regardless of ESD. One row per PO, sorted by age descending (most stale first).
+// Recent/Accumulated are computed as a residual split of this single population (not two
+// independent checks), so they're guaranteed mutually exclusive and always sum to the total.
 export function computeBacklogRows(
   lines: PurchaseLine[],
   classifications: Record<string, ClassificationEntry>,
@@ -81,7 +67,7 @@ export function computeBacklogRows(
   const rows: BacklogPORow[] = [];
   for (const [po, poLines] of byPO) {
     const pgrd = poLines.find((l) => l.pgrd)?.pgrd ?? null;
-    if (!pgrd || pgrd >= today) continue; // PGRD must have passed
+    if (!pgrd || pgrd >= today) continue; // PGRD must have passed — this is the only backlog gate
     const hasAnyASD = poLines.some((l) => l.asd);
     if (hasAnyASD) continue; // cleared
 
@@ -90,6 +76,10 @@ export function computeBacklogRows(
     const ageDays = differenceInCalendarDays(today, pgrd);
     const reasonResult = poReasonResults.get(po);
     const rawReasons = poLines.map((l) => l.lossReasonCode.trim()).filter((r) => isSubstantiveReason(r));
+
+    // residual split: Accumulated is the explicit >2wk check, Recent is simply "everything else"
+    // in this already-backlog-only population — there is no third bucket a row could fall into here.
+    const isAccumulated = ageDays > RECENT_THRESHOLD_DAYS;
 
     rows.push({
       po,
@@ -100,7 +90,7 @@ export function computeBacklogRows(
       esd,
       qtyConfirmed: poLines.reduce((s, l) => s + l.cqty, 0),
       ageDays,
-      ageBucket: ageDays <= RECENT_THRESHOLD_DAYS ? 'recent' : 'accumulated',
+      ageBucket: isAccumulated ? 'accumulated' : 'recent',
       hasEsd: esd !== null,
       esdPassedNoAsd: esd !== null && esd < today,
       rootCauseCategory: reasonResult?.finalCategory ?? null,
@@ -110,6 +100,23 @@ export function computeBacklogRows(
   }
 
   return rows.sort((a, b) => b.ageDays - a.ageDays);
+}
+
+// Expected is NOT backlog (PGRD hasn't passed yet) — a forward-looking early-warning bucket:
+// PGRD in the future, with an ESD already booked for a date after that PGRD. Shown alongside the
+// backlog numbers but never summed into Total Backlog. A PO with PGRD already passed + ESD booked
+// is not "Expected" — it's just ordinary Recent/Accumulated backlog (already covered above).
+export function computeExpectedRows(lines: PurchaseLine[], today: Date = new Date()): ExpectedPORow[] {
+  const byPO = groupByPO(lines);
+  const rows: ExpectedPORow[] = [];
+  for (const poLines of byPO.values()) {
+    const pgrd = poLines.find((l) => l.pgrd)?.pgrd ?? null;
+    if (!pgrd || pgrd <= today) continue; // PGRD must be in the future
+    const esd = poLines.find((l) => l.esd)?.esd ?? null;
+    if (!esd || esd <= pgrd) continue; // ESD must be booked for after PGRD
+    rows.push({ po: poLines[0].po, supplier: poLines[0].supplier, warehouse: poLines[0].destination, pgrd, esd });
+  }
+  return rows;
 }
 
 export interface AgeBand {
@@ -137,22 +144,50 @@ export function computeAgeBands(rows: BacklogPORow[]): AgeBand[] {
 export interface ProjectionWeek {
   label: string;
   offset: number;
-  count: number;
+  recent: number;
+  accumulated: number;
+  expected: number;
+  total: number; // recent + accumulated only — matches the Total Backlog KPI definition
+  stackTotal: number; // recent + accumulated + expected — the chart's actual visual bar height
 }
 
-// Stock view of backlog with an ESD booked (No-ESD is intentionally excluded — it's surfaced as
-// its own standalone note instead). A PO counts as backlog in every week from when its PGRD
-// passes through to whichever week it clears: offsets 0-1 (last completed + current in-progress
-// week) use real ASD as it stands today; offsets 2+ additionally assume on-schedule clearance per
-// booked ESD, since those weeks haven't happened yet.
+interface ProjectionPO {
+  pgrd: Date;
+  asd: Date | null;
+  esd: Date | null;
+}
+
+type WeekStatus = 'recent' | 'accumulated' | 'expected' | 'other';
+
+// Recomputes what a single PO's status WOULD be as of a given week's end — not "carry forward
+// today's classification": a currently-Recent PO ages into Accumulated if still unresolved by a
+// later week, and a currently-Expected PO (future PGRD) rolls into Recent once its PGRD passes.
+function statusAsOfWeek(po: ProjectionPO, weekEnd: Date, useEsdAssumption: boolean): WeekStatus {
+  const clearedReal = po.asd !== null && po.asd <= weekEnd;
+  const clearedProjected = useEsdAssumption && po.esd !== null && po.esd <= weekEnd;
+  if (clearedReal || clearedProjected) return 'other';
+
+  if (po.pgrd <= weekEnd) {
+    const ageDays = differenceInCalendarDays(weekEnd, po.pgrd);
+    return ageDays > RECENT_THRESHOLD_DAYS ? 'accumulated' : 'recent';
+  }
+  if (po.esd && po.esd > po.pgrd) return 'expected';
+  return 'other'; // ordinary future order, not yet due, no ESD signal
+}
+
+// Running stock view, split by status per week (Recent / Accumulated / Expected) rather than one
+// solid bar. Offsets 0-1 (last completed + current in-progress week) use real ASD data as it
+// stands today; offsets 2+ additionally assume on-schedule clearance per booked ESD, since those
+// weeks haven't happened yet. Operates over ALL lines (not just currently-open backlog) since a PO
+// not yet backlog today can still enter backlog by a later week in this projection.
 export function computeProjectionSeries(lines: PurchaseLine[], curWeek: number, curYear: number): ProjectionWeek[] {
   const byPO = groupByPO(lines);
-  const pos: { pgrd: Date; asd: Date | null; esd: Date }[] = [];
+  const pos: ProjectionPO[] = [];
   for (const poLines of byPO.values()) {
     const pgrd = poLines.find((l) => l.pgrd)?.pgrd ?? null;
-    const esd = poLines.find((l) => l.esd)?.esd ?? null;
-    if (!pgrd || !esd) continue; // No-ESD excluded from the projection chart
+    if (!pgrd) continue;
     const asd = poLines.find((l) => l.asd)?.asd ?? null;
+    const esd = poLines.find((l) => l.esd)?.esd ?? null;
     pos.push({ pgrd, asd, esd });
   }
 
@@ -160,13 +195,19 @@ export function computeProjectionSeries(lines: PurchaseLine[], curWeek: number, 
   for (let offset = 0; offset <= PROJECTION_FORWARD_WEEKS; offset++) {
     const { week, year } = shiftISOWeek(curWeek, curYear, offset);
     const { end: weekEnd } = weekRangeFor(week, year);
-    const count = pos.filter((p) => {
-      if (p.pgrd > weekEnd) return false; // hasn't entered backlog by this week
-      const clearedReal = p.asd !== null && p.asd <= weekEnd;
-      const clearedProjected = offset >= 2 && p.esd <= weekEnd;
-      return !clearedReal && !clearedProjected;
-    }).length;
-    weeks.push({ label: `W${String(week).padStart(2, '0')}`, offset, count });
+    const useEsdAssumption = offset >= 2;
+
+    let recent = 0;
+    let accumulated = 0;
+    let expected = 0;
+    for (const p of pos) {
+      const status = statusAsOfWeek(p, weekEnd, useEsdAssumption);
+      if (status === 'recent') recent += 1;
+      else if (status === 'accumulated') accumulated += 1;
+      else if (status === 'expected') expected += 1;
+    }
+
+    weeks.push({ label: `W${String(week).padStart(2, '0')}`, offset, recent, accumulated, expected, total: recent + accumulated, stackTotal: recent + accumulated + expected });
   }
   return weeks;
 }
@@ -177,102 +218,62 @@ export function findOutliers(rows: BacklogPORow[], curWeek: number, curYear: num
   return rows.filter((r) => r.hasEsd && r.esd! > windowEnd);
 }
 
-export interface SupplierTrend {
+export interface SupplierBacklogSummary {
   supplier: string;
-  current: number;
-  priorWeek: number;
-  netChange: number;
-  trailing: number[]; // last 6 weekly snapshots, oldest first, ending at last completed week
-  classification: 'chronic' | 'spike' | 'improving' | 'stable';
+  count: number;
+  avgAgeDays: number;
+  noEsdCount: number;
 }
 
-const TRAILING_WEEKS = 6;
-
-// Historical backlog level per supplier, computed the same way as the forward projection but
-// looking backward with only real ASD data (every one of these weeks has already happened).
-function backlogCountAsOfWeek(lines: PurchaseLine[], weekEnd: Date): Map<string, number> {
-  const byPO = groupByPO(lines);
-  const counts = new Map<string, number>();
-  for (const poLines of byPO.values()) {
-    const pgrd = poLines.find((l) => l.pgrd)?.pgrd ?? null;
-    if (!pgrd || pgrd > weekEnd) continue;
-    const asd = poLines.find((l) => l.asd)?.asd ?? null;
-    if (asd && asd <= weekEnd) continue; // cleared by then
-    const supplier = poLines[0].supplier;
-    counts.set(supplier, (counts.get(supplier) ?? 0) + 1);
+// Ranked by CURRENT backlog count. There is deliberately no week-over-week trend/chronic-vs-spike
+// classification here: the data source is a live upload with records updated in place (once ASD
+// fills in, the PO's earlier backlog status is gone), so a genuine "backlog as of last week"
+// figure isn't reconstructable from it — computing one would just be fabricating a trend. Derived
+// directly from the same `rows` population used everywhere else on the page, so a supplier with
+// real current backlog can never silently disappear here.
+export function computeSupplierBacklogSummary(rows: BacklogPORow[]): SupplierBacklogSummary[] {
+  const bySupplier = new Map<string, BacklogPORow[]>();
+  for (const r of rows) {
+    if (!bySupplier.has(r.supplier)) bySupplier.set(r.supplier, []);
+    bySupplier.get(r.supplier)!.push(r);
   }
-  return counts;
-}
-
-export function computeSupplierTrends(lines: PurchaseLine[], curWeek: number, curYear: number, today: Date = new Date()): SupplierTrend[] {
-  const snapshots: Map<string, number>[] = [];
-  for (let offset = -(TRAILING_WEEKS - 1); offset <= 0; offset++) {
-    const { week, year } = shiftISOWeek(curWeek, curYear, offset);
-    const { end: weekEnd } = weekRangeFor(week, year);
-    snapshots.push(backlogCountAsOfWeek(lines, weekEnd));
-  }
-  const currentCounts = backlogCountAsOfWeek(lines, today);
-
-  const suppliers = new Set<string>();
-  snapshots.forEach((m) => m.forEach((_, s) => suppliers.add(s)));
-  currentCounts.forEach((_, s) => suppliers.add(s));
-
-  const trends: SupplierTrend[] = [];
-  for (const supplier of suppliers) {
-    const trailing = snapshots.map((m) => m.get(supplier) ?? 0);
-    const current = currentCounts.get(supplier) ?? 0;
-    const priorWeek = trailing[trailing.length - 1];
-    const netChange = current - priorWeek;
-
-    const weeksElevated = trailing.filter((c) => c > 0).length;
-    const earlierAvg = trailing.slice(0, -1).reduce((s, c) => s + c, 0) / Math.max(trailing.length - 1, 1);
-
-    let classification: SupplierTrend['classification'];
-    if (weeksElevated >= trailing.length - 1 && trailing.length > 1) classification = 'chronic';
-    else if (netChange > 0 && current > earlierAvg * 2) classification = 'spike';
-    else if (netChange < 0) classification = 'improving';
-    else classification = 'stable';
-
-    if (current > 0 || trailing.some((c) => c > 0)) {
-      trends.push({ supplier, current, priorWeek, netChange, trailing, classification });
-    }
-  }
-
-  return trends.sort((a, b) => b.netChange - a.netChange);
+  return [...bySupplier.entries()]
+    .map(([supplier, poRows]) => ({
+      supplier,
+      count: poRows.length,
+      avgAgeDays: Math.round(poRows.reduce((s, r) => s + r.ageDays, 0) / poRows.length),
+      noEsdCount: poRows.filter((r) => !r.hasEsd).length,
+    }))
+    .sort((a, b) => b.count - a.count);
 }
 
 export interface BacklogInsight {
   narrative: string;
-  growthPct: number | null;
 }
 
-// Auto-generated narrative from the underlying numbers — never hardcoded text.
-export function buildInsight(rows: BacklogPORow[], trends: SupplierTrend[], today: Date = new Date()): BacklogInsight {
-  const current = rows.length;
-  const priorWeek = trends.reduce((s, t) => s + t.priorWeek, 0);
-  const growthPct = priorWeek > 0 ? Math.round(((current - priorWeek) / priorWeek) * 100) : null;
+// Auto-generated from current-state facts only (no week-over-week trend claim — see
+// computeSupplierBacklogSummary's comment for why that isn't computable from this data source).
+export function buildInsight(rows: BacklogPORow[], curWeek: number, curYear: number): BacklogInsight {
+  const total = rows.length;
+  if (total === 0) return { narrative: 'No backlog in scope.' };
 
-  const growing = [...trends].filter((t) => t.netChange > 0).sort((a, b) => b.netChange - a.netChange).slice(0, 2);
-  const driverText = growing.length
-    ? `driven primarily by ${growing.map((t) => t.supplier).join(' and ')}`
-    : 'with no single supplier standing out';
+  const { week, year } = shiftISOWeek(curWeek, curYear, PROJECTION_FORWARD_WEEKS);
+  const { end: windowEnd } = weekRangeFor(week, year);
+  const windowLabel = `W${String(week).padStart(2, '0')}`;
+  const expectedToClear = rows.filter((r) => r.hasEsd && r.esd! <= windowEnd).length;
+  const pctExpectedToClear = Math.round((expectedToClear / total) * 100);
 
-  // dominant root cause among currently-new (recent-bucket) entries with a classified reason
-  const recentWithReason = rows.filter((r) => r.ageBucket === 'recent' && r.rootCauseCategory);
-  const catCounts = new Map<ReasonCategory, number>();
-  recentWithReason.forEach((r) => catCounts.set(r.rootCauseCategory!, (catCounts.get(r.rootCauseCategory!) ?? 0) + 1));
-  const topCat = [...catCounts.entries()].sort((a, b) => b[1] - a[1])[0];
-  const catText = topCat
-    ? `${REASON_CATEGORY_LABELS[topCat[0]]} accounts for the largest share of new entries (${topCat[1]} of ${recentWithReason.length} classified).`
-    : '';
+  const bySupplier = new Map<string, number>();
+  rows.forEach((r) => bySupplier.set(r.supplier, (bySupplier.get(r.supplier) ?? 0) + 1));
+  const topSupplier = [...bySupplier.entries()].sort((a, b) => b[1] - a[1])[0];
 
-  const trendWord = growthPct === null ? 'Backlog stands at' : growthPct > 0 ? `Backlog grew ${growthPct}% this week` : growthPct < 0 ? `Backlog shrank ${Math.abs(growthPct)}% this week` : 'Backlog held flat this week';
+  const parts = [
+    `${total} POs in backlog`,
+    `${pctExpectedToClear}% expected to clear by ${windowLabel}`,
+    topSupplier ? `${topSupplier[0]} currently carries the most backlog (${topSupplier[1]} POs)` : null,
+  ].filter((p): p is string => p !== null);
 
-  const narrative = growthPct === null
-    ? `Backlog stands at ${current} POs. ${catText}`.trim()
-    : `${trendWord}, ${driverText}. ${catText}`.trim();
-
-  return { narrative, growthPct };
+  return { narrative: parts.join(' — ') };
 }
 
 export interface EtaEstimate {
@@ -283,7 +284,11 @@ export interface EtaEstimate {
 const ETA_LOOKBACK_WEEKS = 4;
 
 // Rough ETA: no-ESD backlog volume / recent average weekly clearance pace (any PO whose ASD
-// landed in one of the last N completed weeks, regardless of what bucket it's in now).
+// landed in one of the last N completed weeks, regardless of what bucket it's in now). Unlike the
+// supplier trend above, this only reads real ASD timestamps already present on today's records —
+// it doesn't require reconstructing a past backlog LEVEL, so it holds up under the same live-data
+// constraint. It would still undercount if cleared POs get archived out of the export entirely
+// rather than just having ASD filled in place — worth confirming with the Dynamics export owner.
 export function computeEtaEstimate(lines: PurchaseLine[], noEsdCount: number, curWeek: number, curYear: number): EtaEstimate {
   const byPO = groupByPO(lines);
   let cleared = 0;

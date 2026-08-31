@@ -26,10 +26,11 @@ interface BacklogKpiStripProps {
   avgAgeDays: number;
   noEsdCount: number;
   expectedCount: number;
-  netChangeVsPriorWeek?: number; // supplier view only — trend vs that supplier's own history
 }
 
-export function BacklogKpiStrip({ total, recent, accumulated, avgAgeDays, noEsdCount, expectedCount, netChangeVsPriorWeek }: BacklogKpiStripProps) {
+// No week-over-week trend card here — the data source can't support a genuine "vs last week"
+// figure (see computeSupplierBacklogSummary's comment), so this strip only shows current-state facts.
+export function BacklogKpiStrip({ total, recent, accumulated, avgAgeDays, noEsdCount, expectedCount }: BacklogKpiStripProps) {
   return (
     <div className="flex gap-2">
       <Card label="Total Backlog" value={String(total)} />
@@ -38,13 +39,6 @@ export function BacklogKpiStrip({ total, recent, accumulated, avgAgeDays, noEsdC
       <Card label="Avg Age" value={`${avgAgeDays}d`} />
       <Card label="No-ESD" value={String(noEsdCount)} valueColor={COLOR.fail} />
       <Card label="Expected" value={String(expectedCount)} sub="Future PGRD, ESD booked after it" />
-      {netChangeVsPriorWeek !== undefined && (
-        <Card
-          label="Trend vs Last Week"
-          value={`${netChangeVsPriorWeek > 0 ? '+' : ''}${netChangeVsPriorWeek}`}
-          valueColor={netChangeVsPriorWeek > 0 ? COLOR.fail : netChangeVsPriorWeek < 0 ? COLOR.pass : COLOR.muted}
-        />
-      )}
     </div>
   );
 }

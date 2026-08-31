@@ -1,44 +1,38 @@
 'use client';
 
-import type { SupplierTrend } from '../../lib/backlogAggregation';
+import type { SupplierBacklogSummary } from '../../lib/backlogAggregation';
 
 interface BacklogSupplierRankingProps {
-  trends: SupplierTrend[];
+  summary: SupplierBacklogSummary[];
 }
 
-const CLASSIFICATION_STYLE: Record<SupplierTrend['classification'], { label: string; color: string; bg: string }> = {
-  chronic: { label: 'Chronic', color: '#dc2626', bg: '#FEE2E2' },
-  spike: { label: 'Spike', color: '#c2650a', bg: '#FFF3E0' },
-  improving: { label: 'Improving', color: '#15803d', bg: '#DCFCE7' },
-  stable: { label: 'Stable', color: '#7b7571', bg: '#f5f2ee' },
-};
-
-// Ranked by trend direction (net adding vs net clearing week-over-week), not raw backlog count —
-// a supplier with a small but growing backlog is a bigger forward risk than one with a large but
-// shrinking one.
-export function BacklogSupplierRanking({ trends }: BacklogSupplierRankingProps) {
-  const top = trends.slice(0, 10);
+// Ranked by current backlog count — no trend/chronic-vs-spike claim, since a genuine week-over-week
+// comparison isn't computable from this live, mutate-in-place data source (see
+// computeSupplierBacklogSummary's comment).
+export function BacklogSupplierRanking({ summary }: BacklogSupplierRankingProps) {
+  const top = summary.slice(0, 10);
+  const maxCount = Math.max(1, ...top.map((s) => s.count));
 
   return (
     <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
-      <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-3">Supplier Ranking — by Trend</p>
+      <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-3">Supplier Ranking — Current Backlog</p>
       {top.length === 0 ? (
         <p className="text-xs text-[#9c9794] py-6 text-center">No backlog in scope</p>
       ) : (
-        <div className="space-y-2">
-          {top.map((t) => {
-            const style = CLASSIFICATION_STYLE[t.classification];
-            return (
-              <div key={t.supplier} className="flex items-center justify-between gap-2 text-xs">
-                <span className="font-semibold text-[#403833] truncate flex-1">{t.supplier}</span>
-                <span className="px-2 py-0.5 rounded-full font-semibold" style={{ color: style.color, background: style.bg }}>{style.label}</span>
-                <span className={`font-semibold w-14 text-right ${t.netChange > 0 ? 'text-fail' : t.netChange < 0 ? 'text-pass' : 'text-[#7b7571]'}`}>
-                  {t.netChange > 0 ? '+' : ''}{t.netChange}
+        <div className="space-y-3">
+          {top.map((s) => (
+            <div key={s.supplier}>
+              <div className="flex items-baseline justify-between gap-2 mb-1">
+                <span className="text-xs font-semibold text-[#403833] truncate">{s.supplier}</span>
+                <span className="text-xs font-semibold text-[#58524e] shrink-0">
+                  {s.count} POs · avg {s.avgAgeDays}d{s.noEsdCount > 0 ? ` · ${s.noEsdCount} no-ESD` : ''}
                 </span>
-                <span className="text-[#9c9794] w-16 text-right">{t.current} total</span>
               </div>
-            );
-          })}
+              <div className="h-3 bg-[#f5f2ee] rounded-full overflow-hidden">
+                <div className="h-full rounded-full bg-brand transition-all" style={{ width: `${Math.max((s.count / maxCount) * 100, 3)}%` }} />
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

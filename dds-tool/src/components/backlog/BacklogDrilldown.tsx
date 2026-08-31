@@ -11,7 +11,7 @@ import { formatFilterSummary } from '../../lib/filterSummary';
 import { parseBacklogParams, buildBacklogParams } from '../../lib/backlogParams';
 import {
   computeBacklogRows, computeExpectedRows, computeAgeBands, computeProjectionSeries, findOutliers,
-  computeSupplierTrends, buildInsight, computeEtaEstimate, anchorWeek,
+  computeSupplierBacklogSummary, buildInsight, computeEtaEstimate, anchorWeek,
 } from '../../lib/backlogAggregation';
 import { BacklogKpiStrip } from './BacklogKpiStrip';
 import { BacklogProjectionChart } from './BacklogProjectionChart';
@@ -56,12 +56,11 @@ export function BacklogDrilldown() {
   const ageBands = useMemo(() => computeAgeBands(rows), [rows]);
   const projection = useMemo(() => computeProjectionSeries(filteredLines, curWeek, curYear), [filteredLines, curWeek, curYear]);
   const outliers = useMemo(() => findOutliers(rows, curWeek, curYear), [rows, curWeek, curYear]);
-  const supplierTrends = useMemo(() => computeSupplierTrends(filteredLines, curWeek, curYear), [filteredLines, curWeek, curYear]);
-  const insight = useMemo(() => buildInsight(rows, supplierTrends), [rows, supplierTrends]);
+  const supplierSummary = useMemo(() => computeSupplierBacklogSummary(rows), [rows]);
+  const insight = useMemo(() => buildInsight(rows, curWeek, curYear), [rows, curWeek, curYear]);
   const eta = useMemo(() => computeEtaEstimate(filteredLines, noEsdRows.length, curWeek, curYear), [filteredLines, noEsdRows.length, curWeek, curYear]);
 
   const isSingleSupplier = filters.suppliers.length === 1;
-  const scopedTrends = isSingleSupplier ? supplierTrends.filter((t) => t.supplier === filters.suppliers[0]) : supplierTrends;
 
   if (allLines.length === 0) {
     return (
@@ -102,7 +101,6 @@ export function BacklogDrilldown() {
           avgAgeDays={avgAgeDays}
           noEsdCount={noEsdRows.length}
           expectedCount={expectedRows.length}
-          netChangeVsPriorWeek={isSingleSupplier ? scopedTrends[0]?.netChange ?? 0 : undefined}
         />
 
         <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
@@ -124,7 +122,7 @@ export function BacklogDrilldown() {
         {!isSingleSupplier ? (
           <>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-              <BacklogSupplierRanking trends={scopedTrends} />
+              <BacklogSupplierRanking summary={supplierSummary} />
               <BacklogAgeBreakdown bands={ageBands} />
             </div>
             <BacklogGroupedTable rows={rows} />
