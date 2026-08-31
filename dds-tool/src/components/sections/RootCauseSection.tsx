@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { MiniLegend } from '../shared/MiniLegend';
 import { useReasonClassification } from '../../hooks/useReasonClassification';
 import { REASON_CATEGORIES, REASON_CATEGORY_LABELS, isSubstantiveReason, type ReasonCategory } from '../../lib/reasonClassification';
@@ -136,13 +136,23 @@ export function RootCauseSection({ lines, weeksInRange, drillDownHref }: RootCau
           <div className="flex-1 min-h-0">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="2 4" stroke={COLOR.border} vertical={false} />
                 <XAxis dataKey="weekLabel" tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} interval={0} />
                 <YAxis tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} allowDecimals={false} width={24} />
                 <Tooltip content={<NonZeroTooltip />} allowEscapeViewBox={{ x: false, y: false }} wrapperStyle={{ zIndex: 60 }} />
-                {topCategories.map((cat) => (
-                  <Bar key={cat} dataKey={cat} stackId="reasons" fill={CATEGORY_PALETTE[cat]} fillOpacity={0.85} />
+                {topCategories.map((cat, i) => (
+                  <Bar
+                    key={cat}
+                    dataKey={cat}
+                    stackId="reasons"
+                    fill={CATEGORY_PALETTE[cat]}
+                    fillOpacity={0.85}
+                    stroke="#fff"
+                    strokeWidth={2}
+                    radius={!hasOther && i === topCategories.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                  />
                 ))}
-                {hasOther && <Bar dataKey="other" stackId="reasons" fill={COLOR.muted} fillOpacity={0.85} />}
+                {hasOther && <Bar dataKey="other" stackId="reasons" fill={COLOR.muted} fillOpacity={0.85} stroke="#fff" strokeWidth={2} radius={[4, 4, 0, 0]} />}
               </BarChart>
             </ResponsiveContainer>
           </div>

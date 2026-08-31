@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { differenceInCalendarWeeks } from 'date-fns';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { weekOf } from '../../lib/kpiFormulas';
 import { isoWeekKey } from '../../lib/dateUtils';
 import { COLOR } from '../../lib/statusColors';
@@ -120,6 +120,7 @@ export function BacklogSection({ lines, drillDownHref }: BacklogSectionProps) {
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={clearance} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="2 4" stroke={COLOR.border} vertical={false} />
               <XAxis dataKey="weekLabel" tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} interval={0} />
               <YAxis tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} allowDecimals={false} width={24} />
               <Tooltip
@@ -128,7 +129,7 @@ export function BacklogSection({ lines, drillDownHref }: BacklogSectionProps) {
                 itemStyle={{ color: '#f9f7f6' }}
                 formatter={(value) => [`${value} POs`, 'Clearing']}
               />
-              <Bar dataKey="count" radius={[2, 2, 0, 0]}>
+              <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={36}>
                 {clearance.map((c) => (
                   <Cell key={c.weekLabel} fill={COLOR.brand} />
                 ))}

@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { getISOWeek, getISOWeekYear } from '../../lib/dateUtils';
 import { COLOR } from '../../lib/statusColors';
 import type { WeekInRange } from '../../hooks/useFilters';
@@ -62,6 +62,7 @@ export function MissingESDSection({ lines, weeksInRange, drillDownHref }: Missin
       <div className="flex-1 min-h-0 mt-3">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={rows} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="2 4" stroke={COLOR.border} vertical={false} />
             <XAxis dataKey="weekLabel" tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} interval={0} />
             <YAxis tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} allowDecimals={false} width={24} />
             <Tooltip
@@ -70,7 +71,7 @@ export function MissingESDSection({ lines, weeksInRange, drillDownHref }: Missin
               itemStyle={{ color: '#f9f7f6' }}
               formatter={(value) => [`${value} POs`, 'Missing ESD']}
             />
-            <Bar dataKey="count" radius={[2, 2, 0, 0]}>
+            <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={36}>
               {rows.map((r) => (
                 <Cell key={r.weekLabel} fill={r.count > 0 ? COLOR.fail : COLOR.border} />
               ))}

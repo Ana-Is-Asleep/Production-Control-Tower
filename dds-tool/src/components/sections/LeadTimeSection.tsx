@@ -58,9 +58,9 @@ export function LeadTimeSection({ lines, drillDownHref }: LeadTimeSectionProps) 
                   itemStyle={{ color: '#f9f7f6' }}
                   formatter={(value: unknown, name: unknown) => (name === 'Avg LT' ? [`${value}d`, name as string] : [`${value} POs`, name as string])}
                 />
-                <Bar yAxisId="count" dataKey="withinTarget" name="Within target" stackId="ships" fill={COLOR.pass} fillOpacity={0.85} />
-                <Bar yAxisId="count" dataKey="aboveTarget" name="Above target" stackId="ships" fill={COLOR.fail} fillOpacity={0.85} />
-                <Line yAxisId="days" dataKey="avgLT" name="Avg LT" stroke={COLOR.navy} strokeWidth={2} dot={{ r: 2 }} connectNulls />
+                <Bar yAxisId="count" dataKey="withinTarget" name="Within target" stackId="ships" fill={COLOR.pass} fillOpacity={0.85} stroke="#fff" strokeWidth={2} radius={[0, 0, 0, 0]} />
+                <Bar yAxisId="count" dataKey="aboveTarget" name="Above target" stackId="ships" fill={COLOR.fail} fillOpacity={0.85} stroke="#fff" strokeWidth={2} radius={[4, 4, 0, 0]} />
+                <Line yAxisId="days" dataKey="avgLT" name="Avg LT" stroke={COLOR.navy} strokeWidth={2} dot={{ r: 4, fill: COLOR.navy, stroke: '#fff', strokeWidth: 1.5 }} connectNulls />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
