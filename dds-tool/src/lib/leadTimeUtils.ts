@@ -109,6 +109,52 @@ export function computeWeeklyLT(lines: PurchaseLine[]): WeeklyLTPoint[] {
     }));
 }
 
+export interface WeeklyLTTargetPoint {
+  weekLabel: string;
+  isoWeek: number;
+  isoYear: number;
+  withinTarget: number; // POs shipped that week with production LT <= target
+  aboveTarget: number;  // POs shipped that week with production LT > target
+  avgLT: number | null; // average production LT across POs shipped that week
+}
+
+// Dashboard mini chart: one row per ASD week — count of POs shipped within vs above the 30-day
+// target, plus the average production LT for that week. Aggregated by PO (not line), since a PO
+// with multiple lines should only count once; a PO's LT is the average of its own lines' LTs.
+export function computeWeeklyLTTargetSplit(lines: PurchaseLine[]): WeeklyLTTargetPoint[] {
+  const byPO = new Map<string, { asd: Date; lts: number[] }>();
+  for (const line of lines) {
+    if (!line.asd || !line.orderDate || !canScore(line)) continue;
+    const r = computeLeadTime(line);
+    if (r.productionLT == null) continue;
+    if (!byPO.has(line.po)) byPO.set(line.po, { asd: line.asd, lts: [] });
+    byPO.get(line.po)!.lts.push(r.productionLT);
+  }
+
+  const byWeek = new Map<string, { week: number; year: number; within: number; above: number; lts: number[] }>();
+  byPO.forEach(({ asd, lts }) => {
+    const avgPoLT = Math.round(lts.reduce((s, n) => s + n, 0) / lts.length);
+    const week = getISOWeek(asd);
+    const year = getISOWeekYear(asd);
+    const key = `${year}-${String(week).padStart(2, '0')}`;
+    if (!byWeek.has(key)) byWeek.set(key, { week, year, within: 0, above: 0, lts: [] });
+    const entry = byWeek.get(key)!;
+    if (avgPoLT <= TARGET_LT) entry.within += 1; else entry.above += 1;
+    entry.lts.push(avgPoLT);
+  });
+
+  return [...byWeek.entries()]
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([, d]) => ({
+      weekLabel: `W${String(d.week).padStart(2, '0')}`,
+      isoWeek: d.week,
+      isoYear: d.year,
+      withinTarget: d.within,
+      aboveTarget: d.above,
+      avgLT: d.lts.length ? Math.round(d.lts.reduce((s, n) => s + n, 0) / d.lts.length) : null,
+    }));
+}
+
 export function summariseLeadTimes(lines: PurchaseLine[]): LeadTimeSummary {
   const results = lines.map(computeLeadTime);
   const avg = (nums: (number | null)[]) => {
