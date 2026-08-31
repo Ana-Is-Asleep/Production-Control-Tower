@@ -95,7 +95,7 @@ export function RootCauseSection({ lines, weeksInRange, drillDownHref }: RootCau
     // bucket instead — otherwise it can rank into the top 4 on its own and produce two
     // confusingly-similar gray "Other/Unclear" + "Other" legend entries at once.
     const rankable = categoryOrder.filter((cat) => cat !== 'other_unclear');
-    const topCategories = rankable.filter((cat) => (categoryTotals[cat] ?? 0) > 0).slice(0, 4);
+    const topCategories: ReasonCategory[] = rankable.filter((cat) => (categoryTotals[cat] ?? 0) > 0).slice(0, 4);
     const otherCategories = categoryOrder.filter((cat) => !topCategories.includes(cat) && (categoryTotals[cat] ?? 0) > 0);
     const hasOther = otherCategories.length > 0;
 
