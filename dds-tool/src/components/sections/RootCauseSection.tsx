@@ -147,12 +147,10 @@ export function RootCauseSection({ lines, weeksInRange, drillDownHref }: RootCau
                     stackId="reasons"
                     fill={CATEGORY_PALETTE[cat]}
                     fillOpacity={0.85}
-                    stroke="#fff"
-                    strokeWidth={2}
                     radius={!hasOther && i === topCategories.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
                   />
                 ))}
-                {hasOther && <Bar dataKey="other" stackId="reasons" fill={COLOR.muted} fillOpacity={0.85} stroke="#fff" strokeWidth={2} radius={[4, 4, 0, 0]} />}
+                {hasOther && <Bar dataKey="other" stackId="reasons" fill={COLOR.muted} fillOpacity={0.85} radius={[4, 4, 0, 0]} />}
               </BarChart>
             </ResponsiveContainer>
           </div>
