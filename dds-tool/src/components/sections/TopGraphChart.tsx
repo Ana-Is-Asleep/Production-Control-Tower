@@ -18,7 +18,7 @@ interface TopGraphChartProps {
 export function TopGraphChart({ points, onWeekClick }: TopGraphChartProps) {
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between mb-1 shrink-0">
+      <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mb-2 shrink-0">
         <MiniLegend
           items={[
             { label: 'POs SOT or Expected SOT', color: BAR_SHIPPED, type: 'bar' },
@@ -27,7 +27,7 @@ export function TopGraphChart({ points, onWeekClick }: TopGraphChartProps) {
             { label: 'OTIF %', color: LINE_OTIF, type: 'line' },
           ]}
         />
-        <span className="text-[9px] text-[#b5aaa5] shrink-0">dashed = projected</span>
+        <span className="text-[10px] text-[#b5aaa5] italic">(dashed = projected)</span>
       </div>
       <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">

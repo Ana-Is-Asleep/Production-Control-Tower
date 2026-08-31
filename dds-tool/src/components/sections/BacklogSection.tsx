@@ -102,13 +102,13 @@ export function BacklogSection({ lines, drillDownHref }: BacklogSectionProps) {
       </div>
       <div className="grid grid-cols-3 gap-2 shrink-0">
         {([
-          { label: 'Recent', color: 'text-warn', value: recentCount },
-          { label: 'Accumulated', color: 'text-fail', value: accumulatedCount },
-          { label: 'Expected', color: 'text-brand', value: expectedCount },
+          { label: 'Recent', color: COLOR.brand, value: recentCount },
+          { label: 'Accumulated', color: COLOR.fail, value: accumulatedCount },
+          { label: 'Expected', color: COLOR.navy, value: expectedCount },
         ]).map((c) => (
           <div key={c.label} className="text-left rounded-lg px-2 py-1">
             <p className="text-[9px] uppercase tracking-widest text-[#9c9794] truncate">{c.label}</p>
-            <p className={`kpi-number font-extrabold text-xl leading-none mt-0.5 ${c.color}`}>{c.value}</p>
+            <p className="kpi-number font-extrabold text-xl leading-none mt-0.5" style={{ color: c.color }}>{c.value}</p>
           </div>
         ))}
       </div>
