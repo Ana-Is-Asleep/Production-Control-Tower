@@ -70,9 +70,9 @@ export function InvoicesSection({ invoices, supplierFilter, drillDownHref }: Inv
             ))}
           </div>
           {weeklyPending.length > 0 && (
-            <div className="flex-1 min-h-0 mt-4">
-              <p className="text-[10px] uppercase tracking-widest text-[#9c9794] mb-1">Total Pending — by due week</p>
-              <div style={{ height: 'calc(100% - 18px)' }}>
+            <div className="flex-1 min-h-0 mt-4 flex flex-col">
+              <p className="text-[10px] uppercase tracking-widest text-[#9c9794] mb-1 shrink-0">Total Pending — by due week</p>
+              <div className="flex-1 min-h-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={weeklyPending} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="2 4" stroke={COLOR.border} vertical={false} />

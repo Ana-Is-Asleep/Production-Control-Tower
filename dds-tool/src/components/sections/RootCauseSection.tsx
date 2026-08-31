@@ -91,7 +91,11 @@ export function RootCauseSection({ lines, weeksInRange, drillDownHref }: RootCau
     // Cap the compact card at the top 4 categories by volume, with everything else folded into a
     // single neutral "Other" segment — with up to 14 possible categories, showing them all (or even
     // 5) produces several similarly-toned warm colors that are hard to tell apart at this size.
-    const topCategories = categoryOrder.filter((cat) => (categoryTotals[cat] ?? 0) > 0).slice(0, 4);
+    // "other_unclear" is excluded from ever taking a top-4 slot and always folds into the "Other"
+    // bucket instead — otherwise it can rank into the top 4 on its own and produce two
+    // confusingly-similar gray "Other/Unclear" + "Other" legend entries at once.
+    const rankable = categoryOrder.filter((cat) => cat !== 'other_unclear');
+    const topCategories = rankable.filter((cat) => (categoryTotals[cat] ?? 0) > 0).slice(0, 4);
     const otherCategories = categoryOrder.filter((cat) => !topCategories.includes(cat) && (categoryTotals[cat] ?? 0) > 0);
     const hasOther = otherCategories.length > 0;
 
