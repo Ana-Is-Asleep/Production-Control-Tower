@@ -21,11 +21,11 @@ export function BacklogClearanceForecast({ points }: BacklogClearanceForecastPro
   const pctExpectedToClear = totalToday ? Math.round((expectedToClear / totalToday) * 100) : 0;
 
   return (
-    <div className="bg-white rounded-lg border border-[#e9e3df] p-4 h-full flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
-      <p className="text-sm font-bold text-[#403833]">Backlog Clearance Forecast</p>
-      <p className="text-[11px] text-[#9c9794] mb-2">Based on ESD — when we expect the current backlog to clear</p>
+    <div className="bg-white rounded-lg border border-[#e9e3df] p-4 h-full flex flex-col overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
+      <p className="text-sm font-bold text-[#403833] shrink-0">Backlog Clearance Forecast</p>
+      <p className="text-[11px] text-[#9c9794] mb-2 shrink-0">Based on ESD — when we expect the current backlog to clear</p>
 
-      <div className="flex-1 min-h-0" style={{ minHeight: 180 }}>
+      <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={points} margin={{ top: 24, right: 16, left: -10, bottom: 0 }}>
             <defs>
@@ -50,7 +50,7 @@ export function BacklogClearanceForecast({ points }: BacklogClearanceForecastPro
         </ResponsiveContainer>
       </div>
 
-      <div className="flex items-center gap-2 mt-2 flex-wrap">
+      <div className="flex items-center gap-2 mt-2 flex-wrap shrink-0">
         <span className="text-[11px] px-2 py-1 rounded-md bg-pass-bg text-pass font-semibold flex items-center gap-1">
           ✓ {expectedToClear} of {totalToday} current backlog POs ({pctExpectedToClear}%) have an ESD and are expected to clear by {last?.label ?? '—'}.
         </span>

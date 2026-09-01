@@ -154,7 +154,7 @@ export function BacklogDrilldown() {
               />
             </div>
 
-            <div style={{ flex: '3 1 220px' }} className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch min-h-0">
+            <div style={{ flex: '3 1 220px' }} className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch min-h-0 overflow-hidden">
               <div className="lg:col-span-2 min-h-0">
                 <BacklogClearanceForecast points={forecast} />
               </div>
@@ -169,7 +169,7 @@ export function BacklogDrilldown() {
 
             {outliers.length > 0 && <div className="shrink-0"><BacklogOutlierCallout outliers={outliers} /></div>}
 
-            <div style={{ flex: '2 1 160px' }} className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch min-h-0">
+            <div style={{ flex: '2 1 160px' }} className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch min-h-0 overflow-hidden">
               <BacklogSupplierRanking summary={supplierSummary} />
               <BacklogAgeBreakdown bands={ageBands} />
             </div>
@@ -196,7 +196,7 @@ export function BacklogDrilldown() {
               </div>
             </div>
 
-            <div style={{ flex: '3 1 220px' }} className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch min-h-0">
+            <div style={{ flex: '3 1 220px' }} className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch min-h-0 overflow-hidden">
               <div className="lg:col-span-2 min-h-0">
                 <BacklogClearanceForecast points={forecast} />
               </div>
@@ -212,7 +212,7 @@ export function BacklogDrilldown() {
 
             {outliers.length > 0 && <div className="shrink-0"><BacklogOutlierCallout outliers={outliers} /></div>}
 
-            <div style={{ flex: '2 1 160px' }} className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch min-h-0">
+            <div style={{ flex: '2 1 160px' }} className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch min-h-0 overflow-hidden">
               <BacklogAgeBreakdown bands={ageBands} />
               <BacklogEsdPassedCallout
                 count={rows.filter((r) => r.esdPassedNoAsd).length}
@@ -220,7 +220,7 @@ export function BacklogDrilldown() {
               />
             </div>
 
-            <div style={{ flex: '4 1 260px' }} className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-3 items-stretch min-h-0">
+            <div style={{ flex: '4 1 260px' }} className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-3 items-stretch min-h-0 overflow-hidden">
               <BacklogPOTable
                 rows={rows}
                 today={today}
