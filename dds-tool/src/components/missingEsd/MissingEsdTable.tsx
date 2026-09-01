@@ -1,24 +1,39 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, SlidersHorizontal, Download } from 'lucide-react';
 import { formatDateShort } from '../../lib/dateUtils';
-import type { MissingEsdRow } from '../../lib/missingEsdAggregation';
+import { egrdBucketKeyForRow, type MissingEsdRow } from '../../lib/missingEsdAggregation';
+import type { UrgencyFilter } from '../../lib/missingEsdParams';
 
 interface MissingEsdTableProps {
   rows: MissingEsdRow[];
+  tab: UrgencyFilter;
+  curWeek: number;
+  curYear: number;
+  selectedBucketKeys: string[] | null;
+  onSelectBucketKeys: (keys: string[] | null) => void;
 }
 
-type QuickFilter = 'all' | 'overdue' | 'due_lt_1wk' | 'due_1_3wk' | 'due_3_6wk' | 'due_gt_6wk';
+interface QuickFilter {
+  label: string;
+  keys: string[];
+}
 
-function bucketFor(row: MissingEsdRow): QuickFilter {
-  const d = row.daysUntilEgrd;
-  if (d === null) return 'due_gt_6wk';
-  if (d <= 0) return 'overdue';
-  if (d <= 7) return 'due_lt_1wk';
-  if (d <= 21) return 'due_1_3wk';
-  if (d <= 42) return 'due_3_6wk';
-  return 'due_gt_6wk';
+const NEEDING_ACTION_FILTERS: QuickFilter[] = [
+  { label: 'Overdue', keys: ['overdue'] },
+  { label: 'EGRD this week', keys: ['w0'] },
+  { label: 'EGRD next week', keys: ['w1'] },
+  { label: 'EGRD in 2-3 weeks', keys: ['w2', 'w3'] },
+];
+
+const NOT_URGENT_FILTERS: QuickFilter[] = [
+  { label: 'EGRD in 3-6 weeks', keys: ['w3', 'w4', 'w5'] },
+  { label: 'EGRD > 6 weeks', keys: ['further'] },
+];
+
+function sameKeys(a: string[], b: string[]) {
+  return a.length === b.length && a.every((k) => b.includes(k));
 }
 
 function statusLabel(row: MissingEsdRow): string {
@@ -27,7 +42,7 @@ function statusLabel(row: MissingEsdRow): string {
   if (row.daysUntilEgrd === 0) return 'Due today';
   if (row.daysUntilEgrd <= 7) return 'Due in 1 week';
   if (row.daysUntilEgrd <= 21) return 'Due in 1-3 weeks';
-  return 'Due later';
+  return 'Not urgent';
 }
 
 function statusColor(urgency: MissingEsdRow['urgency']) {
@@ -45,32 +60,24 @@ function daysLabel(row: MissingEsdRow): string {
 
 const ROWS_PER_PAGE = 25;
 
-const QUICK_FILTERS: { key: QuickFilter; label: (n: number) => string }[] = [
-  { key: 'all', label: (n) => `All (${n})` },
-  { key: 'overdue', label: (n) => `Overdue (${n})` },
-  { key: 'due_lt_1wk', label: (n) => `Due in < 1 week (${n})` },
-  { key: 'due_1_3wk', label: (n) => `Due in 1-3 weeks (${n})` },
-];
-
-export function MissingEsdTable({ rows }: MissingEsdTableProps) {
+// Tabs live in the parent (they drive which row set — Needing Action vs Not Urgent — gets
+// passed in here); this component only owns search, pagination, and the quick-filter chips,
+// which share the same bucket keys as the EGRD-week chart above so a chip and a bar click mean
+// exactly the same filter.
+export function MissingEsdTable({ rows, tab, curWeek, curYear, selectedBucketKeys, onSelectBucketKeys }: MissingEsdTableProps) {
   const [search, setSearch] = useState('');
-  const [quickFilter, setQuickFilter] = useState<QuickFilter>('all');
   const [page, setPage] = useState(1);
 
-  const bucketCounts = useMemo(() => {
-    const counts: Record<QuickFilter, number> = { all: rows.length, overdue: 0, due_lt_1wk: 0, due_1_3wk: 0, due_3_6wk: 0, due_gt_6wk: 0 };
-    rows.forEach((r) => { counts[bucketFor(r)] += 1; });
-    return counts;
-  }, [rows]);
+  const quickFilters = tab === 'urgent' ? NEEDING_ACTION_FILTERS : NOT_URGENT_FILTERS;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return rows.filter((r) => {
-      if (quickFilter !== 'all' && bucketFor(r) !== quickFilter) return false;
+      if (selectedBucketKeys && !selectedBucketKeys.includes(egrdBucketKeyForRow(r, curWeek, curYear))) return false;
       if (!q) return true;
       return r.po.toLowerCase().includes(q) || r.supplier.toLowerCase().includes(q) || r.warehouse.toLowerCase().includes(q);
     });
-  }, [rows, search, quickFilter]);
+  }, [rows, search, selectedBucketKeys, curWeek, curYear]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));
   const safePage = Math.min(page, totalPages);
@@ -88,18 +95,35 @@ export function MissingEsdTable({ rows }: MissingEsdTableProps) {
             className="text-xs outline-none w-full text-[#403833] placeholder:text-[#9c9794]"
           />
         </div>
-        {QUICK_FILTERS.map((f) => (
-          <button
-            key={f.key}
-            onClick={() => { setQuickFilter(f.key); setPage(1); }}
-            className={`text-xs font-semibold px-3 py-1.5 rounded-full border whitespace-nowrap transition-colors ${
-              quickFilter === f.key ? 'bg-[#403833] text-white border-[#403833]' : 'border-[#e9e3df] text-[#7b7571] hover:border-[#403833]'
-            }`}
-          >
-            {f.label(bucketCounts[f.key])}
-          </button>
-        ))}
-        <span className="text-xs text-[#9c9794] ml-auto whitespace-nowrap">{filtered.length} POs</span>
+        <button
+          onClick={() => onSelectBucketKeys(null)}
+          className={`text-xs font-semibold px-3 py-1.5 rounded-full border whitespace-nowrap transition-colors ${
+            selectedBucketKeys === null ? 'bg-[#403833] text-white border-[#403833]' : 'border-[#e9e3df] text-[#7b7571] hover:border-[#403833]'
+          }`}
+        >
+          All ({rows.length})
+        </button>
+        {quickFilters.map((f) => {
+          const count = rows.filter((r) => f.keys.includes(egrdBucketKeyForRow(r, curWeek, curYear))).length;
+          const active = selectedBucketKeys !== null && sameKeys(selectedBucketKeys, f.keys);
+          return (
+            <button
+              key={f.label}
+              onClick={() => { setPage(1); onSelectBucketKeys(active ? null : f.keys); }}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-full border whitespace-nowrap transition-colors ${
+                active ? 'bg-[#403833] text-white border-[#403833]' : 'border-[#e9e3df] text-[#7b7571] hover:border-[#403833]'
+              }`}
+            >
+              {f.label} ({count})
+            </button>
+          );
+        })}
+        <button title="More filters (coming soon)" disabled className="flex items-center gap-1.5 text-xs font-semibold text-[#7b7571] border border-[#e9e3df] rounded-lg px-2.5 h-8 opacity-60 cursor-not-allowed">
+          <SlidersHorizontal size={13} /> More filters
+        </button>
+        <button title="Export (coming soon)" disabled className="flex items-center gap-1.5 text-xs font-semibold text-[#7b7571] border border-[#e9e3df] rounded-lg px-2.5 h-8 opacity-60 cursor-not-allowed ml-auto">
+          <Download size={13} /> Export
+        </button>
       </div>
 
       <table className="w-full text-xs">

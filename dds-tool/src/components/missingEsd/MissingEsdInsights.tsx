@@ -2,48 +2,51 @@
 
 import { useMemo } from 'react';
 import { AlertTriangle, Clock, PackageSearch, CheckCircle2 } from 'lucide-react';
-import { computeUrgencyProfile, computeSupplierExposure, type MissingEsdRow } from '../../lib/missingEsdAggregation';
+import { computeEgrdWeekBuckets, computeSupplierExposure, EGRD_NEEDING_ACTION_WEEKS, type MissingEsdRow } from '../../lib/missingEsdAggregation';
 
 interface MissingEsdInsightsProps {
   rows: MissingEsdRow[];
+  curWeek: number;
+  curYear: number;
 }
 
-// Current-state facts only, same convention as the SOT/OTIF Key Insights panel — no
-// week-over-week comparisons, since none of this is tracked historically.
-export function MissingEsdInsights({ rows }: MissingEsdInsightsProps) {
+const MAX_INSIGHTS = 4;
+
+// Current-state facts only, no week-over-week comparisons — none of this is tracked historically,
+// so every bullet here interprets the current scope rather than restating a KPI number.
+export function MissingEsdInsights({ rows, curWeek, curYear }: MissingEsdInsightsProps) {
   const insights = useMemo(() => {
     const items: { icon: typeof AlertTriangle; tone: 'fail' | 'warn' | 'pass' | 'neutral'; text: string }[] = [];
-    const buckets = computeUrgencyProfile(rows);
+    const buckets = computeEgrdWeekBuckets(rows, curWeek, curYear);
     const overdue = buckets[0].count;
-    const dueSoon = buckets[1].count + buckets[2].count;
+    const upcomingNeeding = buckets.slice(1, 1 + EGRD_NEEDING_ACTION_WEEKS).reduce((s, b) => s + b.count, 0);
 
     if (overdue > 0) {
-      items.push({ icon: AlertTriangle, tone: 'fail', text: `${overdue} PO${overdue > 1 ? 's are' : ' is'} already overdue and require immediate action.` });
+      items.push({ icon: AlertTriangle, tone: 'fail', text: `${overdue} PO${overdue > 1 ? 's are' : ' is'} already overdue and require immediate attention.` });
     }
-    if (dueSoon > 0) {
-      items.push({ icon: Clock, tone: 'warn', text: `${dueSoon} additional PO${dueSoon > 1 ? 's' : ''} will become overdue within the next 3 weeks if no ESD is confirmed.` });
-    }
-
-    const { top } = computeSupplierExposure(rows);
-    const needingActionTotal = rows.filter((r) => r.urgency !== 'watchlist').length;
-    if (top.length && needingActionTotal > 0) {
-      const share = Math.round((top[0].needingAction / needingActionTotal) * 100);
-      if (top[0].needingAction > 0) {
-        items.push({ icon: PackageSearch, tone: 'neutral', text: `${share}% of Needing Action POs are concentrated at ${top[0].supplier}.` });
-      }
+    if (upcomingNeeding > 0) {
+      items.push({ icon: Clock, tone: 'warn', text: `${upcomingNeeding} additional PO${upcomingNeeding > 1 ? 's' : ''} have EGRD within the next 3 weeks.` });
     }
 
-    const due1to3 = buckets[2].count;
-    if (due1to3 > 0) {
-      items.push({ icon: Clock, tone: 'neutral', text: `The largest volume due in the next 1–3 weeks: ${due1to3} POs.` });
+    const upcomingWeekBuckets = buckets.filter((b) => b.key.startsWith('w'));
+    const largestUpcoming = upcomingWeekBuckets.reduce((a, b) => (b.count > a.count ? b : a), upcomingWeekBuckets[0]);
+    if (largestUpcoming && largestUpcoming.count > 0) {
+      items.push({ icon: Clock, tone: 'neutral', text: `The largest concentration of upcoming missing ESD sits in ${largestUpcoming.label} with ${largestUpcoming.count} POs.` });
+    }
+
+    const needingActionRows = rows.filter((r) => r.urgency !== 'watchlist');
+    const { top } = computeSupplierExposure(needingActionRows, 1);
+    if (top.length && needingActionRows.length > 0 && top[0].needingAction > 0) {
+      const share = Math.round((top[0].needingAction / needingActionRows.length) * 100);
+      items.push({ icon: PackageSearch, tone: 'neutral', text: `${share}% of all Needing Action POs belong to ${top[0].supplier}.` });
     }
 
     if (rows.length === 0) {
       items.push({ icon: CheckCircle2, tone: 'pass', text: 'No open POs are missing ESD in the current scope.' });
     }
 
-    return items;
-  }, [rows]);
+    return items.slice(0, MAX_INSIGHTS);
+  }, [rows, curWeek, curYear]);
 
   const toneColor: Record<string, string> = { fail: 'text-fail', warn: 'text-warn', pass: 'text-pass', neutral: 'text-[#7b7571]' };
 
@@ -53,7 +56,7 @@ export function MissingEsdInsights({ rows }: MissingEsdInsightsProps) {
       {insights.length === 0 ? (
         <p className="text-xs text-[#9c9794]">No POs in scope to summarize.</p>
       ) : (
-        <div className="space-y-2.5 flex-1">
+        <div className="space-y-3 flex-1">
           {insights.map((item, i) => {
             const Icon = item.icon;
             return (

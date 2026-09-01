@@ -6,18 +6,24 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Download, MoreVertical } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { useFilters } from '../../hooks/useFilters';
-import { formatDateShort } from '../../lib/dateUtils';
+import { formatDateShort, currentISOWeek } from '../../lib/dateUtils';
 import {
   parseMissingEsdParams, buildMissingEsdParams, type UrgencyFilter,
 } from '../../lib/missingEsdParams';
-import { computeMissingEsdRows, findConsolidationRisks } from '../../lib/missingEsdAggregation';
+import { computeMissingEsdRows, findConsolidationRisks, EGRD_NEEDING_ACTION_WEEKS } from '../../lib/missingEsdAggregation';
 import { Sidebar } from '../shell/Sidebar';
 import { PageHeader } from '../shell/PageHeader';
 import { MissingEsdKpiRow } from './MissingEsdKpiRow';
-import { MissingEsdUrgencyProfile } from './MissingEsdUrgencyProfile';
+import { MissingEsdEgrdChart } from './MissingEsdEgrdChart';
 import { MissingEsdSupplierExposure } from './MissingEsdSupplierExposure';
 import { MissingEsdInsights } from './MissingEsdInsights';
 import { MissingEsdTable } from './MissingEsdTable';
+
+function bucketGroup(key: string): 'needing' | 'not_urgent' {
+  if (key === 'overdue') return 'needing';
+  if (key.startsWith('w')) return Number(key.slice(1)) < EGRD_NEEDING_ACTION_WEEKS ? 'needing' : 'not_urgent';
+  return 'not_urgent';
+}
 
 export function MissingEsdDrilldown() {
   const router = useRouter();
@@ -27,10 +33,17 @@ export function MissingEsdDrilldown() {
 
   const initial = useMemo(() => parseMissingEsdParams(searchParams), []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const { filters, setFilters, weekRangeLines, allSuppliers, curWeek, curYear } =
+  // Missing ESD is a current-state view, not a snapshot: filteredLines (supplier/category/channel
+  // only) is used instead of weekRangeLines, so there's no PGRD week-range restriction here.
+  const { filters, setFilters, filteredLines, allSuppliers, curWeek: sotCurWeek, curYear: sotCurYear } =
     useFilters(allLines, initial.filters);
 
+  // the actual current ISO week (not the "last completed week" useFilters anchors SOT/OTIF
+  // scoring to) — EGRD-week buckets are forward-looking from today, not lagged by a week
+  const { week: curWeek, year: curYear } = useMemo(() => currentISOWeek(), []);
+
   const [urgency, setUrgency] = useState<UrgencyFilter>(initial.urgency);
+  const [selectedBucketKeys, setSelectedBucketKeys] = useState<string[] | null>(null);
 
   useEffect(() => {
     const params = buildMissingEsdParams(filters, urgency);
@@ -38,13 +51,31 @@ export function MissingEsdDrilldown() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, urgency, pathname]);
 
-  const allRows = useMemo(() => computeMissingEsdRows(weekRangeLines), [weekRangeLines]);
+  const allRows = useMemo(() => computeMissingEsdRows(filteredLines), [filteredLines]);
   const needingActionRows = useMemo(() => allRows.filter((r) => r.urgency !== 'watchlist'), [allRows]);
   const notUrgentRows = useMemo(() => allRows.filter((r) => r.urgency === 'watchlist'), [allRows]);
   const overdueCount = useMemo(() => allRows.filter((r) => r.urgency === 'overdue').length, [allRows]);
 
   const scopeRows = urgency === 'urgent' ? needingActionRows : notUrgentRows;
   const risks = useMemo(() => findConsolidationRisks(scopeRows), [scopeRows]);
+
+  const handleTabChange = (u: UrgencyFilter) => {
+    setUrgency(u);
+    setSelectedBucketKeys(null);
+  };
+
+  const handleChartSelect = (key: string | null) => {
+    if (key === null) {
+      setSelectedBucketKeys(null);
+      return;
+    }
+    setUrgency(bucketGroup(key) === 'needing' ? 'urgent' : 'watchlist');
+    setSelectedBucketKeys([key]);
+  };
+
+  const handleSupplierClick = (supplier: string) => {
+    setFilters({ ...filters, suppliers: [supplier] });
+  };
 
   if (allLines.length === 0) {
     return (
@@ -70,8 +101,9 @@ export function MissingEsdDrilldown() {
           filters={filters}
           onChange={setFilters}
           allSuppliers={allSuppliers}
-          curWeek={curWeek}
-          curYear={curYear}
+          curWeek={sotCurWeek}
+          curYear={sotCurYear}
+          showWeekRange={false}
           rightActions={
             <>
               <button
@@ -101,12 +133,23 @@ export function MissingEsdDrilldown() {
             totalCount={allRows.length}
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-4 items-stretch">
-            <MissingEsdUrgencyProfile rows={allRows} />
-            <MissingEsdInsights rows={allRows} />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+            <div className="lg:col-span-6">
+              <MissingEsdEgrdChart
+                rows={allRows}
+                curWeek={curWeek}
+                curYear={curYear}
+                selectedBucketKeys={selectedBucketKeys}
+                onSelectBucket={handleChartSelect}
+              />
+            </div>
+            <div className="lg:col-span-4">
+              <MissingEsdSupplierExposure rows={allRows} onSupplierClick={handleSupplierClick} />
+            </div>
+            <div className="lg:col-span-2">
+              <MissingEsdInsights rows={allRows} curWeek={curWeek} curYear={curYear} />
+            </div>
           </div>
-
-          <MissingEsdSupplierExposure rows={allRows} />
 
           {risks.length > 0 && (
             <div className="space-y-2">
@@ -123,7 +166,7 @@ export function MissingEsdDrilldown() {
               {(['urgent', 'watchlist'] as UrgencyFilter[]).map((u) => (
                 <button
                   key={u}
-                  onClick={() => setUrgency(u)}
+                  onClick={() => handleTabChange(u)}
                   className={`text-sm font-semibold px-4 py-2 rounded-t-lg border-b-2 transition-colors ${
                     urgency === u ? 'border-brand text-brand' : 'border-transparent text-[#9c9794] hover:text-[#403833]'
                   }`}
@@ -132,7 +175,14 @@ export function MissingEsdDrilldown() {
                 </button>
               ))}
             </div>
-            <MissingEsdTable rows={scopeRows} />
+            <MissingEsdTable
+              rows={scopeRows}
+              tab={urgency}
+              curWeek={curWeek}
+              curYear={curYear}
+              selectedBucketKeys={selectedBucketKeys}
+              onSelectBucketKeys={setSelectedBucketKeys}
+            />
           </div>
         </div>
       </div>

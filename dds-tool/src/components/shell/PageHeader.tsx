@@ -25,6 +25,7 @@ interface PageHeaderProps {
   curWeek: number;
   curYear: number;
   rightActions?: ReactNode; // page-specific buttons (Upload/Actions-toggle on the dashboard, Export/etc. on drill-downs)
+  showWeekRange?: boolean; // false for pages that are current-state only (e.g. Missing ESD) — no snapshot/history selector
 }
 
 const CHANNELS: Channel[] = ['Offline', 'Online'];
@@ -34,7 +35,7 @@ const CHANNELS: Channel[] = ['Offline', 'Online'];
 // logic as before (WeekRangeStepper, VendorDropdown, and the channel/category toggle functions
 // are untouched), just recomposed into one header block with the dropdown affordances layered on
 // top of the existing pill toggles.
-export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWeek, curYear, rightActions }: PageHeaderProps) {
+export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWeek, curYear, rightActions, showWeekRange = true }: PageHeaderProps) {
   const toggleChannel = (c: Channel) => {
     const next = filters.channels.includes(c) ? filters.channels.filter((x) => x !== c) : [...filters.channels, c];
     onChange({ ...filters, channels: next });
@@ -66,10 +67,12 @@ export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWee
         </div>
 
         <div className="flex items-center gap-2 flex-wrap shrink-0">
-          <div className="flex items-center gap-2 bg-white border border-[#e9e3df] rounded-lg px-2.5 h-8">
-            <Calendar size={14} className="text-[#7b7571]" />
-            <WeekRangeStepper min={WEEK_RANGE_MIN} max={WEEK_RANGE_MAX} value={filters.weekRange} onChange={(weekRange) => onChange({ ...filters, weekRange })} curWeek={curWeek} curYear={curYear} />
-          </div>
+          {showWeekRange && (
+            <div className="flex items-center gap-2 bg-white border border-[#e9e3df] rounded-lg px-2.5 h-8">
+              <Calendar size={14} className="text-[#7b7571]" />
+              <WeekRangeStepper min={WEEK_RANGE_MIN} max={WEEK_RANGE_MAX} value={filters.weekRange} onChange={(weekRange) => onChange({ ...filters, weekRange })} curWeek={curWeek} curYear={curYear} />
+            </div>
+          )}
           <VendorDropdown allSuppliers={allSuppliers} selected={filters.suppliers} onChange={(s) => onChange({ ...filters, suppliers: s })} />
           <CategoryDropdown selected={filters.categories} onChange={(c) => onChange({ ...filters, categories: c })} />
           <ChannelDropdown selected={filters.channels} onChange={(c) => onChange({ ...filters, channels: c })} />

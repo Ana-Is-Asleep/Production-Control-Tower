@@ -1,4 +1,5 @@
 import { differenceInCalendarDays } from 'date-fns';
+import { getISOWeek, getISOWeekYear, shiftISOWeek } from './dateUtils';
 import type { PurchaseLine } from '../types';
 
 export type UrgencyBucket = 'overdue' | 'due_soon' | 'watchlist';
@@ -16,9 +17,12 @@ export interface MissingEsdRow {
   urgency: UrgencyBucket;
 }
 
+// EGRD < today = Overdue; EGRD <= today + 21 days = Needing Action (due_soon here covers the
+// non-overdue half of "needing action"); anything further out = Not Urgent. A PO due exactly
+// today is not yet overdue.
 function urgencyFor(daysUntilEgrd: number | null): UrgencyBucket {
   if (daysUntilEgrd === null) return 'watchlist';
-  if (daysUntilEgrd <= 0) return 'overdue';
+  if (daysUntilEgrd < 0) return 'overdue';
   if (daysUntilEgrd <= URGENT_WINDOW_DAYS) return 'due_soon';
   return 'watchlist';
 }
@@ -67,34 +71,61 @@ export function computeMissingEsdRows(lines: PurchaseLine[]): MissingEsdRow[] {
   });
 }
 
-export interface UrgencyProfileBucket {
-  key: 'overdue' | 'due_lt_1wk' | 'due_1_3wk' | 'due_3_6wk' | 'due_gt_6wk';
+export const EGRD_WEEKS_AHEAD = 6;
+export const EGRD_NEEDING_ACTION_WEEKS = 3; // divider sits after the 3rd upcoming week
+
+export interface EgrdWeekBucket {
+  key: string; // 'overdue' | 'w0'..'w{N-1}' | 'further'
   label: string;
   count: number;
+  group: 'needing' | 'not_urgent';
 }
 
-// Finer-grained breakdown than the overdue/due_soon/watchlist buckets used for filtering — purely
-// a presentational split of the same two groups (overdue + due_lt_1wk + due_1_3wk = Needing
-// Action; due_3_6wk + due_gt_6wk = Not Urgent) so the urgency profile bar can show more texture
-// without changing what "needing action" means anywhere else.
-export function computeUrgencyProfile(rows: MissingEsdRow[]): UrgencyProfileBucket[] {
-  const counts = { overdue: 0, due_lt_1wk: 0, due_1_3wk: 0, due_3_6wk: 0, due_gt_6wk: 0 };
-  for (const r of rows) {
-    const d = r.daysUntilEgrd;
-    if (d === null) counts.due_gt_6wk += 1;
-    else if (d <= 0) counts.overdue += 1;
-    else if (d <= 7) counts.due_lt_1wk += 1;
-    else if (d <= 21) counts.due_1_3wk += 1;
-    else if (d <= 42) counts.due_3_6wk += 1;
-    else counts.due_gt_6wk += 1;
+// Which EGRD-week bucket a row belongs to — shared by the chart (to aggregate counts) and the
+// table (so clicking a bar or a quick filter chip means exactly the same thing). Overdue is its
+// own bucket regardless of which ISO week the EGRD falls in; everything else is bucketed by the
+// ISO week the EGRD lands in, relative to the current week, with anything beyond
+// EGRD_WEEKS_AHEAD folded into "further".
+export function egrdBucketKeyForRow(row: MissingEsdRow, curWeek: number, curYear: number): string {
+  if (row.daysUntilEgrd === null || !row.egrd) return 'further';
+  if (row.daysUntilEgrd < 0) return 'overdue';
+  const rowWeek = getISOWeek(row.egrd);
+  const rowYear = getISOWeekYear(row.egrd);
+  for (let offset = 0; offset < EGRD_WEEKS_AHEAD; offset++) {
+    const shifted = shiftISOWeek(curWeek, curYear, offset);
+    if (shifted.week === rowWeek && shifted.year === rowYear) return `w${offset}`;
   }
-  return [
-    { key: 'overdue', label: 'Overdue', count: counts.overdue },
-    { key: 'due_lt_1wk', label: 'Due in < 1 week', count: counts.due_lt_1wk },
-    { key: 'due_1_3wk', label: 'Due in 1–3 weeks', count: counts.due_1_3wk },
-    { key: 'due_3_6wk', label: 'Due in 3–6 weeks', count: counts.due_3_6wk },
-    { key: 'due_gt_6wk', label: 'Due in > 6 weeks', count: counts.due_gt_6wk },
+  return 'further';
+}
+
+// Current missing-ESD POs grouped by the week of their EGRD — the main chart on the page. Shows
+// both urgency (color/grouping) and timing (which week the risk lands in) in one view, replacing
+// the old urgency-profile bar.
+export function computeEgrdWeekBuckets(rows: MissingEsdRow[], curWeek: number, curYear: number): EgrdWeekBucket[] {
+  const counts = new Map<string, number>();
+  for (const r of rows) {
+    const key = egrdBucketKeyForRow(r, curWeek, curYear);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  const buckets: EgrdWeekBucket[] = [
+    { key: 'overdue', label: 'Overdue', count: counts.get('overdue') ?? 0, group: 'needing' },
   ];
+
+  let lastLabel = '';
+  for (let offset = 0; offset < EGRD_WEEKS_AHEAD; offset++) {
+    const { week } = shiftISOWeek(curWeek, curYear, offset);
+    lastLabel = `W${String(week).padStart(2, '0')}`;
+    buckets.push({
+      key: `w${offset}`,
+      label: lastLabel,
+      count: counts.get(`w${offset}`) ?? 0,
+      group: offset < EGRD_NEEDING_ACTION_WEEKS ? 'needing' : 'not_urgent',
+    });
+  }
+  buckets.push({ key: 'further', label: `${lastLabel}+`, count: counts.get('further') ?? 0, group: 'not_urgent' });
+
+  return buckets;
 }
 
 export interface SupplierExposureRow {
