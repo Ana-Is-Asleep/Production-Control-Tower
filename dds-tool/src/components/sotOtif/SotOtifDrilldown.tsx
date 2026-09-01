@@ -13,6 +13,8 @@ import { PageHeader } from '../shell/PageHeader';
 import { KpiBox } from '../shared/KpiBox';
 import { TopGraphChart } from '../sections/TopGraphChart';
 import { KPICardsRow } from './KPICardsRow';
+import { SupplierInfoCard } from './SupplierInfoCard';
+import { SupplierKpiStrip } from './SupplierKpiStrip';
 import { ScorecardMatrix } from './ScorecardMatrix';
 import { RiskRadar } from './RiskRadar';
 import { ConcentrationAnalysis } from './ConcentrationAnalysis';
@@ -123,6 +125,8 @@ export function SotOtifDrilldown() {
   const scopeOTIF = useMemo(() => aggregateOTIFRate(kpiLines, isChinaSupplier), [kpiLines, isChinaSupplier]);
   const onTimeCount = scopeRollups.filter((r) => r.sot === true).length;
   const lateCount = scopeRollups.filter((r) => r.sot === false).length;
+  const otifOnCount = scopeRollups.filter((r) => r.otif === true).length;
+  const otifOffCount = scopeRollups.filter((r) => r.otif === false).length;
   // "Not SOT Predicted" — POs where SOT is still undetermined (future PGRD week with no ESD yet
   // to project from), i.e. computeSOTLine's null case. Not a new calculation, just a new count
   // over the same per-PO rollup result already computed above.
@@ -235,23 +239,45 @@ export function SotOtifDrilldown() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 min-h-0 px-4 pt-3">
-            <TopGraphChart points={kpis.topGraph} onWeekClick={handleChartWeekClick} />
+          <div className="flex-1 min-h-0 px-4 pt-3 flex gap-3">
+            <SupplierInfoCard
+              supplier={selectedSupplier ?? ''}
+              categories={filters.categories}
+              channels={filters.channels}
+              weekLabelStart={weeksInRange[0]?.label ?? ''}
+              weekLabelEnd={weeksInRange[weeksInRange.length - 1]?.label ?? ''}
+              weekCount={weeksInRange.length}
+            />
+            <div className="flex-1 min-h-0 min-w-0">
+              <TopGraphChart points={kpis.topGraph} onWeekClick={handleChartWeekClick} />
+            </div>
           </div>
         )}
-        <KPICardsRow
-          sotPct={scopeSOT}
-          otifPct={scopeOTIF}
-          sotTarget={kpis.sotTarget}
-          otifTarget={kpis.otifTarget}
-          totalPOs={scopeRollups.length}
-          onTimeCount={onTimeCount}
-          lateCount={lateCount}
-          notSotPredictedCount={notSotPredictedCount}
-          avgDelayDays={avgDelayDays}
-          weekLabel={kpiWeekLabel}
-          compact={isModeB}
-        />
+        {!isModeB ? (
+          <KPICardsRow
+            sotTarget={kpis.sotTarget}
+            totalPOs={scopeRollups.length}
+            onTimeCount={onTimeCount}
+            lateCount={lateCount}
+            notSotPredictedCount={notSotPredictedCount}
+            avgDelayDays={avgDelayDays}
+            weekLabel={kpiWeekLabel}
+          />
+        ) : (
+          <SupplierKpiStrip
+            weekLabel={selectedWeek?.label ?? null}
+            posInScope={scopeRollups.length}
+            sotPct={scopeSOT}
+            otifPct={scopeOTIF}
+            sotTarget={kpis.sotTarget}
+            otifTarget={kpis.otifTarget}
+            onTimeCount={onTimeCount}
+            lateCount={lateCount}
+            otifOnCount={otifOnCount}
+            otifOffCount={otifOffCount}
+            avgDelayDays={avgDelayDays}
+          />
+        )}
       </div>
 
       {selectedWeek && (
