@@ -1,44 +1,51 @@
 'use client';
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LabelList, ResponsiveContainer, Cell } from 'recharts';
-import { COLOR } from '../../lib/statusColors';
 import type { AgeBand } from '../../lib/backlogAggregation';
 
 interface BacklogAgeBreakdownProps {
   bands: AgeBand[];
 }
 
-const BAND_COLORS = [COLOR.pass, COLOR.brand, COLOR.warn, COLOR.fail];
+// <2wk = green, 2-4wk = orange, 4-6wk = amber/darker orange, 6wk+ = red.
+const BAND_COLORS = ['#15803d', '#ff7700', '#c2650a', '#dc2626'];
 
-// Fills the card's full height (the card is stretched to match its sibling in the grid row) so
-// the bars scale to the available space instead of sitting cramped inside a fixed-height box with
-// dead space below.
+// How long current backlog POs have already been in backlog (Today - PGRD) — NOT when they're
+// expected to ship (that's the ESD-based clearance forecast elsewhere on the page). One horizontal
+// segmented distribution rather than four independent bar charts, so recency vs aging reads at a
+// glance.
 export function BacklogAgeBreakdown({ bands }: BacklogAgeBreakdownProps) {
+  const total = bands.reduce((s, b) => s + b.count, 0);
+
   return (
-    <div className="bg-white rounded-lg border border-[#e9e3df] p-4 flex flex-col h-full" style={{ boxShadow: 'var(--shadow-card)' }}>
-      <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-3 shrink-0">Age Breakdown</p>
-      <div className="flex-1 min-h-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={bands} margin={{ top: 20, right: 8, left: 0, bottom: 0 }} barCategoryGap="30%">
-            <CartesianGrid strokeDasharray="2 4" stroke={COLOR.border} vertical={false} />
-            <XAxis dataKey="label" tick={{ fill: COLOR.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: COLOR.muted, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} width={28} />
-            <Tooltip
-              contentStyle={{ background: COLOR.navy, border: 'none', borderRadius: 8, fontSize: 11, padding: '6px 10px' }}
-              labelStyle={{ color: COLOR.brandSoft, fontWeight: 700 }}
-              itemStyle={{ color: '#f9f7f6' }}
-              formatter={(value) => [`${value} POs`, 'Backlog']}
-              cursor={{ fill: COLOR.border, fillOpacity: 0.3 }}
-            />
-            <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={72}>
-              {bands.map((b, i) => (
-                <Cell key={b.label} fill={BAND_COLORS[i] ?? COLOR.muted} />
-              ))}
-              <LabelList dataKey="count" position="top" style={{ fontSize: 12, fontWeight: 700, fill: COLOR.navy }} />
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+    <div className="bg-white rounded-lg border border-[#e9e3df] p-4 h-full flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
+      <p className="text-sm font-bold text-[#403833]">Backlog Age Breakdown</p>
+      <p className="text-[11px] text-[#9c9794] mb-3">How long current backlog POs have already been in backlog</p>
+
+      {total === 0 ? (
+        <p className="text-xs text-[#9c9794] py-6 text-center">No backlog in scope</p>
+      ) : (
+        <>
+          <div className="flex h-9 rounded-lg overflow-hidden">
+            {bands.map((b, i) => {
+              const pct = Math.round((b.count / total) * 100);
+              if (pct === 0) return null;
+              return (
+                <div key={b.label} className="flex items-center justify-center text-xs font-bold text-white" style={{ width: `${pct}%`, background: BAND_COLORS[i] }}>
+                  {pct >= 8 ? `${pct}%` : ''}
+                </div>
+              );
+            })}
+          </div>
+          <div className="grid grid-cols-4 gap-2 mt-3">
+            {bands.map((b, i) => (
+              <div key={b.label}>
+                <p className="text-sm font-extrabold leading-none" style={{ color: BAND_COLORS[i] }}>{b.count} <span className="text-[10px] text-[#9c9794] font-semibold">POs</span></p>
+                <p className="text-[10px] text-[#7b7571] mt-1">{b.label} in backlog</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -3,23 +3,23 @@
 import { useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { Download, MoreVertical } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { useFilters } from '../../hooks/useFilters';
-import { useReasonClassification } from '../../hooks/useReasonClassification';
-import { isSubstantiveReason } from '../../lib/reasonClassification';
-import { formatFilterSummary } from '../../lib/filterSummary';
+import { currentISOWeek } from '../../lib/dateUtils';
 import { parseBacklogParams, buildBacklogParams } from '../../lib/backlogParams';
 import {
-  computeBacklogRows, computeExpectedRows, computeAgeBands, computeProjectionSeries, findOutliers,
-  computeSupplierBacklogSummary, buildInsight, computeEtaEstimate, anchorWeek,
+  computeBacklogRows, computeExpectedRows, computeAgeBands, computeClearanceForecast,
+  computeExpectedByPgrdWeek, findOutliers, computeSupplierBacklogSummary, computeEtaEstimate, anchorWeek,
 } from '../../lib/backlogAggregation';
-import { BacklogKpiStrip } from './BacklogKpiStrip';
-import { BacklogProjectionChart } from './BacklogProjectionChart';
+import { Sidebar } from '../shell/Sidebar';
+import { PageHeader } from '../shell/PageHeader';
+import { BacklogTopCards } from './BacklogTopCards';
+import { BacklogClearanceForecast } from './BacklogClearanceForecast';
+import { BacklogKeyInsights } from './BacklogKeyInsights';
 import { BacklogAgeBreakdown } from './BacklogAgeBreakdown';
 import { BacklogSupplierRanking } from './BacklogSupplierRanking';
 import { BacklogOutlierCallout } from './BacklogOutlierCallout';
-import { BacklogGroupedTable } from './BacklogGroupedTable';
-import { BacklogTable } from './BacklogTable';
 
 export function BacklogDrilldown() {
   const router = useRouter();
@@ -29,11 +29,11 @@ export function BacklogDrilldown() {
 
   const initialFilters = useMemo(() => parseBacklogParams(searchParams), []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // read-only: this page inherits the dashboard's filters, it never changes them. Backlog
-  // deliberately uses filteredLines (supplier/channel/category only), NOT weekRangeLines — the
-  // same precedent the existing dashboard card already follows, since backlog needs full PGRD
-  // history regardless of the narrow global week-range slider.
-  const { filters, filteredLines } = useFilters(allLines, initialFilters);
+  // Backlog is a current-state view (Today vs PGRD/ESD), not a snapshot: filteredLines
+  // (supplier/channel/category only) is used instead of weekRangeLines, so there's no PGRD
+  // week-range restriction here — same precedent as the dashboard card and Missing ESD.
+  const { filters, setFilters, filteredLines, allSuppliers, curWeek: sotCurWeek, curYear: sotCurYear } =
+    useFilters(allLines, initialFilters);
 
   useEffect(() => {
     const params = buildBacklogParams(filters);
@@ -41,98 +41,112 @@ export function BacklogDrilldown() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, pathname]);
 
-  const linesWithReasons = useMemo(() => filteredLines.filter((l) => isSubstantiveReason(l.lossReasonCode)), [filteredLines]);
-  const { classifications } = useReasonClassification(linesWithReasons.map((l) => l.lossReasonCode));
+  const today = useMemo(() => new Date(), []);
+  // the literal current ISO week (not "last completed") — the clearance forecast and Expected
+  // Future Backlog breakdown are both forward-looking from today, not a lagged scoring anchor
+  const { week: curWeek, year: curYear } = useMemo(() => currentISOWeek(), []);
+  const { week: lastCompletedWk, year: lastCompletedYr } = useMemo(() => anchorWeek(), []);
 
-  const { week: curWeek, year: curYear } = useMemo(() => anchorWeek(), []);
-
-  const rows = useMemo(() => computeBacklogRows(filteredLines, classifications), [filteredLines, classifications]);
+  const rows = useMemo(() => computeBacklogRows(filteredLines, today), [filteredLines, today]);
   const recentRows = useMemo(() => rows.filter((r) => r.ageBucket === 'recent'), [rows]);
   const accumulatedRows = useMemo(() => rows.filter((r) => r.ageBucket === 'accumulated'), [rows]);
   const noEsdRows = useMemo(() => rows.filter((r) => !r.hasEsd), [rows]);
-  const expectedRows = useMemo(() => computeExpectedRows(filteredLines), [filteredLines]);
+  const expectedRows = useMemo(() => computeExpectedRows(filteredLines, today), [filteredLines, today]);
   const avgAgeDays = useMemo(() => (rows.length ? Math.round(rows.reduce((s, r) => s + r.ageDays, 0) / rows.length) : 0), [rows]);
 
   const ageBands = useMemo(() => computeAgeBands(rows), [rows]);
-  const projection = useMemo(() => computeProjectionSeries(filteredLines, curWeek, curYear), [filteredLines, curWeek, curYear]);
-  const outliers = useMemo(() => findOutliers(rows, curWeek, curYear), [rows, curWeek, curYear]);
+  const forecast = useMemo(() => computeClearanceForecast(rows, curWeek, curYear), [rows, curWeek, curYear]);
+  const expectedByWeek = useMemo(() => computeExpectedByPgrdWeek(expectedRows, curWeek, curYear), [expectedRows, curWeek, curYear]);
+  const outliers = useMemo(() => findOutliers(rows, lastCompletedWk, lastCompletedYr), [rows, lastCompletedWk, lastCompletedYr]);
   const supplierSummary = useMemo(() => computeSupplierBacklogSummary(rows), [rows]);
-  const insight = useMemo(() => buildInsight(rows, curWeek, curYear), [rows, curWeek, curYear]);
-  const eta = useMemo(() => computeEtaEstimate(filteredLines, noEsdRows.length, curWeek, curYear), [filteredLines, noEsdRows.length, curWeek, curYear]);
-
-  const isSingleSupplier = filters.suppliers.length === 1;
+  const eta = useMemo(() => computeEtaEstimate(filteredLines, noEsdRows.length, lastCompletedWk, lastCompletedYr), [filteredLines, noEsdRows.length, lastCompletedWk, lastCompletedYr]);
 
   if (allLines.length === 0) {
     return (
-      <div className="h-screen w-full bg-[#f5f2ee] flex flex-col items-center justify-center gap-4">
-        <p className="text-lg font-semibold text-[#403833]">No data loaded</p>
-        <p className="text-sm text-[#9c9794]">Go back to the overview and upload your data export.</p>
-        <Link href="/" className="bg-brand text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-brand-soft transition-colors">
-          ← Back to Overview
-        </Link>
+      <div className="h-screen w-full bg-[#f5f2ee] flex overflow-hidden">
+        <Sidebar />
+        <div className="flex-1 min-w-0 flex flex-col items-center justify-center gap-4">
+          <p className="text-lg font-semibold text-[#403833]">No data loaded</p>
+          <p className="text-sm text-[#9c9794]">Go back to the overview and upload your data export.</p>
+          <Link href="/" className="bg-brand text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-brand-soft transition-colors">
+            ← Back to Overview
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen w-full bg-[#f5f2ee] flex flex-col overflow-hidden">
-      <header className="bg-white border-b border-[#e9e3df] px-5 py-2.5 flex items-center gap-3 shrink-0">
-        <Link href="/" className="flex items-center gap-1.5 text-sm font-semibold text-[#403833] hover:text-brand transition-colors shrink-0">
-          <span>←</span> Overview
-        </Link>
-        <span className="text-[#e9e3df]">|</span>
-        <span className="text-[#403833] text-sm font-semibold shrink-0">Backlog Detail</span>
-        <span className="text-[#e9e3df]">|</span>
-        <span className="text-xs text-[#7b7571] truncate">Filtered by: {formatFilterSummary(filters)}</span>
-      </header>
-
-      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
-        {!isSingleSupplier && (
-          <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
-            <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-1">Insight</p>
-            <p className="text-sm text-[#403833]">{insight.narrative}</p>
-          </div>
-        )}
-
-        <BacklogKpiStrip
-          total={rows.length}
-          recent={recentRows.length}
-          accumulated={accumulatedRows.length}
-          avgAgeDays={avgAgeDays}
-          noEsdCount={noEsdRows.length}
-          expectedCount={expectedRows.length}
+    <div className="h-screen w-full bg-[#f5f2ee] flex overflow-hidden">
+      <Sidebar />
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+        <PageHeader
+          breadcrumb={[{ label: 'Overview', href: '/' }, { label: 'Backlog Detail' }]}
+          filters={filters}
+          onChange={setFilters}
+          allSuppliers={allSuppliers}
+          curWeek={sotCurWeek}
+          curYear={sotCurYear}
+          showWeekRange={false}
+          rightActions={
+            <>
+              <button
+                title="Export (coming soon)"
+                disabled
+                className="flex items-center gap-1.5 text-xs font-semibold text-[#7b7571] border border-[#e9e3df] rounded-lg px-2.5 h-8 opacity-60 cursor-not-allowed"
+              >
+                <Download size={13} />
+                Export
+              </button>
+              <button
+                title="More options (coming soon)"
+                disabled
+                className="flex items-center justify-center w-8 h-8 rounded-lg border border-[#e9e3df] text-[#7b7571] opacity-60 cursor-not-allowed"
+              >
+                <MoreVertical size={15} />
+              </button>
+            </>
+          }
         />
 
-        <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
-          <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-3">Forward Projection — last completed week + next 4 weeks</p>
-          <BacklogProjectionChart weeks={projection} />
-        </div>
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
+          <BacklogTopCards
+            rows={rows}
+            recentCount={recentRows.length}
+            accumulatedCount={accumulatedRows.length}
+            noEsdCount={noEsdRows.length}
+            expectedCount={expectedRows.length}
+            expectedByWeek={expectedByWeek}
+            avgAgeDays={avgAgeDays}
+            expectedClearanceCount={rows.length - noEsdRows.length}
+          />
 
-        <div className="flex items-center gap-2 text-sm">
-          <div className="bg-white rounded-lg border border-[#e9e3df] px-4 py-2.5 flex-1" style={{ boxShadow: 'var(--shadow-card)' }}>
-            <span className="font-semibold text-fail">{noEsdRows.length}</span> POs in backlog with no expectation to clear
-            {eta.weeksToClear !== null && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
+            <div className="lg:col-span-2">
+              <BacklogClearanceForecast points={forecast} />
+            </div>
+            <BacklogKeyInsights
+              rows={rows}
+              noEsdCount={noEsdRows.length}
+              supplierSummary={supplierSummary}
+              expectedCount={expectedRows.length}
+              expectedByWeek={expectedByWeek}
+            />
+          </div>
+
+          <BacklogOutlierCallout outliers={outliers} />
+          {eta.weeksToClear !== null && noEsdRows.length > 0 && (
+            <div className="bg-white rounded-lg border border-[#e9e3df] px-4 py-2.5 text-sm" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <span className="font-semibold text-fail">{noEsdRows.length}</span> POs in backlog have no expectation to clear
               <span className="text-[#9c9794]"> — at the current clearance rate (~{eta.avgClearancePerWeek.toFixed(1)}/wk), this would take approximately {eta.weeksToClear} week{eta.weeksToClear === 1 ? '' : 's'} to clear if nothing changes.</span>
-            )}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+            <BacklogSupplierRanking summary={supplierSummary} />
+            <BacklogAgeBreakdown bands={ageBands} />
           </div>
         </div>
-
-        <BacklogOutlierCallout outliers={outliers} />
-
-        {!isSingleSupplier ? (
-          <>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-              <BacklogSupplierRanking summary={supplierSummary} />
-              <BacklogAgeBreakdown bands={ageBands} />
-            </div>
-            <BacklogGroupedTable rows={rows} />
-          </>
-        ) : (
-          <>
-            <BacklogAgeBreakdown bands={ageBands} />
-            <BacklogTable rows={rows} showSupplier={false} />
-          </>
-        )}
       </div>
     </div>
   );
