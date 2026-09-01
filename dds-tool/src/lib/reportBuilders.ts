@@ -21,7 +21,7 @@ import type { WeekInRange, ActiveFilters } from '../hooks/useFilters';
 import type { PurchaseLine } from '../types';
 import type { InvoiceRow } from '../types/invoice';
 import type { ClassificationEntry } from '../hooks/useReasonClassification';
-import type { SheetDef, CellValue } from './xlsxWriter';
+import type { SheetDef, CellValue, ChartDef } from './xlsxWriter';
 
 export interface ReportKpi {
   label: string;
@@ -84,6 +84,23 @@ function tableSheet(t: ReportTable): SheetDef {
   return { name: t.title, rows: [t.columns, ...t.rows] };
 }
 
+// A native Excel chart bound to the Weekly Evolution sheet's own cells (columns: Week, POs,
+// SOT %, OTIF %) — not a pasted image, so it stays live if the sheet is edited.
+function sotOtifChart(weeklyTable: ReportTable): ChartDef {
+  const lastRow = weeklyTable.rows.length + 1; // header occupies row 1
+  const sheetRef = `'${weeklyTable.title}'`;
+  return {
+    type: 'line',
+    title: 'SOT & OTIF Weekly Evolution',
+    categoryRange: `${sheetRef}!$A$2:$A$${lastRow}`,
+    series: [
+      { name: 'SOT %', valueRange: `${sheetRef}!$C$2:$C$${lastRow}` },
+      { name: 'OTIF %', valueRange: `${sheetRef}!$D$2:$D$${lastRow}` },
+    ],
+    anchorRow: 8,
+  };
+}
+
 // Shared SOT/OTIF core — used by both "SOT & OTIF Performance" (weekly-first) and "Supplier
 // Performance" (supplier-first) since they're the same underlying calculation, just presented in a
 // different order. Reuses aggregateSOTRate/aggregateOTIFRate/rollupByPO exactly as the SOT/OTIF
@@ -137,22 +154,26 @@ function computeSotOtifCore(ctx: ReportContext) {
 export function buildSotOtifReport(ctx: ReportContext): ReportResult {
   const { rollups, weeklyTable, supplierTable, kpis } = computeSotOtifCore(ctx);
   const tables = [weeklyTable, supplierTable];
+  const summary = summarySheet('SOT & OTIF Performance', ctx.filterLabel, kpis);
+  if (weeklyTable.rows.length > 0) summary.chart = sotOtifChart(weeklyTable);
   return {
     contextLabel: `PO Level · ${ctx.filterLabel}`,
     kpis,
     tables,
-    sheets: [summarySheet('SOT & OTIF Performance', ctx.filterLabel, kpis), ...tables.map(tableSheet), poRowsSheet(rollups)],
+    sheets: [summary, ...tables.map(tableSheet), poRowsSheet(rollups)],
   };
 }
 
 export function buildSupplierPerformanceReport(ctx: ReportContext): ReportResult {
   const { rollups, weeklyTable, supplierTable, kpis } = computeSotOtifCore(ctx);
   const tables = [supplierTable, weeklyTable];
+  const summary = summarySheet('Supplier Performance', ctx.filterLabel, kpis);
+  if (weeklyTable.rows.length > 0) summary.chart = sotOtifChart(weeklyTable);
   return {
     contextLabel: `PO Level · ${ctx.filterLabel}`,
     kpis,
     tables,
-    sheets: [summarySheet('Supplier Performance', ctx.filterLabel, kpis), ...tables.map(tableSheet), poRowsSheet(rollups)],
+    sheets: [summary, ...tables.map(tableSheet), poRowsSheet(rollups)],
   };
 }
 
