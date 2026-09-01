@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { Download, MoreVertical } from 'lucide-react';
+import { Download, MoreVertical, Maximize2, MoreHorizontal, Info } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { useFilters, type WeekInRange, type ActiveFilters } from '../../hooks/useFilters';
 import { useKPIs } from '../../hooks/useKPIs';
@@ -47,6 +47,7 @@ export function SotOtifDrilldown() {
   // true only when Mode B was reached by clicking a scorecard row — controls the
   // "← All suppliers" breadcrumb so it doesn't show up when the supplier was picked via the filter
   const [viaScorecard, setViaScorecard] = useState(false);
+  const [scorecardShowAll, setScorecardShowAll] = useState(false);
 
   const today = useMemo(() => new Date(), []);
   const kpis = useKPIs(weekRangeLines, weeksInRange, isChinaSupplier);
@@ -234,8 +235,18 @@ export function SotOtifDrilldown() {
                 tint={scopeOTIF === null ? 'neutral' : scopeOTIF >= kpis.otifTarget ? 'pass' : 'fail'}
               />
             </div>
-            <div className="flex-1 min-h-0 min-w-0">
-              <TopGraphChart points={kpis.topGraph} onWeekClick={handleChartWeekClick} />
+            <div className="flex-1 min-h-0 min-w-0 bg-white rounded-lg border border-[#e9e3df] p-3 flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <div className="flex items-center justify-between shrink-0 mb-2">
+                <p className="text-sm font-bold text-[#403833]">SOT &amp; OTIF Evolution</p>
+                <div className="flex items-center gap-2 text-[#9c9794]">
+                  <span className="text-[11px] font-medium px-2 py-1 rounded-md border border-[#e9e3df]">Weekly</span>
+                  <Maximize2 size={14} />
+                  <MoreHorizontal size={14} />
+                </div>
+              </div>
+              <div className="flex-1 min-h-0">
+                <TopGraphChart points={kpis.topGraph} onWeekClick={handleChartWeekClick} />
+              </div>
             </div>
           </div>
         ) : (
@@ -248,8 +259,18 @@ export function SotOtifDrilldown() {
               weekLabelEnd={weeksInRange[weeksInRange.length - 1]?.label ?? ''}
               weekCount={weeksInRange.length}
             />
-            <div className="flex-1 min-h-0 min-w-0">
-              <TopGraphChart points={kpis.topGraph} onWeekClick={handleChartWeekClick} />
+            <div className="flex-1 min-h-0 min-w-0 bg-white rounded-lg border border-[#e9e3df] p-3 flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <div className="flex items-center justify-between shrink-0 mb-2">
+                <p className="text-sm font-bold text-[#403833]">SOT &amp; OTIF Evolution</p>
+                <div className="flex items-center gap-2 text-[#9c9794]">
+                  <span className="text-[11px] font-medium px-2 py-1 rounded-md border border-[#e9e3df]">Weekly</span>
+                  <Maximize2 size={14} />
+                  <MoreHorizontal size={14} />
+                </div>
+              </div>
+              <div className="flex-1 min-h-0">
+                <TopGraphChart points={kpis.topGraph} onWeekClick={handleChartWeekClick} />
+              </div>
             </div>
           </div>
         )}
@@ -295,11 +316,21 @@ export function SotOtifDrilldown() {
           <div className="p-4">
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.3fr_1fr] gap-4 items-stretch">
               <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
-                <p className="text-sm font-bold text-[#403833] mb-3">Performance by Week</p>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-bold text-[#403833]">Performance by Week</p>
+                  <span className="text-xs text-brand font-semibold">View data</span>
+                </div>
                 <PerformanceByWeekTable lines={weekRangeLines} weeksInRange={weeksInRange} isChinaSupplier={isChinaSupplier} today={today} />
               </div>
               <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
-                <p className="text-sm font-bold text-[#403833] mb-3">Supplier Scorecard <span className="text-[11px] font-medium text-[#9c9794]">(Top {Math.min(10, allSuppliers.length)} by volume)</span></p>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-bold text-[#403833]">Supplier Scorecard <span className="text-[11px] font-medium text-[#9c9794]">(Top {Math.min(10, allSuppliers.length)} by volume)</span></p>
+                  {allSuppliers.length > 10 && (
+                    <button onClick={() => setScorecardShowAll((v) => !v)} className="text-xs text-brand font-semibold hover:underline">
+                      {scorecardShowAll ? 'Show top 10 only' : `View all (${allSuppliers.length})`}
+                    </button>
+                  )}
+                </div>
                 <ScorecardMatrix
                   lines={weekRangeLines}
                   weeksInRange={weeksInRange}
@@ -307,9 +338,23 @@ export function SotOtifDrilldown() {
                   today={today}
                   selectedWeek={selectedWeek}
                   onSupplierClick={handleSupplierRowClick}
+                  showAll={scorecardShowAll}
                 />
               </div>
               <KeyInsightsPanel rollups={scopeRollups} avgDelayDays={avgDelayDays} weekLabel={kpiWeekLabel} />
+            </div>
+            <div className="bg-white rounded-lg border border-[#e9e3df] p-4 mt-4" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <div className="flex items-center gap-1.5 mb-2">
+                <p className="text-sm font-bold text-[#403833]">About the metrics</p>
+                <Info size={13} className="text-[#9c9794]" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-[11px] text-[#7b7571]">
+                <p><span className="font-semibold text-[#403833]">SOT %</span> — share of POs shipped on or before their Shipment On Time date.</p>
+                <p><span className="font-semibold text-[#403833]">OTIF %</span> — share of POs delivered on or before their Committed Delivery Date (EGRD), in full.</p>
+                <p><span className="font-semibold text-[#403833]">Target</span> — strategic target for both SOT and OTIF is {kpis.sotTarget}%.</p>
+                <p><span className="font-semibold text-[#403833]">POs in Last Completed Week</span> — all metrics on this page refer to {kpiWeekLabel ?? 'the selected period'}.</p>
+                <div className="bg-[#fff7ed] rounded-md px-2.5 py-2">Percentages are calculated based on POs in scope for the selected period.</div>
+              </div>
             </div>
           </div>
         ) : (

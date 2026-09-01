@@ -29,7 +29,7 @@ function IconStatCard({ icon: Icon, tint, label, value, sub }: { icon: LucideIco
         <Icon size={16} />
       </div>
       <div className="min-w-0">
-        <p className="text-[10px] uppercase tracking-wide text-[#9c9794] truncate">{label}</p>
+        <p className="text-[10px] tracking-wide text-[#9c9794] truncate">{label}</p>
         <p className="text-lg font-extrabold leading-none text-[#403833] mt-0.5">{value}</p>
         {sub && <p className="text-[10px] text-[#9c9794] truncate mt-0.5">{sub}</p>}
       </div>
@@ -45,13 +45,13 @@ function IconStatCard({ icon: Icon, tint, label, value, sub }: { icon: LucideIco
 export function KPICardsRow({ totalPOs, onTimeCount, lateCount, notSotPredictedCount, avgDelayDays, weekLabel, sotTarget }: KPICardsRowProps) {
   return (
     <div className="flex gap-2 px-4 pb-2 pt-2 shrink-0">
-      <IconStatCard icon={CalendarCheck2} tint="brand" label="POs in Scope" value={String(totalPOs)} sub={weekLabel ?? undefined} />
+      <IconStatCard icon={CalendarCheck2} tint="brand" label="POs in Last Completed Week" value={String(totalPOs)} sub={weekLabel ?? undefined} />
       <IconStatCard icon={Clock} tint="pass" label="On Time (OTIF)" value={String(onTimeCount)} />
       <IconStatCard icon={Clock} tint="fail" label="Late" value={String(lateCount)} />
       <IconStatCard icon={HelpCircle} tint="neutral" label="Not SOT Predicted" value={String(notSotPredictedCount)} />
       <IconStatCard icon={Timer} tint="brand" label="Avg Delay (Late POs)" value={avgDelayDays !== null ? `${avgDelayDays} days` : '—'} />
       <div className="rounded-lg border border-[#e9e3df] px-4 py-2.5 flex flex-col items-center justify-center shrink-0 w-[100px]" style={{ background: '#f0ede9' }}>
-        <p className="text-[9px] uppercase tracking-widest text-[#9c9794]">Target</p>
+        <p className="text-[9px] tracking-widest text-[#9c9794]">Target</p>
         <p className="text-lg font-extrabold text-[#403833] mt-0.5">{sotTarget}%</p>
       </div>
     </div>

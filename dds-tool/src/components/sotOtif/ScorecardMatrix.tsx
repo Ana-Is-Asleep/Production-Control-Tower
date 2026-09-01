@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Check, Minus, X } from 'lucide-react';
 import { aggregateSOTRate, aggregateOTIFRate, type IsChinaSupplier } from '../../lib/kpiFormulas';
 import { sotTier, sotTierColor, computeTrend, type Trend } from '../../lib/poAggregation';
@@ -15,6 +15,7 @@ interface ScorecardMatrixProps {
   today: Date;
   selectedWeek: WeekInRange | null;
   onSupplierClick: (supplier: string) => void;
+  showAll: boolean;
 }
 
 const TOP_N = 10;
@@ -45,8 +46,7 @@ function VsTargetIcon({ pct }: { pct: number | null }) {
 // ranked by PO volume (top 10, expandable) rather than by SOT rate, so the suppliers actually
 // worth a conversation aren't buried behind low-volume outliers. Narrows to a single week's
 // SOT%/OTIF% (no trend, since there's only one data point) when a week is selected above.
-export function ScorecardMatrix({ lines, weeksInRange, isChinaSupplier, today, selectedWeek, onSupplierClick }: ScorecardMatrixProps) {
-  const [showAll, setShowAll] = useState(false);
+export function ScorecardMatrix({ lines, weeksInRange, isChinaSupplier, today, selectedWeek, onSupplierClick, showAll }: ScorecardMatrixProps) {
   const suppliers = useMemo(() => [...new Set(lines.map((l) => l.supplier))].filter(Boolean), [lines]);
 
   const rows = useMemo(() => {
@@ -107,11 +107,11 @@ export function ScorecardMatrix({ lines, weeksInRange, isChinaSupplier, today, s
           </tbody>
         </table>
       </div>
-      {rows.length > TOP_N && (
-        <button onClick={() => setShowAll((v) => !v)} className="text-xs text-brand font-semibold hover:underline mt-2">
-          {showAll ? 'Show top 10 only' : `View all (${rows.length})`}
-        </button>
-      )}
+      <div className="flex items-center gap-3 mt-3 text-[10px] text-[#7b7571]">
+        <span className="flex items-center gap-1"><Check size={12} className="text-pass" /> ≥ 90% of target</span>
+        <span className="flex items-center gap-1"><Minus size={12} className="text-warn" /> 70% – 90% of target</span>
+        <span className="flex items-center gap-1"><X size={12} className="text-fail" /> &lt; 70% of target</span>
+      </div>
     </div>
   );
 }

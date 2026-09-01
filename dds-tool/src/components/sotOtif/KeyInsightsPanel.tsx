@@ -27,8 +27,15 @@ export function KeyInsightsPanel({ rollups, avgDelayDays, weekLabel }: KeyInsigh
     if (late.length > 0) {
       const bySupplier = new Map<string, number>();
       late.forEach((r) => bySupplier.set(r.supplier, (bySupplier.get(r.supplier) ?? 0) + 1));
-      const [topSupplier, topCount] = [...bySupplier.entries()].sort((a, b) => b[1] - a[1])[0];
+      const bySupplierSorted = [...bySupplier.entries()].sort((a, b) => b[1] - a[1]);
+      const [topSupplier, topCount] = bySupplierSorted[0];
       items.push({ icon: AlertTriangle, tone: 'fail', text: `${topSupplier} has the most late POs (${topCount}).` });
+
+      const topN = bySupplierSorted.slice(0, Math.min(4, bySupplierSorted.length));
+      const topNShare = Math.round((topN.reduce((sum, [, c]) => sum + c, 0) / late.length) * 100);
+      if (bySupplierSorted.length > topN.length) {
+        items.push({ icon: AlertTriangle, tone: 'warn', text: `Top ${topN.length} suppliers represent ${topNShare}% of late POs.` });
+      }
     }
 
     if (avgDelayDays !== null) {
