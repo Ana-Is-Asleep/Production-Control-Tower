@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { getISOWeek, getISOWeekYear } from '../../lib/dateUtils';
 import { COLOR } from '../../lib/statusColors';
+import { CardHeader } from '../shared/CardHeader';
 import type { WeekInRange } from '../../hooks/useFilters';
 import type { PurchaseLine } from '../../types';
 
@@ -52,13 +53,12 @@ export function MissingESDSection({ lines, weeksInRange, drillDownHref }: Missin
       className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full overflow-hidden"
       style={{ boxShadow: 'var(--shadow-card)' }}
     >
-      <div className="flex items-start justify-between shrink-0">
-        <div className="flex items-baseline gap-2">
-          <p className="text-xs font-bold uppercase tracking-wide text-[#403833]">Missing ESD</p>
-          <span className={`text-xs font-semibold ${totalMissing === 0 ? 'text-pass' : 'text-[#7b7571]'}`}>{totalMissing}</span>
-        </div>
-        <p className="text-[10px] text-brand font-semibold">Drill down →</p>
-      </div>
+      <CardHeader
+        title="Missing ESD"
+        infoText="POs with no Expected Shipping Date booked yet"
+        subtitle="Open POs without ESD"
+        total={totalMissing}
+      />
       <div className="flex-1 min-h-0 mt-3">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={rows} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>

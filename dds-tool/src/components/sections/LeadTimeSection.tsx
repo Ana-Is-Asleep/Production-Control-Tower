@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 import { ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { MiniLegend } from '../shared/MiniLegend';
+import { CardHeader } from '../shared/CardHeader';
 import { summariseLeadTimes, computeWeeklyLTTargetSplit } from '../../lib/leadTimeUtils';
 import { COLOR } from '../../lib/statusColors';
 import type { PurchaseLine } from '../../types';
@@ -23,15 +24,11 @@ export function LeadTimeSection({ lines, drillDownHref }: LeadTimeSectionProps) 
       className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full overflow-hidden"
       style={{ boxShadow: 'var(--shadow-card)' }}
     >
-      <div className="flex items-start justify-between shrink-0">
-        <div className="flex items-baseline gap-2">
-          <p className="text-xs font-bold uppercase tracking-wide text-[#403833]">Lead Time</p>
-          <span className="text-xs font-semibold text-[#7b7571]">
-            {summary.avgProductionLT !== null ? `${summary.avgProductionLT}d avg` : '—'}
-          </span>
-        </div>
-        <p className="text-[10px] text-brand font-semibold">Drill down →</p>
-      </div>
+      <CardHeader
+        title="Lead Time"
+        infoText="Production lead time (Order Date to Actual Shipping Date) vs the 30-day target"
+        subtitle={summary.avgProductionLT !== null ? `${summary.avgProductionLT}d avg production lead time` : undefined}
+      />
       {weeklyLTTarget.length === 0 ? (
         <div className="flex-1 flex items-center">
           <p className="text-xs text-[#b5aaa5]">No shipped POs in range</p>

@@ -2,13 +2,13 @@
 
 import { useMemo, useState } from 'react';
 import { useData } from '../context/DataContext';
-import { NavTabs } from './shared/NavTabs';
+import { Sidebar } from './shell/Sidebar';
+import { PageHeader } from './shell/PageHeader';
 import { useFilters } from '../hooks/useFilters';
 import { useKPIs } from '../hooks/useKPIs';
 import { useVendorMapping } from '../hooks/useVendorMapping';
 import { useActions } from '../hooks/useActions';
 import { UploadPanel } from './upload/UploadPanel';
-import { GlobalFilterBar } from './shared/GlobalFilterBar';
 import { TopGraphSection } from './sections/TopGraphSection';
 import { RootCauseSection } from './sections/RootCauseSection';
 import { MissingESDSection } from './sections/MissingESDSection';
@@ -18,7 +18,6 @@ import { LeadTimeSection } from './sections/LeadTimeSection';
 import { ActionsBadgeDrawer } from './actions/ActionsBadgeDrawer';
 import { ActionsSidePanel } from './actions/ActionsSidePanel';
 import type { StatusFilter } from './actions/ActionsTabs';
-import { formatFilterSummary } from '../lib/filterSummary';
 import { buildSotOtifHref } from '../lib/sotOtifParams';
 import { buildRootCauseHref } from '../lib/rootCauseParams';
 import { buildMissingEsdHref } from '../lib/missingEsdParams';
@@ -65,86 +64,76 @@ export function Dashboard() {
   const hasData = allLines.length > 0;
 
   return (
-    <div className="h-screen w-full bg-[#f5f2ee] flex flex-col overflow-hidden">
-      <header className="bg-white border-b border-[#e9e3df] px-5 py-2.5 flex items-center gap-3 shrink-0">
-        <img src="/emma-logo.svg" alt="emma" className="h-6 w-auto shrink-0" />
-        <span className="text-[#d5cdc6]">|</span>
-        <span className="text-[#403833] text-sm font-semibold shrink-0">DDS</span>
-        <NavTabs className="ml-2" />
-        {hasData && (
-          <span className="text-xs text-[#7b7571] font-medium truncate">{formatFilterSummary(filters)}</span>
-        )}
-        <div className="flex-1" />
-        {hasData && (
-          <button
-            onClick={() => setActionsUiMode((m) => (m === 'badge' ? 'panel' : 'badge'))}
-            title="Switch Actions UI variant"
-            className="text-xs border border-[#e9e3df] rounded-lg px-3 py-1.5 text-[#58524e] hover:border-brand hover:text-brand shrink-0"
-          >
-            Actions: {actionsUiMode === 'badge' ? 'Badge' : 'Panel'}
-          </button>
-        )}
-        <button onClick={() => setUploadOpen(true)} className="filter-pill text-xs border border-[#e9e3df] rounded-lg px-3 py-1.5 text-[#58524e] hover:border-brand hover:text-brand shrink-0">
-          ↑ Upload
-        </button>
-      </header>
+    <div className="h-screen w-full bg-[#f5f2ee] flex overflow-hidden">
+      <Sidebar />
 
-      {!hasData && (
-        <div className="flex flex-col items-center justify-center min-h-[80vh] gap-8 px-4 page-enter">
-          <div className="text-center">
-            <p className="text-2xl font-semibold text-[#403833]">No data loaded</p>
-            <p className="text-[#9c9794] text-sm mt-2">Upload your Business Central exports to begin the review.</p>
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+        {!hasData && (
+          <div className="flex-1 flex flex-col items-center justify-center gap-8 px-4 page-enter">
+            <div className="text-center">
+              <p className="text-2xl font-semibold text-[#403833]">No data loaded</p>
+              <p className="text-[#9c9794] text-sm mt-2">Upload your Business Central exports to begin the review.</p>
+            </div>
+            <button
+              onClick={() => setUploadOpen(true)}
+              className="bg-brand text-white px-8 py-3 rounded-lg text-sm font-semibold hover:bg-brand-soft transition-colors"
+            >
+              Upload BC Files
+            </button>
           </div>
-          <button
-            onClick={() => setUploadOpen(true)}
-            className="bg-brand text-white px-8 py-3 rounded-lg text-sm font-semibold hover:bg-brand-soft transition-colors"
-          >
-            Upload BC Files
-          </button>
-        </div>
-      )}
+        )}
 
-      {hasData && (
-        <div className="page-enter flex-1 min-h-0 flex overflow-hidden">
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-            <GlobalFilterBar filters={filters} onChange={setFilters} allSuppliers={allSuppliers} curWeek={curWeek} curYear={curYear} />
-            <div className={`p-4 flex-1 min-h-0 flex flex-col gap-4 w-full max-w-[1400px] 2xl:max-w-[1680px] mx-auto overflow-y-auto ${actionsUiMode === 'badge' ? 'pb-16' : ''}`}>
-              <div style={{ flex: '4 0 300px' }}>
-                <TopGraphSection
-                  points={kpis.topGraph}
-                  sotTarget={kpis.sotTarget}
-                  otifTarget={kpis.otifTarget}
-                  drillDownHref={buildSotOtifHref(filters)}
-                />
-              </div>
-              <div style={{ flex: '3 0 260px' }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <RootCauseSection lines={weekRangeLines} weeksInRange={weeksInRange} drillDownHref={buildRootCauseHref(filters)} />
-                <MissingESDSection lines={weekRangeLines} weeksInRange={weeksInRange} drillDownHref={buildMissingEsdHref(filters)} />
-                <BacklogSection lines={filteredLines} drillDownHref={buildBacklogHref(filters)} />
-              </div>
-              <div style={{ flex: '2 0 220px' }} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <InvoicesSection invoices={invoices} supplierFilter={filters.suppliers} drillDownHref={buildInvoicesHref(filters.suppliers)} />
-                <LeadTimeSection lines={weekRangeLines} drillDownHref={buildLeadTimeHref(filters)} />
+        {hasData && (
+          <div className="page-enter flex-1 min-h-0 flex overflow-hidden">
+            <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+              <PageHeader
+                filters={filters}
+                onChange={setFilters}
+                allSuppliers={allSuppliers}
+                curWeek={curWeek}
+                curYear={curYear}
+                onUpload={() => setUploadOpen(true)}
+                actionsUiMode={actionsUiMode}
+                onToggleActionsUiMode={() => setActionsUiMode((m) => (m === 'badge' ? 'panel' : 'badge'))}
+              />
+              <div className={`p-4 flex-1 min-h-0 flex flex-col gap-4 w-full max-w-[1400px] 2xl:max-w-[1680px] mx-auto overflow-y-auto ${actionsUiMode === 'badge' ? 'pb-16' : ''}`}>
+                <div style={{ flex: '4 0 300px' }}>
+                  <TopGraphSection
+                    points={kpis.topGraph}
+                    sotTarget={kpis.sotTarget}
+                    otifTarget={kpis.otifTarget}
+                    drillDownHref={buildSotOtifHref(filters)}
+                  />
+                </div>
+                <div style={{ flex: '3 0 260px' }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <RootCauseSection lines={weekRangeLines} weeksInRange={weeksInRange} drillDownHref={buildRootCauseHref(filters)} />
+                  <MissingESDSection lines={weekRangeLines} weeksInRange={weeksInRange} drillDownHref={buildMissingEsdHref(filters)} />
+                  <BacklogSection lines={filteredLines} drillDownHref={buildBacklogHref(filters)} />
+                </div>
+                <div style={{ flex: '2 0 220px' }} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <InvoicesSection invoices={invoices} supplierFilter={filters.suppliers} drillDownHref={buildInvoicesHref(filters.suppliers)} />
+                  <LeadTimeSection lines={weekRangeLines} drillDownHref={buildLeadTimeHref(filters)} />
+                </div>
               </div>
             </div>
+            {actionsUiMode === 'panel' && (
+              <ActionsSidePanel
+                actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers}
+                tab={actionsTab} onTabChange={setActionsTab} statusFilter={actionsStatusFilter} onStatusFilterChange={setActionsStatusFilter}
+              />
+            )}
           </div>
-          {actionsUiMode === 'panel' && (
-            <ActionsSidePanel
-              actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers}
-              tab={actionsTab} onTabChange={setActionsTab} statusFilter={actionsStatusFilter} onStatusFilterChange={setActionsStatusFilter}
-            />
-          )}
-        </div>
-      )}
+        )}
 
-      {hasData && actionsUiMode === 'badge' && (
-        <ActionsBadgeDrawer
-          actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers}
-          tab={actionsTab} onTabChange={setActionsTab} statusFilter={actionsStatusFilter} onStatusFilterChange={setActionsStatusFilter}
-        />
-      )}
+        {hasData && actionsUiMode === 'badge' && (
+          <ActionsBadgeDrawer
+            actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers}
+            tab={actionsTab} onTabChange={setActionsTab} statusFilter={actionsStatusFilter} onStatusFilterChange={setActionsStatusFilter}
+          />
+        )}
 
-      <UploadPanel open={uploadOpen} onClose={() => setUploadOpen(false)} onLoad={handleLoad} />
+        <UploadPanel open={uploadOpen} onClose={() => setUploadOpen(false)} onLoad={handleLoad} />
+      </div>
     </div>
   );
 }

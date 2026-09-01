@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { TopGraphChart } from './TopGraphChart';
+import { CardHeader } from '../shared/CardHeader';
+import { KpiBox } from '../shared/KpiBox';
 import type { TopGraphPoint } from '../../hooks/useKPIs';
 
 interface TopGraphSectionProps {
@@ -28,23 +30,25 @@ export function TopGraphSection({ points, sotTarget, otifTarget, drillDownHref }
       className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full overflow-hidden"
       style={{ boxShadow: 'var(--shadow-card)' }}
     >
-      <div className="flex items-start justify-end mb-3 shrink-0">
-        <p className="text-xs text-brand font-semibold">Drill down →</p>
-      </div>
-      <div className="flex-1 min-h-0 flex items-stretch gap-5">
-        <div className="flex flex-col justify-center gap-4 shrink-0">
-          <div>
-            <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-1">SOT · {sotTarget}% target</p>
-            <p className={`kpi-number font-extrabold text-4xl leading-none ${currentSOT === null ? 'text-[#c8c0bb]' : currentSOT >= sotTarget ? 'text-pass' : 'text-fail'}`}>
-              {pctLabel(currentSOT)}
-            </p>
-          </div>
-          <div>
-            <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-1">OTIF · {otifTarget}% target</p>
-            <p className={`kpi-number font-extrabold text-4xl leading-none ${currentOTIF === null ? 'text-[#c8c0bb]' : currentOTIF >= otifTarget ? 'text-pass' : 'text-fail'}`}>
-              {pctLabel(currentOTIF)}
-            </p>
-          </div>
+      <CardHeader
+        title="SOT & OTIF Performance"
+        infoText="Shipped On Time and On Time In Full performance vs. the 90% target"
+        subtitle="Evolution vs. 90% target"
+      />
+      <div className="flex-1 min-h-0 flex items-stretch gap-5 mt-3">
+        <div className="flex flex-col justify-center gap-3 shrink-0 w-[150px]">
+          <KpiBox
+            label={`SOT · ${sotTarget}% target`}
+            value={pctLabel(currentSOT)}
+            valueClassName={`text-3xl ${currentSOT === null ? 'text-[#c8c0bb]' : currentSOT >= sotTarget ? 'text-pass' : 'text-fail'}`}
+            tint={currentSOT === null ? 'neutral' : currentSOT >= sotTarget ? 'pass' : 'fail'}
+          />
+          <KpiBox
+            label={`OTIF · ${otifTarget}% target`}
+            value={pctLabel(currentOTIF)}
+            valueClassName={`text-3xl ${currentOTIF === null ? 'text-[#c8c0bb]' : currentOTIF >= otifTarget ? 'text-pass' : 'text-fail'}`}
+            tint={currentOTIF === null ? 'neutral' : currentOTIF >= otifTarget ? 'pass' : 'fail'}
+          />
         </div>
         <div className="flex-1 min-h-0 min-w-0">
           <TopGraphChart points={points} />

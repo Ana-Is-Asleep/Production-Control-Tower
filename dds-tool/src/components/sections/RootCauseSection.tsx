@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { MiniLegend } from '../shared/MiniLegend';
+import { CardHeader } from '../shared/CardHeader';
 import { useReasonClassification } from '../../hooks/useReasonClassification';
 import { REASON_CATEGORIES, REASON_CATEGORY_LABELS, isSubstantiveReason, type ReasonCategory } from '../../lib/reasonClassification';
 import { aggregatePOReasons, type LineForAggregation } from '../../lib/poReasonAggregation';
@@ -117,13 +118,11 @@ export function RootCauseSection({ lines, weeksInRange, drillDownHref }: RootCau
       className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full overflow-hidden"
       style={{ boxShadow: 'var(--shadow-card)' }}
     >
-      <div className="flex items-start justify-between shrink-0">
-        <div className="flex items-baseline gap-2">
-          <p className="text-xs font-bold uppercase tracking-wide text-[#403833]">Root Cause</p>
-          {totalFlagged > 0 && <span className="text-xs font-semibold text-[#7b7571]">{totalFlagged}</span>}
-        </div>
-        <p className="text-[10px] text-brand font-semibold">Drill down →</p>
-      </div>
+      <CardHeader
+        title="Root Cause"
+        infoText="AI-classified root causes for confirmed supplier loss reasons"
+        subtitle="Total open cases by root cause"
+      />
       {totalFlagged === 0 ? (
         <div className="flex-1 flex items-center">
           <p className="text-xs text-[#b5aaa5]">No flagged loss reasons in range</p>

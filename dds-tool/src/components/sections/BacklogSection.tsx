@@ -7,6 +7,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { weekOf } from '../../lib/kpiFormulas';
 import { isoWeekKey } from '../../lib/dateUtils';
 import { COLOR } from '../../lib/statusColors';
+import { CardHeader } from '../shared/CardHeader';
+import { KpiBox } from '../shared/KpiBox';
 import type { PurchaseLine } from '../../types';
 
 interface BacklogSectionProps {
@@ -96,20 +98,18 @@ export function BacklogSection({ lines, drillDownHref }: BacklogSectionProps) {
       className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full overflow-hidden"
       style={{ boxShadow: 'var(--shadow-card)' }}
     >
-      <div className="flex items-start justify-between shrink-0">
-        <p className="text-xs font-bold uppercase tracking-wide text-[#403833]">Backlog</p>
-        <p className="text-[10px] text-brand font-semibold">Drill down →</p>
-      </div>
+      <CardHeader
+        title="Backlog"
+        infoText="POs past their planned goods-ready date with no confirmed shipment"
+        subtitle="POs pending confirmation"
+      />
       <div className="grid grid-cols-3 gap-2 shrink-0 mt-3">
         {([
-          { label: 'Recent', color: recentCount > 0 ? COLOR.warn : COLOR.navy, value: recentCount },
-          { label: 'Accumulated', color: accumulatedCount > 0 ? COLOR.fail : COLOR.navy, value: accumulatedCount },
-          { label: 'Expected', color: COLOR.navy, value: expectedCount },
-        ]).map((c) => (
-          <div key={c.label} className="text-left rounded-lg px-2 py-1">
-            <p className="text-[9px] uppercase tracking-widest text-[#9c9794] truncate">{c.label}</p>
-            <p className="kpi-number font-extrabold text-xl leading-none mt-0.5" style={{ color: c.color }}>{c.value}</p>
-          </div>
+          { label: 'Recent', tint: recentCount > 0 ? 'warn' : 'neutral', color: 'text-[#403833]', value: recentCount },
+          { label: 'Accumulated', tint: accumulatedCount > 0 ? 'fail' : 'neutral', color: 'text-[#403833]', value: accumulatedCount },
+          { label: 'Expected', tint: 'neutral', color: 'text-[#403833]', value: expectedCount },
+        ] as const).map((c) => (
+          <KpiBox key={c.label} label={c.label} value={c.value} valueClassName={`text-xl ${c.color}`} tint={c.tint} />
         ))}
       </div>
       <div className="flex-1 min-h-0 mt-2">

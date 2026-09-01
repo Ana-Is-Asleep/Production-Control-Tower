@@ -6,6 +6,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { computeKPIs, filterBySupplierNames, formatAmountsByCurrency } from '../../lib/invoiceUtils';
 import { getISOWeek, getISOWeekYear } from '../../lib/dateUtils';
 import { COLOR } from '../../lib/statusColors';
+import { CardHeader } from '../shared/CardHeader';
+import { KpiBox } from '../shared/KpiBox';
 import type { InvoiceRow } from '../../types/invoice';
 
 interface InvoicesSectionProps {
@@ -38,11 +40,11 @@ export function InvoicesSection({ invoices, supplierFilter, drillDownHref }: Inv
   }, [kpis.totalPending]);
 
   const CARDS = [
-    { id: 1, label: 'Overdue – Pending Approval', count: kpis.overdueP2w.length, rows: kpis.overdueP2w, color: kpis.overdueP2w.length > 0 ? 'text-fail' : 'text-[#403833]' },
-    { id: 2, label: 'Total Pending', count: kpis.totalPending.length, rows: kpis.totalPending, color: kpis.totalPending.length > 0 ? 'text-warn' : 'text-[#403833]' },
-    { id: 3, label: 'Due by End of Week', count: kpis.dueByEndOfWeek.length, rows: kpis.dueByEndOfWeek, color: 'text-[#403833]' },
-    { id: 4, label: 'Approved, Awaiting Payment', count: kpis.approvedNotPaid.length, rows: kpis.approvedNotPaid, color: 'text-pass' },
-  ];
+    { id: 1, label: 'Overdue – Pending Approval', count: kpis.overdueP2w.length, rows: kpis.overdueP2w, color: 'text-fail', tint: kpis.overdueP2w.length > 0 ? 'fail' : 'neutral' },
+    { id: 2, label: 'Total Pending', count: kpis.totalPending.length, rows: kpis.totalPending, color: 'text-warn', tint: kpis.totalPending.length > 0 ? 'warn' : 'neutral' },
+    { id: 3, label: 'Due by End of Week', count: kpis.dueByEndOfWeek.length, rows: kpis.dueByEndOfWeek, color: 'text-[#403833]', tint: 'neutral' },
+    { id: 4, label: 'Approved, Awaiting Payment', count: kpis.approvedNotPaid.length, rows: kpis.approvedNotPaid, color: 'text-pass', tint: 'pass' },
+  ] as const;
 
   return (
     <Link
@@ -50,10 +52,7 @@ export function InvoicesSection({ invoices, supplierFilter, drillDownHref }: Inv
       className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-4 cursor-pointer h-full flex flex-col overflow-hidden"
       style={{ boxShadow: 'var(--shadow-card)' }}
     >
-      <div className="flex items-center justify-between shrink-0">
-        <p className="text-xs font-bold uppercase tracking-wide text-[#403833]">Invoices</p>
-        <p className="text-[10px] text-brand font-semibold">Drill down →</p>
-      </div>
+      <CardHeader title="Invoices" infoText="P2W invoice status by approval and payment stage" />
       {invoices.length === 0 ? (
         <div className="flex-1 flex items-center">
           <p className="text-xs text-[#b5aaa5]">Upload invoice file to see data</p>
@@ -62,11 +61,14 @@ export function InvoicesSection({ invoices, supplierFilter, drillDownHref }: Inv
         <div className="flex-1 min-h-0 mt-3 flex flex-col">
           <div className="grid grid-cols-4 gap-3 w-full shrink-0">
             {CARDS.map((c) => (
-              <div key={c.id} className="flex flex-col">
-                <p className="text-[10px] text-[#9c9794] truncate">{c.label}</p>
-                <p className={`kpi-number font-extrabold text-2xl leading-none mt-1.5 ${c.color}`}>{c.count}</p>
-                {showAmount && <p className="text-[10px] text-[#7b7571] truncate mt-0.5">{formatAmountsByCurrency(c.rows)}</p>}
-              </div>
+              <KpiBox
+                key={c.id}
+                label={c.label}
+                value={c.count}
+                valueClassName={`text-2xl ${c.color}`}
+                tint={c.tint}
+                sub={showAmount ? <p className="text-[10px] text-[#7b7571] truncate">{formatAmountsByCurrency(c.rows)}</p> : undefined}
+              />
             ))}
           </div>
           {weeklyPending.length > 0 && (
