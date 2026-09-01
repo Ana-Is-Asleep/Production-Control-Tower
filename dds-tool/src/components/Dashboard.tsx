@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useData } from '../context/DataContext';
 import { Sidebar } from './shell/Sidebar';
 import { PageHeader } from './shell/PageHeader';
+import { PanelRight, Upload as UploadIcon } from 'lucide-react';
 import { useFilters } from '../hooks/useFilters';
 import { useKPIs } from '../hooks/useKPIs';
 import { useVendorMapping } from '../hooks/useVendorMapping';
@@ -92,9 +93,25 @@ export function Dashboard() {
                 allSuppliers={allSuppliers}
                 curWeek={curWeek}
                 curYear={curYear}
-                onUpload={() => setUploadOpen(true)}
-                actionsUiMode={actionsUiMode}
-                onToggleActionsUiMode={() => setActionsUiMode((m) => (m === 'badge' ? 'panel' : 'badge'))}
+                rightActions={
+                  <>
+                    <button
+                      onClick={() => setActionsUiMode((m) => (m === 'badge' ? 'panel' : 'badge'))}
+                      title="Switch Actions UI variant"
+                      className="flex items-center justify-center w-8 h-8 rounded-lg border border-[#e9e3df] text-[#58524e] hover:border-[#403833] hover:text-[#403833]"
+                    >
+                      <PanelRight size={15} />
+                    </button>
+                    <button
+                      onClick={() => setUploadOpen(true)}
+                      title="Upload Business Central export"
+                      className="flex items-center gap-1.5 text-xs font-semibold text-white bg-[#403833] rounded-lg px-2.5 h-8 hover:bg-[#58524e]"
+                    >
+                      <UploadIcon size={13} />
+                      Upload
+                    </button>
+                  </>
+                }
               />
               <div className={`p-3 flex-1 min-h-0 flex flex-col gap-3 w-full max-w-[1400px] 2xl:max-w-[1680px] mx-auto overflow-y-auto ${actionsUiMode === 'badge' ? 'pb-14' : ''}`}>
                 <div style={{ flex: '4 1 220px' }}>

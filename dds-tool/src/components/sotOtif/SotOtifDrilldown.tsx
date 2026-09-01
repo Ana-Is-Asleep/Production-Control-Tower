@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { Download, MoreVertical } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { useFilters, type WeekInRange, type ActiveFilters } from '../../hooks/useFilters';
 import { useKPIs } from '../../hooks/useKPIs';
 import { useVendorMapping } from '../../hooks/useVendorMapping';
-import { GlobalFilterBar } from '../shared/GlobalFilterBar';
+import { Sidebar } from '../shell/Sidebar';
+import { PageHeader } from '../shell/PageHeader';
 import { TopGraphChart } from '../sections/TopGraphChart';
 import { KPICardsRow } from './KPICardsRow';
 import { ScorecardMatrix } from './ScorecardMatrix';
@@ -131,35 +133,58 @@ export function SotOtifDrilldown() {
   // page won't have it, so send the user back to upload rather than rendering an empty dashboard
   if (allLines.length === 0) {
     return (
-      <div className="h-screen w-full bg-[#f5f2ee] flex flex-col items-center justify-center gap-4">
-        <p className="text-lg font-semibold text-[#403833]">No data loaded</p>
-        <p className="text-sm text-[#9c9794]">Go back to the overview and upload your Business Central exports.</p>
-        <Link href="/" className="bg-brand text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-brand-soft transition-colors">
-          ← Back to Overview
-        </Link>
+      <div className="h-screen w-full bg-[#f5f2ee] flex overflow-hidden">
+        <Sidebar />
+        <div className="flex-1 flex flex-col items-center justify-center gap-4">
+          <p className="text-lg font-semibold text-[#403833]">No data loaded</p>
+          <p className="text-sm text-[#9c9794]">Go back to the overview and upload your Business Central exports.</p>
+          <Link href="/" className="bg-brand text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-brand-soft transition-colors">
+            ← Back to Overview
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen w-full bg-[#f5f2ee] flex flex-col overflow-hidden">
-      <header className="bg-white border-b border-[#e9e3df] px-5 py-2.5 flex items-center gap-3 shrink-0">
-        <Link href="/" className="flex items-center gap-1.5 text-sm font-semibold text-[#403833] hover:text-brand transition-colors shrink-0">
-          <span>←</span> Overview
-        </Link>
+    <div className="h-screen w-full bg-[#f5f2ee] flex overflow-hidden">
+      <Sidebar />
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+        <PageHeader
+          breadcrumb={[{ label: 'Dashboard', href: '/' }, { label: 'SOT / OTIF Performance' }]}
+          filters={filters}
+          onChange={handleFilterChange}
+          allSuppliers={allSuppliers}
+          curWeek={curWeek}
+          curYear={curYear}
+          rightActions={
+            <>
+              <button
+                title="Export (coming soon)"
+                disabled
+                className="flex items-center gap-1.5 text-xs font-semibold text-[#7b7571] border border-[#e9e3df] rounded-lg px-2.5 h-8 opacity-60 cursor-not-allowed"
+              >
+                <Download size={13} />
+                Export
+              </button>
+              <button
+                title="More options (coming soon)"
+                disabled
+                className="flex items-center justify-center w-8 h-8 rounded-lg border border-[#e9e3df] text-[#7b7571] opacity-60 cursor-not-allowed"
+              >
+                <MoreVertical size={15} />
+              </button>
+            </>
+          }
+        />
+
         {isModeB && viaScorecard && (
-          <>
-            <span className="text-[#e9e3df]">|</span>
-            <button onClick={handleAllSuppliers} className="text-xs font-medium text-brand hover:underline shrink-0">
+          <div className="px-5 py-1.5 bg-white border-b border-[#e9e3df] shrink-0">
+            <button onClick={handleAllSuppliers} className="text-xs font-medium text-brand hover:underline">
               ← All suppliers
             </button>
-          </>
+          </div>
         )}
-        <span className="text-[#e9e3df]">|</span>
-        <span className="text-[#403833] text-sm font-semibold shrink-0">SOT / OTIF Detail</span>
-      </header>
-
-      <GlobalFilterBar filters={filters} onChange={handleFilterChange} allSuppliers={allSuppliers} curWeek={curWeek} curYear={curYear} />
 
       {/* Top section — persistent chart + context-aware KPI cards, ~35% of screen height.
           A real flex column (not a hardcoded height subtraction) so the KPI row can never
@@ -226,6 +251,7 @@ export function SotOtifDrilldown() {
             )}
           </div>
         )}
+        </div>
       </div>
     </div>
   );

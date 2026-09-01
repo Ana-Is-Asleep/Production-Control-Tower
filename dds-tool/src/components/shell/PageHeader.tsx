@@ -1,6 +1,8 @@
 'use client';
 
-import { Calendar, Upload as UploadIcon, PanelRight } from 'lucide-react';
+import type { ReactNode } from 'react';
+import Link from 'next/link';
+import { Calendar, RotateCcw } from 'lucide-react';
 import { WeekRangeStepper } from '../shared/WeekRangeStepper';
 import { VendorDropdown } from '../shared/VendorDropdown';
 import { CategoryDropdown } from '../shared/CategoryDropdown';
@@ -10,24 +12,29 @@ import { CATEGORY_COLORS } from '../../lib/statusColors';
 import { WEEK_RANGE_MIN, WEEK_RANGE_MAX, DEFAULT_FILTERS, type ActiveFilters } from '../../hooks/useFilters';
 import type { Channel } from '../../lib/channelUtils';
 
+export interface Breadcrumb {
+  label: string;
+  href?: string;
+}
+
 interface PageHeaderProps {
+  breadcrumb?: Breadcrumb[]; // omit for the main dashboard, which just shows the title
   filters: ActiveFilters;
   onChange: (f: ActiveFilters) => void;
   allSuppliers: string[];
   curWeek: number;
   curYear: number;
-  onUpload: () => void;
-  actionsUiMode: 'badge' | 'panel';
-  onToggleActionsUiMode: () => void;
+  rightActions?: ReactNode; // page-specific buttons (Upload/Actions-toggle on the dashboard, Export/etc. on drill-downs)
 }
 
 const CHANNELS: Channel[] = ['Offline', 'Online'];
 
-// Page title/subtitle + filter controls, replacing the old top nav bar + separate filter bar —
-// same underlying filter state/logic as before (WeekRangeStepper, VendorDropdown, and the
-// channel/category toggle functions are untouched), just recomposed into one header block with
-// the new dropdown affordances layered on top of the existing pill toggles.
-export function PageHeader({ filters, onChange, allSuppliers, curWeek, curYear, onUpload, actionsUiMode, onToggleActionsUiMode }: PageHeaderProps) {
+// Page title (+ optional breadcrumb) and filter controls, shared by the main dashboard and every
+// full-page drill-down so they all look and behave the same way — same underlying filter state/
+// logic as before (WeekRangeStepper, VendorDropdown, and the channel/category toggle functions
+// are untouched), just recomposed into one header block with the dropdown affordances layered on
+// top of the existing pill toggles.
+export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWeek, curYear, rightActions }: PageHeaderProps) {
   const toggleChannel = (c: Channel) => {
     const next = filters.channels.includes(c) ? filters.channels.filter((x) => x !== c) : [...filters.channels, c];
     onChange({ ...filters, channels: next });
@@ -40,7 +47,23 @@ export function PageHeader({ filters, onChange, allSuppliers, curWeek, curYear, 
   return (
     <div className="bg-white border-b border-[#e9e3df] px-5 py-2.5 shrink-0">
       <div className="flex items-center justify-between gap-6 flex-wrap">
-        <h1 className="text-base font-bold text-[#403833] tracking-tight shrink-0">Production Control Tower</h1>
+        <div className="shrink-0">
+          <h1 className="text-base font-bold text-[#403833] tracking-tight">Production Control Tower</h1>
+          {breadcrumb && (
+            <div className="flex items-center gap-1.5 text-xs text-[#9c9794] mt-0.5">
+              {breadcrumb.map((b, i) => (
+                <span key={b.label} className="flex items-center gap-1.5">
+                  {i > 0 && <span className="text-[#d6cfc9]">›</span>}
+                  {b.href ? (
+                    <Link href={b.href} className="hover:text-brand transition-colors">{b.label}</Link>
+                  ) : (
+                    <span className="text-[#403833] font-medium">{b.label}</span>
+                  )}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center gap-2 flex-wrap shrink-0">
           <div className="flex items-center gap-2 bg-white border border-[#e9e3df] rounded-lg px-2.5 h-8">
@@ -51,23 +74,12 @@ export function PageHeader({ filters, onChange, allSuppliers, curWeek, curYear, 
           <CategoryDropdown selected={filters.categories} onChange={(c) => onChange({ ...filters, categories: c })} />
           <ChannelDropdown selected={filters.channels} onChange={(c) => onChange({ ...filters, channels: c })} />
 
-          <span className="w-px h-5 bg-[#e9e3df] mx-1" />
-
-          <button
-            onClick={onToggleActionsUiMode}
-            title="Switch Actions UI variant"
-            className="flex items-center justify-center w-8 h-8 rounded-lg border border-[#e9e3df] text-[#58524e] hover:border-[#403833] hover:text-[#403833]"
-          >
-            <PanelRight size={15} />
-          </button>
-          <button
-            onClick={onUpload}
-            title="Upload Business Central export"
-            className="flex items-center gap-1.5 text-xs font-semibold text-white bg-[#403833] rounded-lg px-2.5 h-8 hover:bg-[#58524e]"
-          >
-            <UploadIcon size={13} />
-            Upload
-          </button>
+          {rightActions && (
+            <>
+              <span className="w-px h-5 bg-[#e9e3df] mx-1" />
+              {rightActions}
+            </>
+          )}
         </div>
       </div>
 
@@ -94,8 +106,8 @@ export function PageHeader({ filters, onChange, allSuppliers, curWeek, curYear, 
         ))}
         {(filters.suppliers.length > 0 || filters.channels.length > 0 || filters.categories.length > 0 ||
           filters.weekRange.start !== DEFAULT_FILTERS.weekRange.start || filters.weekRange.end !== DEFAULT_FILTERS.weekRange.end) && (
-          <button onClick={() => onChange(DEFAULT_FILTERS)} className="text-xs text-[#9c9794] hover:text-fail transition-colors ml-auto">
-            Clear ✕
+          <button onClick={() => onChange(DEFAULT_FILTERS)} className="flex items-center gap-1 text-xs text-[#9c9794] hover:text-fail transition-colors ml-auto">
+            <RotateCcw size={12} /> Reset filters
           </button>
         )}
       </div>
