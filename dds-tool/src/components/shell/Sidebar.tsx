@@ -23,9 +23,9 @@ const NAV_ITEMS: NavItem[] = [
 // design (no workspace selector / collapse toggle / profile footer requested here).
 export function Sidebar() {
   return (
-    <aside className="w-[200px] shrink-0 h-screen bg-white border-r border-[#e9e3df] flex flex-col">
-      <div className="px-4 pt-4 pb-3">
-        <img src="/emma-logo.svg" alt="emma" className="h-6 w-auto" />
+    <aside className="w-[164px] shrink-0 h-screen bg-white border-r border-[#e9e3df] flex flex-col">
+      <div className="px-3 pt-3 pb-2">
+        <img src="/emma-logo.svg" alt="emma" className="h-5 w-auto" />
       </div>
       <nav className="flex-1 min-h-0 px-2 space-y-0.5">
         {NAV_ITEMS.map((item) => {
@@ -34,7 +34,7 @@ export function Sidebar() {
             <button
               key={item.key}
               disabled={!item.active}
-              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] transition-colors ${
+              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[13px] transition-colors ${
                 item.active
                   ? 'bg-[#f5f2ee] text-[#1c1612] font-bold'
                   : 'text-[#403833] font-medium hover:bg-[#f5f2ee] cursor-not-allowed opacity-60'

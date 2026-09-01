@@ -38,42 +38,40 @@ export function PageHeader({ filters, onChange, allSuppliers, curWeek, curYear, 
   };
 
   return (
-    <div className="bg-white border-b border-[#e9e3df] px-7 py-4">
-      <div className="flex items-start justify-between gap-6 flex-wrap">
-        <div>
-          <h1 className="text-[22px] font-bold text-[#403833] tracking-tight">Production Control Tower</h1>
-        </div>
+    <div className="bg-white border-b border-[#e9e3df] px-5 py-2.5 shrink-0">
+      <div className="flex items-center justify-between gap-6 flex-wrap">
+        <h1 className="text-base font-bold text-[#403833] tracking-tight shrink-0">Production Control Tower</h1>
 
         <div className="flex items-center gap-2 flex-wrap shrink-0">
-          <div className="flex items-center gap-2 bg-white border border-[#e9e3df] rounded-lg px-3 h-9">
-            <Calendar size={15} className="text-[#7b7571]" />
+          <div className="flex items-center gap-2 bg-white border border-[#e9e3df] rounded-lg px-2.5 h-8">
+            <Calendar size={14} className="text-[#7b7571]" />
             <WeekRangeStepper min={WEEK_RANGE_MIN} max={WEEK_RANGE_MAX} value={filters.weekRange} onChange={(weekRange) => onChange({ ...filters, weekRange })} curWeek={curWeek} curYear={curYear} />
           </div>
           <VendorDropdown allSuppliers={allSuppliers} selected={filters.suppliers} onChange={(s) => onChange({ ...filters, suppliers: s })} />
           <CategoryDropdown selected={filters.categories} onChange={(c) => onChange({ ...filters, categories: c })} />
           <ChannelDropdown selected={filters.channels} onChange={(c) => onChange({ ...filters, channels: c })} />
 
-          <span className="w-px h-6 bg-[#e9e3df] mx-1" />
+          <span className="w-px h-5 bg-[#e9e3df] mx-1" />
 
           <button
             onClick={onToggleActionsUiMode}
             title="Switch Actions UI variant"
-            className="flex items-center justify-center w-9 h-9 rounded-lg border border-[#e9e3df] text-[#58524e] hover:border-[#403833] hover:text-[#403833]"
+            className="flex items-center justify-center w-8 h-8 rounded-lg border border-[#e9e3df] text-[#58524e] hover:border-[#403833] hover:text-[#403833]"
           >
-            <PanelRight size={16} />
+            <PanelRight size={15} />
           </button>
           <button
             onClick={onUpload}
             title="Upload Business Central export"
-            className="flex items-center gap-1.5 text-[13px] font-semibold text-white bg-[#403833] rounded-lg px-3 h-9 hover:bg-[#58524e]"
+            className="flex items-center gap-1.5 text-xs font-semibold text-white bg-[#403833] rounded-lg px-2.5 h-8 hover:bg-[#58524e]"
           >
-            <UploadIcon size={14} />
+            <UploadIcon size={13} />
             Upload
           </button>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap mt-3">
+      <div className="flex items-center gap-2 flex-wrap mt-2">
         {CHANNELS.map((c) => (
           <button
             key={c}

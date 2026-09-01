@@ -29,7 +29,7 @@ export function ChannelDropdown({ selected, onChange }: ChannelDropdownProps) {
     <div ref={ref} className="relative shrink-0">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 text-[13px] font-medium text-[#403833] bg-white border border-[#e9e3df] rounded-lg px-3 h-9 hover:border-[#9c9794]"
+        className="flex items-center gap-2 text-[13px] font-medium text-[#403833] bg-white border border-[#e9e3df] rounded-lg px-2.5 h-8 hover:border-[#9c9794]"
       >
         <span className="max-w-[140px] truncate">{label}</span>
         <span className="text-[#7b7571] text-[10px]">▾</span>
