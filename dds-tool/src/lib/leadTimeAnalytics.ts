@@ -280,6 +280,7 @@ export interface DrillRow {
   orderDate: Date;
   endDate: Date;
   leadDays: number;
+  lines: PurchaseLine[]; // this PO's own lines — for expandable line-level detail
 }
 
 // Underlying PO rows behind a clicked bar/cell — bucketed the same way as whatever chart the user
@@ -310,8 +311,92 @@ export function computeDrillRows(
       orderDate: g.order,
       endDate: g.end,
       leadDays: lead,
+      lines: g.lines,
     });
   });
 
   return rows.sort((a, b) => b.leadDays - a.leadDays);
+}
+
+export interface PeriodSummary {
+  bucketKey: string;
+  label: string;
+  poCount: number;
+  avgLeadDays: number | null;
+  vsTargetDays: number | null;
+  meetingTarget: boolean | null; // null when no scored POs in that period
+}
+
+// One row per period — Recent Periods Detail table. Reuses the exact same PO-level (latest ASD)
+// grouping as every other Lead Time view; this is packaging, not a new calculation.
+export function computePeriodsSummary(lines: PurchaseLine[], buckets: LTBucket[], period: LTPeriod): PeriodSummary[] {
+  const keySet = new Set(buckets.map((b) => b.key));
+  const groups = groupPOHeaders(lines, () => 0, () => '0');
+
+  const sum = new Map<string, number>();
+  const count = new Map<string, number>();
+  groups.forEach((g) => {
+    const lead = leadDaysOf(g);
+    if (lead === null) return;
+    const bk = bucketKeyForDate(g.end, period);
+    if (!keySet.has(bk)) return;
+    sum.set(bk, (sum.get(bk) ?? 0) + lead);
+    count.set(bk, (count.get(bk) ?? 0) + 1);
+  });
+
+  return buckets.map((b) => {
+    const c = count.get(b.key) ?? 0;
+    const avg = c ? Math.round((sum.get(b.key)! / c) * 10) / 10 : null;
+    return {
+      bucketKey: b.key,
+      label: b.label,
+      poCount: c,
+      avgLeadDays: avg,
+      vsTargetDays: avg !== null ? Math.round((avg - LT_TARGET_DAYS) * 10) / 10 : null,
+      meetingTarget: avg !== null ? avg <= LT_TARGET_DAYS : null,
+    };
+  });
+}
+
+export interface LeadTimeDistributionBucket {
+  label: string;
+  count: number;
+  pct: number;
+}
+
+export interface LeadTimeDistribution {
+  bucketLabel: string;
+  total: number;
+  buckets: LeadTimeDistributionBucket[];
+}
+
+const DISTRIBUTION_RANGES: { label: string; max: number | null }[] = [
+  { label: '0–20 days', max: 20 },
+  { label: '21–30 days', max: 30 },
+  { label: '31–45 days', max: 45 },
+  { label: '46–60 days', max: 60 },
+  { label: '> 60 days', max: null },
+];
+
+// Severity distribution for one period (the latest completed one, by default) — same per-PO lead
+// days used everywhere else on this page, just bucketed by magnitude instead of averaged.
+export function computeLeadTimeDistribution(lines: PurchaseLine[], bucket: LTBucket, period: LTPeriod): LeadTimeDistribution {
+  const groups = groupPOHeaders(lines, () => 0, () => '0');
+  const counts = DISTRIBUTION_RANGES.map(() => 0);
+  let total = 0;
+
+  groups.forEach((g) => {
+    const lead = leadDaysOf(g);
+    if (lead === null) return;
+    if (bucketKeyForDate(g.end, period) !== bucket.key) return;
+    total += 1;
+    const idx = DISTRIBUTION_RANGES.findIndex((r) => r.max === null || lead <= r.max);
+    counts[idx === -1 ? counts.length - 1 : idx] += 1;
+  });
+
+  return {
+    bucketLabel: bucket.label,
+    total,
+    buckets: DISTRIBUTION_RANGES.map((r, i) => ({ label: r.label, count: counts[i], pct: total ? Math.round((counts[i] / total) * 100) : 0 })),
+  };
 }

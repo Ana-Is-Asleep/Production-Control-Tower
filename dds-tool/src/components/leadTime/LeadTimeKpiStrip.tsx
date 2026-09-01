@@ -42,24 +42,24 @@ export function LeadTimeKpiStrip({ kpis }: LeadTimeKpiStripProps) {
         color={COLOR.muted}
       />
       <Card
-        label="vs Target (30d)"
+        label="vs 30-Day Target"
         value={fmtSigned(kpis.vsTargetDays)}
         unit="days"
         sub={kpis.vsTargetDays === null ? '' : kpis.vsTargetDays <= 0 ? 'At or under target' : 'Above target'}
         color={vsTargetColor}
       />
       <Card
-        label="Trend vs Prev Period"
+        label="Trend vs Previous Period"
         value={fmtSigned(kpis.trendVsPrevDays)}
         unit="days"
-        sub={kpis.trendVsPrevDays === null ? '' : kpis.trendVsPrevDays < 0 ? 'Improving' : kpis.trendVsPrevDays > 0 ? 'Slower' : 'Flat'}
+        sub={kpis.trendVsPrevDays === null ? '' : kpis.trendVsPrevDays < 0 ? 'Improving' : kpis.trendVsPrevDays > 0 ? 'Worse' : 'Flat'}
         color={trendColor}
       />
       <Card
-        label="Periods Under Target"
+        label="Periods Meeting Target"
         value={String(kpis.pctPeriodsUnderTarget)}
         unit="%"
-        sub={`${kpis.periodsUnderTarget} of ${kpis.periodsPresent} buckets`}
+        sub={`${kpis.periodsUnderTarget} of ${kpis.periodsPresent} periods`}
         color={COLOR.muted}
       />
     </div>
