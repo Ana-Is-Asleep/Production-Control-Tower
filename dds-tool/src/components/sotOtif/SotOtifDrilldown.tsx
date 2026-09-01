@@ -16,8 +16,8 @@ import { KPICardsRow } from './KPICardsRow';
 import { SupplierInfoCard } from './SupplierInfoCard';
 import { SupplierKpiStrip } from './SupplierKpiStrip';
 import { ScorecardMatrix } from './ScorecardMatrix';
-import { RiskRadar } from './RiskRadar';
-import { ConcentrationAnalysis } from './ConcentrationAnalysis';
+import { PerformanceByWeekTable } from './PerformanceByWeekTable';
+import { KeyInsightsPanel } from './KeyInsightsPanel';
 import { WeekStrip } from './WeekStrip';
 import { POList } from './POList';
 import { rollupByPO } from '../../lib/poAggregation';
@@ -292,21 +292,24 @@ export function SotOtifDrilldown() {
       {/* Bottom section — scrollable, ~65% of screen height */}
       <div className="flex-1 min-h-0 overflow-y-auto">
         {!isModeB ? (
-          <div className="p-4 space-y-4">
-            <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
-              <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-3">Supplier Scorecard</p>
-              <ScorecardMatrix
-                lines={weekRangeLines}
-                weeksInRange={weeksInRange}
-                isChinaSupplier={isChinaSupplier}
-                today={today}
-                selectedWeek={selectedWeek}
-                onSupplierClick={handleSupplierRowClick}
-              />
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch" style={{ minHeight: '360px' }}>
-              <RiskRadar lines={scopeLines} weeksInRange={weeksInRange} isChinaSupplier={isChinaSupplier} today={today} />
-              <ConcentrationAnalysis lines={scopeLines} isChinaSupplier={isChinaSupplier} today={today} />
+          <div className="p-4">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.3fr_1fr] gap-4 items-stretch">
+              <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <p className="text-sm font-bold text-[#403833] mb-3">Performance by Week</p>
+                <PerformanceByWeekTable lines={weekRangeLines} weeksInRange={weeksInRange} isChinaSupplier={isChinaSupplier} today={today} />
+              </div>
+              <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <p className="text-sm font-bold text-[#403833] mb-3">Supplier Scorecard <span className="text-[11px] font-medium text-[#9c9794]">(Top {Math.min(10, allSuppliers.length)} by volume)</span></p>
+                <ScorecardMatrix
+                  lines={weekRangeLines}
+                  weeksInRange={weeksInRange}
+                  isChinaSupplier={isChinaSupplier}
+                  today={today}
+                  selectedWeek={selectedWeek}
+                  onSupplierClick={handleSupplierRowClick}
+                />
+              </div>
+              <KeyInsightsPanel rollups={scopeRollups} avgDelayDays={avgDelayDays} weekLabel={kpiWeekLabel} />
             </div>
           </div>
         ) : (
