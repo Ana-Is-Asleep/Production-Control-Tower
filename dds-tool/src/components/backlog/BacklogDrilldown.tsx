@@ -10,7 +10,7 @@ import { currentISOWeek } from '../../lib/dateUtils';
 import { parseBacklogParams, buildBacklogParams } from '../../lib/backlogParams';
 import {
   computeBacklogRows, computeExpectedRows, computeAgeBands, computeClearanceForecast,
-  computeExpectedByPgrdWeek, findOutliers, computeSupplierBacklogSummary, computeEtaEstimate, anchorWeek,
+  computeExpectedByPgrdWeek, findOutliers, computeSupplierBacklogSummary, anchorWeek,
 } from '../../lib/backlogAggregation';
 import { Sidebar } from '../shell/Sidebar';
 import { PageHeader } from '../shell/PageHeader';
@@ -59,7 +59,6 @@ export function BacklogDrilldown() {
   const expectedByWeek = useMemo(() => computeExpectedByPgrdWeek(expectedRows, curWeek, curYear), [expectedRows, curWeek, curYear]);
   const outliers = useMemo(() => findOutliers(rows, lastCompletedWk, lastCompletedYr), [rows, lastCompletedWk, lastCompletedYr]);
   const supplierSummary = useMemo(() => computeSupplierBacklogSummary(rows), [rows]);
-  const eta = useMemo(() => computeEtaEstimate(filteredLines, noEsdRows.length, lastCompletedWk, lastCompletedYr), [filteredLines, noEsdRows.length, lastCompletedWk, lastCompletedYr]);
 
   if (allLines.length === 0) {
     return (
@@ -109,20 +108,22 @@ export function BacklogDrilldown() {
           }
         />
 
-        <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
-          <BacklogTopCards
-            rows={rows}
-            recentCount={recentRows.length}
-            accumulatedCount={accumulatedRows.length}
-            noEsdCount={noEsdRows.length}
-            expectedCount={expectedRows.length}
-            expectedByWeek={expectedByWeek}
-            avgAgeDays={avgAgeDays}
-            expectedClearanceCount={rows.length - noEsdRows.length}
-          />
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 flex flex-col gap-3">
+          <div className="shrink-0">
+            <BacklogTopCards
+              rows={rows}
+              recentCount={recentRows.length}
+              accumulatedCount={accumulatedRows.length}
+              noEsdCount={noEsdRows.length}
+              expectedCount={expectedRows.length}
+              expectedByWeek={expectedByWeek}
+              avgAgeDays={avgAgeDays}
+              expectedClearanceCount={rows.length - noEsdRows.length}
+            />
+          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
-            <div className="lg:col-span-2">
+          <div style={{ flex: '3 1 220px' }} className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch min-h-0">
+            <div className="lg:col-span-2 min-h-0">
               <BacklogClearanceForecast points={forecast} />
             </div>
             <BacklogKeyInsights
@@ -134,15 +135,9 @@ export function BacklogDrilldown() {
             />
           </div>
 
-          <BacklogOutlierCallout outliers={outliers} />
-          {eta.weeksToClear !== null && noEsdRows.length > 0 && (
-            <div className="bg-white rounded-lg border border-[#e9e3df] px-4 py-2.5 text-sm" style={{ boxShadow: 'var(--shadow-card)' }}>
-              <span className="font-semibold text-fail">{noEsdRows.length}</span> POs in backlog have no expectation to clear
-              <span className="text-[#9c9794]"> — at the current clearance rate (~{eta.avgClearancePerWeek.toFixed(1)}/wk), this would take approximately {eta.weeksToClear} week{eta.weeksToClear === 1 ? '' : 's'} to clear if nothing changes.</span>
-            </div>
-          )}
+          {outliers.length > 0 && <div className="shrink-0"><BacklogOutlierCallout outliers={outliers} /></div>}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <div style={{ flex: '2 1 160px' }} className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch min-h-0">
             <BacklogSupplierRanking summary={supplierSummary} />
             <BacklogAgeBreakdown bands={ageBands} />
           </div>

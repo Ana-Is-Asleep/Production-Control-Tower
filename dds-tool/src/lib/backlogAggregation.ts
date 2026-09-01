@@ -207,37 +207,6 @@ export function findOutliers(rows: BacklogPORow[], curWeek: number, curYear: num
   return rows.filter((r) => r.hasEsd && r.esd! > windowEnd);
 }
 
-export interface EtaEstimate {
-  weeksToClear: number | null; // null when there's no measurable recent clearance pace
-  avgClearancePerWeek: number;
-}
-
-const ETA_LOOKBACK_WEEKS = 4;
-
-// Rough ETA: no-ESD backlog volume / recent average weekly clearance pace (any PO whose ASD
-// landed in one of the last N completed weeks, regardless of what bucket it's in now). Unlike the
-// supplier trend above, this only reads real ASD timestamps already present on today's records —
-// it doesn't require reconstructing a past backlog LEVEL, so it holds up under the same live-data
-// constraint. It would still undercount if cleared POs get archived out of the export entirely
-// rather than just having ASD filled in place — worth confirming with the Dynamics export owner.
-export function computeEtaEstimate(lines: PurchaseLine[], noEsdCount: number, curWeek: number, curYear: number): EtaEstimate {
-  const byPO = groupByPO(lines);
-  let cleared = 0;
-  for (let offset = -(ETA_LOOKBACK_WEEKS - 1); offset <= 0; offset++) {
-    const { week, year } = shiftISOWeek(curWeek, curYear, offset);
-    const { start, end } = weekRangeFor(week, year);
-    for (const poLines of byPO.values()) {
-      const asd = poLines.find((l) => l.asd)?.asd;
-      if (asd && asd >= start && asd <= end) cleared += 1;
-    }
-  }
-  const avgClearancePerWeek = cleared / ETA_LOOKBACK_WEEKS;
-  return {
-    avgClearancePerWeek,
-    weeksToClear: avgClearancePerWeek > 0 ? Math.ceil(noEsdCount / avgClearancePerWeek) : null,
-  };
-}
-
 export function anchorWeek(): { week: number; year: number } {
   const { week, year } = lastCompletedWeek();
   return { week, year };
