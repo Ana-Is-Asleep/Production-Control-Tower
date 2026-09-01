@@ -93,15 +93,18 @@ export function BacklogDrilldown() {
     );
   }
 
+  // Mode B (single-supplier deep dive) scrolls naturally as one normal page — Mode A (the
+  // multi-supplier strategic view) stays viewport-locked/compact. Sidebar is sticky so it stays
+  // pinned in both cases.
   return (
-    <div className="h-screen w-full bg-[#f5f2ee] flex overflow-hidden">
+    <div className={isModeB ? 'min-h-screen w-full bg-[#f5f2ee] flex' : 'h-screen w-full bg-[#f5f2ee] flex overflow-hidden'}>
       <Sidebar />
-      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+      <div className={isModeB ? 'flex-1 min-w-0 flex flex-col' : 'flex-1 min-w-0 flex flex-col overflow-hidden'}>
         <PageHeader
           breadcrumb={
             isModeB
-              ? [{ label: 'Overview', href: '/' }, { label: 'Backlog Detail', href: '/backlog' }, { label: 'Supplier Detail' }]
-              : [{ label: 'Overview', href: '/' }, { label: 'Backlog Detail' }]
+              ? [{ label: 'Dashboard', href: '/' }, { label: 'Backlog Detail', href: '/backlog' }, { label: 'Supplier Detail' }]
+              : [{ label: 'Dashboard', href: '/' }, { label: 'Backlog Detail' }]
           }
           filters={filters}
           onChange={setFilters}
@@ -175,8 +178,8 @@ export function BacklogDrilldown() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 flex flex-col gap-3">
-            <div className="shrink-0 flex gap-3">
+          <div className="p-3 flex flex-col gap-3">
+            <div className="flex gap-3">
               <SupplierInfoCard
                 supplier={selectedSupplier ?? ''}
                 categories={filters.categories}
@@ -196,8 +199,8 @@ export function BacklogDrilldown() {
               </div>
             </div>
 
-            <div style={{ flex: '3 1 220px' }} className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch min-h-0 overflow-hidden">
-              <div className="lg:col-span-2 min-h-0">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch" style={{ minHeight: 320 }}>
+              <div className="lg:col-span-2">
                 <BacklogClearanceForecast points={forecast} />
               </div>
               <BacklogSupplierInsights
@@ -210,9 +213,9 @@ export function BacklogDrilldown() {
               />
             </div>
 
-            {outliers.length > 0 && <div className="shrink-0"><BacklogOutlierCallout outliers={outliers} /></div>}
+            {outliers.length > 0 && <BacklogOutlierCallout outliers={outliers} />}
 
-            <div style={{ flex: '2 1 160px' }} className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch min-h-0 overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
               <BacklogAgeBreakdown bands={ageBands} />
               <BacklogEsdPassedCallout
                 count={rows.filter((r) => r.esdPassedNoAsd).length}
@@ -220,7 +223,7 @@ export function BacklogDrilldown() {
               />
             </div>
 
-            <div style={{ flex: '4 1 260px' }} className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-3 items-stretch min-h-0 overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-3 items-start">
               <BacklogPOTable
                 rows={rows}
                 today={today}

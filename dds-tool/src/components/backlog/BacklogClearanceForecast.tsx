@@ -25,9 +25,9 @@ export function BacklogClearanceForecast({ points }: BacklogClearanceForecastPro
       <p className="text-sm font-bold text-[#403833] shrink-0">Backlog Clearance Forecast</p>
       <p className="text-[11px] text-[#9c9794] mb-2 shrink-0">Based on ESD — when we expect the current backlog to clear</p>
 
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0" style={{ minHeight: 220 }}>
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={points} margin={{ top: 24, right: 16, left: -10, bottom: 0 }}>
+          <AreaChart data={points} margin={{ top: 28, right: 20, left: -10, bottom: 4 }}>
             <defs>
               <linearGradient id="backlogClearanceFill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={COLOR.brand} stopOpacity={0.35} />
@@ -35,8 +35,8 @@ export function BacklogClearanceForecast({ points }: BacklogClearanceForecastPro
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="2 4" stroke={COLOR.border} vertical={false} />
-            <XAxis dataKey="label" tick={{ fill: COLOR.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: COLOR.muted, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} width={30} />
+            <XAxis dataKey="label" tick={{ fill: COLOR.muted, fontSize: 11 }} axisLine={false} tickLine={false} padding={{ left: 12, right: 12 }} />
+            <YAxis tick={{ fill: COLOR.muted, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} width={30} domain={[0, (dataMax: number) => Math.ceil(dataMax * 1.2)]} />
             <Tooltip
               contentStyle={{ background: COLOR.navy, border: 'none', borderRadius: 8, fontSize: 11, padding: '6px 10px' }}
               labelStyle={{ color: COLOR.brandSoft, fontWeight: 700 }}

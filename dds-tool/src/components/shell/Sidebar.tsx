@@ -27,7 +27,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-[164px] shrink-0 h-screen bg-white border-r border-[#e9e3df] flex flex-col">
+    <aside className="w-[164px] shrink-0 h-screen sticky top-0 bg-white border-r border-[#e9e3df] flex flex-col">
       <div className="px-3 pt-3 pb-2">
         <img src="/emma-logo.svg" alt="emma" className="h-5 w-auto" />
       </div>

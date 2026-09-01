@@ -71,9 +71,9 @@ export function InvoicesSection({ invoices, supplierFilter, drillDownHref }: Inv
               />
             ))}
           </div>
-          {weeklyPending.length > 0 && (
-            <div className="flex-1 min-h-0 mt-4 flex flex-col">
-              <p className="text-[10px] uppercase tracking-widest text-[#9c9794] mb-1 shrink-0">Total Pending — by due week</p>
+          <div className="flex-1 min-h-0 mt-4 flex flex-col">
+            <p className="text-[10px] uppercase tracking-widest text-[#9c9794] mb-1 shrink-0">Total Pending — by due week</p>
+            {weeklyPending.length > 0 ? (
               <div className="flex-1 min-h-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={weeklyPending} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
@@ -90,8 +90,12 @@ export function InvoicesSection({ invoices, supplierFilter, drillDownHref }: Inv
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="flex-1 min-h-0 flex items-center justify-center">
+                <p className="text-xs text-[#b5aaa5]">No pending invoices for the selected period.</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </Link>

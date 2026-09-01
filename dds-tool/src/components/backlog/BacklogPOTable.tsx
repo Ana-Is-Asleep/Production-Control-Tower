@@ -86,7 +86,7 @@ export function BacklogPOTable({ rows, today, activeSku, onClearSku, showEsdPass
   const visible = showAll ? filtered : filtered.slice(0, TOP_N);
 
   return (
-    <div className="bg-white rounded-lg border border-[#e9e3df] overflow-hidden flex flex-col h-full" style={{ boxShadow: 'var(--shadow-card)' }}>
+    <div className="bg-white rounded-lg border border-[#e9e3df] overflow-hidden flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
       <div className="px-4 pt-3 flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-baseline gap-2">
           <p className="text-sm font-bold text-[#403833]">Backlog PO Details</p>
@@ -108,10 +108,10 @@ export function BacklogPOTable({ rows, today, activeSku, onClearSku, showEsdPass
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto mt-2">
+      <div className="mt-2">
         <table className="w-full text-xs">
           <thead>
-            <tr className="bg-[#403833] text-white sticky top-0">
+            <tr className="bg-[#403833] text-white">
               <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">PO Number</th>
               <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">PGRD</th>
               <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">EGRD</th>

@@ -18,13 +18,13 @@ export function BacklogBySku({ skus, selectedSku, onSelectSku }: BacklogBySkuPro
   const maxCount = Math.max(1, ...top.map((s) => s.poCount));
 
   return (
-    <div className="bg-white rounded-lg border border-[#e9e3df] p-4 h-full flex flex-col min-h-0" style={{ boxShadow: 'var(--shadow-card)' }}>
+    <div className="bg-white rounded-lg border border-[#e9e3df] p-4 flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
       <p className="text-sm font-bold text-[#403833]">Backlog by SKU</p>
       <p className="text-[11px] text-[#9c9794] mb-3">Top {Math.min(TOP_N, skus.length)} SKUs by current backlog</p>
       {top.length === 0 ? (
         <p className="text-xs text-[#9c9794] py-6 text-center">No backlog in scope</p>
       ) : (
-        <div className="flex-1 min-h-0 overflow-y-auto">
+        <div>
           <table className="w-full text-xs border-collapse">
             <thead>
               <tr className="text-[10px] font-semibold uppercase tracking-wide text-[#9c9794]">

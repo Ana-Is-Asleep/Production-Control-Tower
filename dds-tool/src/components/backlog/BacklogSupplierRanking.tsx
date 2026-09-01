@@ -23,7 +23,6 @@ export function BacklogSupplierRanking({ summary }: BacklogSupplierRankingProps)
         noEsdCount: rest.reduce((s, r) => s + r.noEsdCount, 0),
       }
     : null;
-  const maxCount = Math.max(1, ...top.map((s) => s.count));
 
   return (
     <div className="bg-white rounded-lg border border-[#e9e3df] p-4 h-full flex flex-col min-h-0" style={{ boxShadow: 'var(--shadow-card)' }}>
@@ -37,7 +36,6 @@ export function BacklogSupplierRanking({ summary }: BacklogSupplierRankingProps)
             <thead>
               <tr className="text-[10px] font-semibold uppercase tracking-wide text-[#9c9794]">
                 <th className="text-left pb-1.5">Supplier</th>
-                <th className="pb-1.5"></th>
                 <th className="text-center pb-1.5 px-2">POs</th>
                 <th className="text-center pb-1.5 px-2">% of backlog</th>
                 <th className="text-center pb-1.5 px-2">Avg Age</th>
@@ -48,11 +46,6 @@ export function BacklogSupplierRanking({ summary }: BacklogSupplierRankingProps)
               {top.map((s) => (
                 <tr key={s.supplier} className="border-t border-[#f4f1ef]">
                   <td className="py-2 font-semibold text-[#403833] whitespace-nowrap">{s.supplier}</td>
-                  <td className="py-2 px-2 w-24">
-                    <div className="h-1.5 rounded-full bg-[#f5f2ee] overflow-hidden">
-                      <div className="h-full rounded-full bg-brand" style={{ width: `${Math.max((s.count / maxCount) * 100, 4)}%` }} />
-                    </div>
-                  </td>
                   <td className="py-2 px-2 text-center text-[#403833]">{s.count}</td>
                   <td className="py-2 px-2 text-center text-[#58524e]">{s.pctOfBacklog}%</td>
                   <td className="py-2 px-2 text-center text-[#58524e]">{s.avgAgeDays}d</td>
@@ -62,7 +55,6 @@ export function BacklogSupplierRanking({ summary }: BacklogSupplierRankingProps)
               {others && (
                 <tr className="border-t border-[#f4f1ef] text-[#7b7571]">
                   <td className="py-2 font-semibold whitespace-nowrap">Others</td>
-                  <td className="py-2 px-2"></td>
                   <td className="py-2 px-2 text-center">{others.count}</td>
                   <td className="py-2 px-2 text-center">{others.pctOfBacklog}%</td>
                   <td className="py-2 px-2 text-center">{others.avgAgeDays}d</td>
@@ -71,7 +63,6 @@ export function BacklogSupplierRanking({ summary }: BacklogSupplierRankingProps)
               )}
               <tr className="border-t-2 border-[#403833] font-bold text-[#403833]">
                 <td className="py-2">Total</td>
-                <td className="py-2 px-2"></td>
                 <td className="py-2 px-2 text-center">{summary.reduce((s, r) => s + r.count, 0)}</td>
                 <td className="py-2 px-2 text-center">100%</td>
                 <td className="py-2 px-2 text-center">

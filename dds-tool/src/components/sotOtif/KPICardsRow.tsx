@@ -1,14 +1,13 @@
 'use client';
 
 import type { LucideIcon } from 'lucide-react';
-import { CalendarCheck2, Clock, HelpCircle, Timer } from 'lucide-react';
+import { CalendarCheck2, Clock, Timer } from 'lucide-react';
 
 interface KPICardsRowProps {
   sotTarget: number;
   totalPOs: number;
   onTimeCount: number;
   lateCount: number;
-  notSotPredictedCount: number;
   avgDelayDays: number | null;
   weekLabel: string | null;
 }
@@ -42,13 +41,12 @@ function IconStatCard({ icon: Icon, tint, label, value, sub }: { icon: LucideIco
 // currently selected (full period when no week is picked). SOT/OTIF themselves are shown as
 // boxed cards beside the chart (see SotOtifDrilldown), so this row covers the supporting
 // volume/timing metrics instead.
-export function KPICardsRow({ totalPOs, onTimeCount, lateCount, notSotPredictedCount, avgDelayDays, weekLabel, sotTarget }: KPICardsRowProps) {
+export function KPICardsRow({ totalPOs, onTimeCount, lateCount, avgDelayDays, weekLabel, sotTarget }: KPICardsRowProps) {
   return (
     <div className="flex gap-2 px-4 pb-2 pt-2 shrink-0">
       <IconStatCard icon={CalendarCheck2} tint="brand" label="POs in Last Completed Week" value={String(totalPOs)} sub={weekLabel ?? undefined} />
       <IconStatCard icon={Clock} tint="pass" label="On Time (OTIF)" value={String(onTimeCount)} />
       <IconStatCard icon={Clock} tint="fail" label="Late" value={String(lateCount)} />
-      <IconStatCard icon={HelpCircle} tint="neutral" label="Not SOT Predicted" value={String(notSotPredictedCount)} />
       <IconStatCard icon={Timer} tint="brand" label="Avg Delay (Late POs)" value={avgDelayDays !== null ? `${avgDelayDays} days` : '—'} />
       <div className="rounded-lg border border-[#e9e3df] px-4 py-2.5 flex flex-col items-center justify-center shrink-0 w-[100px]" style={{ background: '#f0ede9' }}>
         <p className="text-[9px] tracking-widest text-[#9c9794]">Target</p>

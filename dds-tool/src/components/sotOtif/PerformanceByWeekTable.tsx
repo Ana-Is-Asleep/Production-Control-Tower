@@ -12,6 +12,7 @@ interface PerformanceByWeekTableProps {
   weeksInRange: WeekInRange[];
   isChinaSupplier: IsChinaSupplier;
   today: Date;
+  onWeekClick?: (weekLabel: string) => void;
 }
 
 function cellTint(pct: number | null): string {
@@ -23,7 +24,7 @@ function cellTint(pct: number | null): string {
 
 // Same weeks shown on the chart above, collapsed into a compact SOT%/OTIF%/volume grid — lets you
 // scan every week's numbers at once rather than reading them off the chart one point at a time.
-export function PerformanceByWeekTable({ lines, weeksInRange, isChinaSupplier, today }: PerformanceByWeekTableProps) {
+export function PerformanceByWeekTable({ lines, weeksInRange, isChinaSupplier, today, onWeekClick }: PerformanceByWeekTableProps) {
   const columns = useMemo(() => {
     return weeksInRange.map((week) => {
       const weekLines = lines.filter((l) => l.pgrd && getISOWeek(l.pgrd) === week.week && getISOWeekYear(l.pgrd) === week.year);
@@ -43,7 +44,13 @@ export function PerformanceByWeekTable({ lines, weeksInRange, isChinaSupplier, t
               <th className="text-left px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-[#9c9794] whitespace-nowrap sticky left-0 bg-white">Metric</th>
               {columns.map((c) => (
                 <th key={c.label} className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-[#9c9794] whitespace-nowrap text-center">
-                  {c.label}{c.isLatest ? ' (Latest)' : ''}
+                  {onWeekClick ? (
+                    <button onClick={() => onWeekClick(c.label)} className="hover:text-brand hover:underline transition-colors">
+                      {c.label}{c.isLatest ? ' (Latest)' : ''}
+                    </button>
+                  ) : (
+                    <>{c.label}{c.isLatest ? ' (Latest)' : ''}</>
+                  )}
                 </th>
               ))}
             </tr>
