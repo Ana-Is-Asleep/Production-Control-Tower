@@ -10,6 +10,7 @@ import { useKPIs } from '../../hooks/useKPIs';
 import { useVendorMapping } from '../../hooks/useVendorMapping';
 import { Sidebar } from '../shell/Sidebar';
 import { PageHeader } from '../shell/PageHeader';
+import { KpiBox } from '../shared/KpiBox';
 import { TopGraphChart } from '../sections/TopGraphChart';
 import { KPICardsRow } from './KPICardsRow';
 import { ScorecardMatrix } from './ScorecardMatrix';
@@ -21,6 +22,10 @@ import { rollupByPO } from '../../lib/poAggregation';
 import { aggregateSOTRate, aggregateOTIFRate } from '../../lib/kpiFormulas';
 import { getISOWeek, getISOWeekYear } from '../../lib/dateUtils';
 import { parseSotOtifParams, buildSotOtifParams } from '../../lib/sotOtifParams';
+
+function pctLabel(v: number | null) {
+  return v === null ? '—' : `${v}%`;
+}
 
 export function SotOtifDrilldown() {
   const router = useRouter();
@@ -111,12 +116,31 @@ export function SotOtifDrilldown() {
     if (!lastCompleted) return scopeLines;
     return weekRangeLines.filter((l) => l.pgrd && getISOWeek(l.pgrd) === lastCompleted.week && getISOWeekYear(l.pgrd) === lastCompleted.year);
   }, [selectedWeek, scopeLines, weekRangeLines, weeksInRange]);
+  const kpiWeekLabel = selectedWeek?.label ?? weeksInRange.find((w) => w.isCurrent)?.label ?? null;
 
   const scopeRollups = useMemo(() => rollupByPO(kpiLines, isChinaSupplier, today), [kpiLines, isChinaSupplier, today]);
   const scopeSOT = useMemo(() => aggregateSOTRate(kpiLines, isChinaSupplier, today), [kpiLines, isChinaSupplier, today]);
   const scopeOTIF = useMemo(() => aggregateOTIFRate(kpiLines, isChinaSupplier), [kpiLines, isChinaSupplier]);
   const onTimeCount = scopeRollups.filter((r) => r.sot === true).length;
   const lateCount = scopeRollups.filter((r) => r.sot === false).length;
+  // "Not SOT Predicted" — POs where SOT is still undetermined (future PGRD week with no ESD yet
+  // to project from), i.e. computeSOTLine's null case. Not a new calculation, just a new count
+  // over the same per-PO rollup result already computed above.
+  const notSotPredictedCount = scopeRollups.filter((r) => r.sot === null).length;
+  // Avg delay among POs that actually missed SOT: ship date (ASD if shipped, else ESD) minus
+  // PGRD, in days — only counted when that gap is positive, since a "late" PO by the SOT week
+  // rule could still have a same-week ship date a few days after PGRD's week started.
+  const avgDelayDays = useMemo(() => {
+    const delays = scopeRollups
+      .filter((r) => r.sot === false && r.pgrd)
+      .map((r) => {
+        const shipDate = r.asd ?? r.esd;
+        if (!shipDate) return null;
+        return Math.round((shipDate.getTime() - r.pgrd!.getTime()) / 86400000);
+      })
+      .filter((d): d is number => d !== null && d > 0);
+    return delays.length ? Math.round((delays.reduce((s, d) => s + d, 0) / delays.length) * 10) / 10 : null;
+  }, [scopeRollups]);
 
   // Mode B: this supplier's rollups for the currently selected week (PO list only loads once a
   // week tile is clicked, per spec)
@@ -189,10 +213,32 @@ export function SotOtifDrilldown() {
       {/* Top section — persistent chart + context-aware KPI cards, ~35% of screen height.
           A real flex column (not a hardcoded height subtraction) so the KPI row can never
           overflow the container and spill onto the scrollable section below it. */}
-      <div className="shrink-0 flex flex-col overflow-hidden" style={{ height: '35vh' }}>
-        <div className="flex-1 min-h-0 px-4 pt-3">
-          <TopGraphChart points={kpis.topGraph} onWeekClick={handleChartWeekClick} />
-        </div>
+      <div className="shrink-0 flex flex-col overflow-hidden" style={{ height: '38vh' }}>
+        {!isModeB ? (
+          <div className="flex-1 min-h-0 px-4 pt-3 flex gap-3">
+            <div className="flex flex-col gap-2 shrink-0 w-[180px]">
+              <KpiBox
+                label={`SOT · ${kpis.sotTarget}% target`}
+                value={pctLabel(scopeSOT)}
+                valueClassName={`text-2xl ${scopeSOT === null ? 'text-[#c8c0bb]' : scopeSOT >= kpis.sotTarget ? 'text-pass' : 'text-fail'}`}
+                tint={scopeSOT === null ? 'neutral' : scopeSOT >= kpis.sotTarget ? 'pass' : 'fail'}
+              />
+              <KpiBox
+                label={`OTIF · ${kpis.otifTarget}% target`}
+                value={pctLabel(scopeOTIF)}
+                valueClassName={`text-2xl ${scopeOTIF === null ? 'text-[#c8c0bb]' : scopeOTIF >= kpis.otifTarget ? 'text-pass' : 'text-fail'}`}
+                tint={scopeOTIF === null ? 'neutral' : scopeOTIF >= kpis.otifTarget ? 'pass' : 'fail'}
+              />
+            </div>
+            <div className="flex-1 min-h-0 min-w-0">
+              <TopGraphChart points={kpis.topGraph} onWeekClick={handleChartWeekClick} />
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 min-h-0 px-4 pt-3">
+            <TopGraphChart points={kpis.topGraph} onWeekClick={handleChartWeekClick} />
+          </div>
+        )}
         <KPICardsRow
           sotPct={scopeSOT}
           otifPct={scopeOTIF}
@@ -201,6 +247,9 @@ export function SotOtifDrilldown() {
           totalPOs={scopeRollups.length}
           onTimeCount={onTimeCount}
           lateCount={lateCount}
+          notSotPredictedCount={notSotPredictedCount}
+          avgDelayDays={avgDelayDays}
+          weekLabel={kpiWeekLabel}
           compact={isModeB}
         />
       </div>

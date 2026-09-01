@@ -25,6 +25,7 @@ export function TopGraphChart({ points, onWeekClick }: TopGraphChartProps) {
             { label: 'POs Requested', color: BAR_TOTAL, type: 'bar' },
             { label: 'SOT %', color: LINE_SOT, type: 'line' },
             { label: 'OTIF %', color: LINE_OTIF, type: 'line' },
+            { label: 'Target (90%)', color: COLOR.muted, type: 'dashed-line' },
           ]}
         />
         <span className="text-[10px] text-[#b5aaa5] italic">(dashed = projected)</span>
