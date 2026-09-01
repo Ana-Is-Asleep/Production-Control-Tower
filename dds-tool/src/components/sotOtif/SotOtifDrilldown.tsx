@@ -18,9 +18,12 @@ import { SupplierKpiStrip } from './SupplierKpiStrip';
 import { ScorecardMatrix } from './ScorecardMatrix';
 import { PerformanceByWeekTable } from './PerformanceByWeekTable';
 import { KeyInsightsPanel } from './KeyInsightsPanel';
+import { SupplierKeyInsights } from './SupplierKeyInsights';
+import { PerformanceConsistency } from './PerformanceConsistency';
+import { LatenessProfile } from './LatenessProfile';
 import { WeekStrip } from './WeekStrip';
 import { POList } from './POList';
-import { rollupByPO } from '../../lib/poAggregation';
+import { rollupByPO, computeConsistencyStats } from '../../lib/poAggregation';
 import { aggregateSOTRate, aggregateOTIFRate } from '../../lib/kpiFormulas';
 import { getISOWeek, getISOWeekYear } from '../../lib/dateUtils';
 import { parseSotOtifParams, buildSotOtifParams } from '../../lib/sotOtifParams';
@@ -77,9 +80,11 @@ export function SotOtifDrilldown() {
 
   const handleSelectWeek = (week: WeekInRange) => setSelectedWeek(week);
   const handleDeselectWeek = () => setSelectedWeek(null);
+  // only completed weeks are selectable — a projected/future week has no actual PO outcomes yet
+  // for the KPI row, lateness profile, or PO table to describe
   const handleChartWeekClick = (weekLabel: string) => {
     const match = weeksInRange.find((w) => w.label === weekLabel);
-    if (match) setSelectedWeek(match);
+    if (match && !match.isFuture) setSelectedWeek(match);
   };
 
   const isModeB = filters.suppliers.length === 1;
@@ -99,8 +104,9 @@ export function SotOtifDrilldown() {
     if (autoSelectedForSupplier.current === selectedSupplier) return;
     autoSelectedForSupplier.current = selectedSupplier;
     if (selectedWeek || weeksInRange.length === 0) return;
-    const defaultWeek = weeksInRange.find((w) => w.isCurrent) ?? weeksInRange[weeksInRange.length - 1];
-    setSelectedWeek(defaultWeek);
+    // fall back to the most recent COMPLETED week in range, never a projected one
+    const defaultWeek = weeksInRange.find((w) => w.isCurrent) ?? [...weeksInRange].reverse().find((w) => !w.isFuture);
+    if (defaultWeek) setSelectedWeek(defaultWeek);
   }, [isModeB, selectedSupplier, selectedWeek, weeksInRange]);
 
   // scope for Mode A's risk/concentration sections: the selected week's POs, or the full period
@@ -147,6 +153,30 @@ export function SotOtifDrilldown() {
     return delays.length ? Math.round((delays.reduce((s, d) => s + d, 0) / delays.length) * 10) / 10 : null;
   }, [scopeRollups]);
 
+  // Mode B: per-week SOT/OTIF/volume for this supplier across the selected historical range,
+  // completed weeks only (a projected week isn't a real outcome yet) — feeds Performance
+  // Consistency and the supplier-specific Key Insights below.
+  const completedWeekPoints = useMemo(() => {
+    if (!isModeB) return [];
+    return weeksInRange.filter((w) => !w.isFuture).map((w) => {
+      const wLines = weekRangeLines.filter((l) => l.pgrd && getISOWeek(l.pgrd) === w.week && getISOWeekYear(l.pgrd) === w.year);
+      const poCount = new Set(wLines.map((l) => l.po)).size;
+      return {
+        label: w.label,
+        sot: poCount > 0 ? aggregateSOTRate(wLines, isChinaSupplier, today) : null,
+        otif: poCount > 0 ? aggregateOTIFRate(wLines, isChinaSupplier) : null,
+        poCount,
+      };
+    });
+  }, [isModeB, weeksInRange, weekRangeLines, isChinaSupplier, today]);
+  const consistencyStats = useMemo(
+    () => computeConsistencyStats(completedWeekPoints, kpis.sotTarget),
+    [completedWeekPoints, kpis.sotTarget]
+  );
+  const periodLabel = weeksInRange.length
+    ? `${weeksInRange[0].label}–${weeksInRange[weeksInRange.length - 1].label}`
+    : '';
+
   // Mode B: this supplier's rollups for the currently selected week (PO list only loads once a
   // week tile is clicked, per spec)
   const supplierWeekLines = useMemo(() => {
@@ -180,7 +210,11 @@ export function SotOtifDrilldown() {
       <Sidebar />
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         <PageHeader
-          breadcrumb={[{ label: 'Dashboard', href: '/' }, { label: 'SOT / OTIF Performance' }]}
+          breadcrumb={
+            isModeB
+              ? [{ label: 'Overview', href: '/' }, { label: 'SOT / OTIF Detail' }]
+              : [{ label: 'Dashboard', href: '/' }, { label: 'SOT / OTIF Performance' }]
+          }
           filters={filters}
           onChange={handleFilterChange}
           allSuppliers={allSuppliers}
@@ -296,7 +330,6 @@ export function SotOtifDrilldown() {
             lateCount={lateCount}
             otifOnCount={otifOnCount}
             otifOffCount={otifOffCount}
-            avgDelayDays={avgDelayDays}
           />
         )}
       </div>
@@ -363,7 +396,22 @@ export function SotOtifDrilldown() {
             </div>
           </div>
         ) : (
-          <div className="p-4 space-y-3">
+          <div className="p-4 space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
+              <SupplierKeyInsights
+                weekLabel={selectedWeek?.label ?? null}
+                sotPct={scopeSOT}
+                otifPct={scopeOTIF}
+                sotTarget={kpis.sotTarget}
+                otifTarget={kpis.otifTarget}
+                lateCount={lateCount}
+                posInScope={scopeRollups.length}
+                consistency={consistencyStats}
+              />
+              <PerformanceConsistency stats={consistencyStats} periodLabel={periodLabel} />
+              <LatenessProfile rollups={supplierWeekRollups} weekLabel={selectedWeek?.label ?? null} />
+            </div>
+
             <WeekStrip
               lines={weekRangeLines.filter((l) => l.supplier === selectedSupplier)}
               weeksInRange={weeksInRange}
@@ -373,7 +421,7 @@ export function SotOtifDrilldown() {
               onSelectWeek={handleSelectWeek}
             />
             {selectedWeek ? (
-              <POList rollups={supplierWeekRollups} today={today} />
+              <POList rollups={supplierWeekRollups} today={today} weekLabel={selectedWeek.label} />
             ) : (
               <p className="text-xs text-[#9c9794] px-1">Select a week above to see its POs</p>
             )}

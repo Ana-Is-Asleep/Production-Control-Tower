@@ -78,6 +78,48 @@ export function rollupByPO(lines: PurchaseLine[], isChinaSupplier: IsChinaSuppli
   return rows;
 }
 
+export interface WeekConsistencyPoint {
+  label: string;
+  sot: number | null;
+  otif: number | null;
+  poCount: number;
+}
+
+export interface ConsistencyStats {
+  weeksMeetingTarget: number;
+  weeksBelowTarget: number;
+  completedWeeksCount: number;
+  avgSOT: number | null;
+  avgOTIF: number | null;
+  bestWeek: WeekConsistencyPoint | null;
+  worstWeek: WeekConsistencyPoint | null;
+}
+
+// Strategic-consistency read of the selected historical period: how many of the COMPLETED weeks
+// (the caller excludes projected/future weeks before calling this) actually hit the SOT target,
+// and which week was best/worst — answers "is this supplier reliable" rather than restating a trend.
+export function computeConsistencyStats(completedWeeks: WeekConsistencyPoint[], sotTarget: number): ConsistencyStats {
+  const withSOT = completedWeeks.filter((w) => w.sot !== null);
+  const weeksMeetingTarget = withSOT.filter((w) => (w.sot as number) >= sotTarget).length;
+  const avgSOT = withSOT.length ? Math.round(withSOT.reduce((s, w) => s + (w.sot as number), 0) / withSOT.length) : null;
+
+  const withOTIF = completedWeeks.filter((w) => w.otif !== null);
+  const avgOTIF = withOTIF.length ? Math.round(withOTIF.reduce((s, w) => s + (w.otif as number), 0) / withOTIF.length) : null;
+
+  const bestWeek = withSOT.length ? withSOT.reduce((a, b) => ((b.sot as number) > (a.sot as number) ? b : a)) : null;
+  const worstWeek = withSOT.length ? withSOT.reduce((a, b) => ((b.sot as number) < (a.sot as number) ? b : a)) : null;
+
+  return {
+    weeksMeetingTarget,
+    weeksBelowTarget: withSOT.length - weeksMeetingTarget,
+    completedWeeksCount: withSOT.length,
+    avgSOT,
+    avgOTIF,
+    bestWeek,
+    worstWeek,
+  };
+}
+
 export type Trend = 'up' | 'down' | 'flat';
 
 // Compares the average SOT rate of the last 2 weeks (in the given ordered week list) against the

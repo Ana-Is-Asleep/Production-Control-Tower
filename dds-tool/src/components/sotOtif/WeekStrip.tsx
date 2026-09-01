@@ -16,8 +16,9 @@ interface WeekStripProps {
 }
 
 // Mode B — one tile per week for the selected supplier. Clicking a tile drives the PO list below.
-// Colour reflects that week's actual SOT% tier, not a fixed color — light tint when unselected,
-// solid fill + white text when selected. A week with no POs gets a neutral grey tile with no
+// Tile background always reflects that week's own SOT% tier (performance status); selection is a
+// separate, fixed-color signal (brand-orange border + top indicator + shadow) so the two states
+// never get confused with each other. A week with no POs gets a neutral grey tile with no
 // percentage shown at all, since there's nothing to report.
 export function WeekStrip({ lines, weeksInRange, isChinaSupplier, today, selectedWeek, onSelectWeek }: WeekStripProps) {
   return (
@@ -33,20 +34,21 @@ export function WeekStrip({ lines, weeksInRange, isChinaSupplier, today, selecte
           <button
             key={`${w.year}-${w.week}`}
             onClick={() => onSelectWeek(w)}
-            className="shrink-0 w-20 rounded-lg text-center transition-all"
-            style={
-              isSelected
-                ? { background: palette.darkBg, boxShadow: '0 2px 6px rgba(44,40,37,0.18)' }
-                : { background: palette.lightBg }
-            }
+            className="relative shrink-0 w-20 rounded-lg text-center transition-all"
+            style={{
+              background: palette.lightBg,
+              border: isSelected ? '2px solid #ff7700' : '2px solid transparent',
+              boxShadow: isSelected ? '0 3px 8px rgba(255,119,0,0.25)' : 'none',
+            }}
           >
-            <p className={`text-[10px] font-semibold pt-2 ${isSelected ? 'text-white/80' : 'text-[#9c9794]'}`}>{w.label}</p>
+            {isSelected && <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-brand" />}
+            <p className="text-[10px] font-semibold pt-2 text-[#9c9794]">{w.label}</p>
             {poCount > 0 && (
-              <p className="text-base font-extrabold" style={{ color: isSelected ? '#fff' : palette.lightText }}>
+              <p className="text-base font-extrabold" style={{ color: palette.lightText }}>
                 {sotPct}%
               </p>
             )}
-            <p className={`text-[9px] pb-2 ${poCount > 0 ? '' : 'pt-1.5'} ${isSelected ? 'text-white/80' : 'text-[#9c9794]'}`}>
+            <p className={`text-[9px] pb-2 text-[#9c9794] ${poCount > 0 ? '' : 'pt-1.5'}`}>
               {poCount > 0 ? `${poCount} PO${poCount === 1 ? '' : 's'}` : 'No POs'}
             </p>
           </button>
