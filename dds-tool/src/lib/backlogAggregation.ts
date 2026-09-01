@@ -19,6 +19,7 @@ export interface BacklogPORow {
   ageBucket: AgeBucket;
   hasEsd: boolean;
   esdPassedNoAsd: boolean; // status label: ESD booked but already passed without clearing
+  lines: PurchaseLine[]; // this PO's own lines — SKU-level detail for expandable rows / SKU rollups
 }
 
 export interface ExpectedPORow {
@@ -72,6 +73,7 @@ export function computeBacklogRows(lines: PurchaseLine[], today: Date = new Date
       ageBucket: isAccumulated ? 'accumulated' : 'recent',
       hasEsd: esd !== null,
       esdPassedNoAsd: esd !== null && esd < today,
+      lines: poLines,
     });
   }
 
@@ -199,6 +201,40 @@ export function computeSupplierBacklogSummary(rows: BacklogPORow[]): SupplierBac
       noEsdCount: poRows.filter((r) => !r.hasEsd).length,
     }))
     .sort((a, b) => b.count - a.count);
+}
+
+export interface SkuBacklogRow {
+  sku: string;
+  poCount: number; // distinct backlog POs containing this SKU (a PO can count toward more than one SKU)
+  pctOfBacklog: number;
+  avgAgeDays: number;
+  noEsdCount: number;
+}
+
+// Which actual products are driving this backlog. No SKU description text exists anywhere in this
+// data source (only the bare SKU code) — shown as-is rather than fabricating a human-readable name.
+export function computeBacklogBySKU(rows: BacklogPORow[]): SkuBacklogRow[] {
+  const bySku = new Map<string, { poSet: Set<string>; ageSum: number; noEsd: number }>();
+  for (const r of rows) {
+    const skus = new Set(r.lines.map((l) => l.sku).filter(Boolean));
+    for (const sku of skus) {
+      const cur = bySku.get(sku) ?? { poSet: new Set<string>(), ageSum: 0, noEsd: 0 };
+      cur.poSet.add(r.po);
+      cur.ageSum += r.ageDays;
+      if (!r.hasEsd) cur.noEsd += 1;
+      bySku.set(sku, cur);
+    }
+  }
+  const total = rows.length;
+  return [...bySku.entries()]
+    .map(([sku, v]) => ({
+      sku,
+      poCount: v.poSet.size,
+      pctOfBacklog: total ? Math.round((v.poSet.size / total) * 100) : 0,
+      avgAgeDays: Math.round(v.ageSum / v.poSet.size),
+      noEsdCount: v.noEsd,
+    }))
+    .sort((a, b) => b.poCount - a.poCount);
 }
 
 export function findOutliers(rows: BacklogPORow[], curWeek: number, curYear: number): BacklogPORow[] {

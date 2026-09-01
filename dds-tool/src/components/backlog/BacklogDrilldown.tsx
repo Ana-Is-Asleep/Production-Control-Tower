@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Download, MoreVertical } from 'lucide-react';
@@ -10,15 +10,20 @@ import { currentISOWeek } from '../../lib/dateUtils';
 import { parseBacklogParams, buildBacklogParams } from '../../lib/backlogParams';
 import {
   computeBacklogRows, computeExpectedRows, computeAgeBands, computeClearanceForecast,
-  computeExpectedByPgrdWeek, findOutliers, computeSupplierBacklogSummary, anchorWeek,
+  computeExpectedByPgrdWeek, findOutliers, computeSupplierBacklogSummary, computeBacklogBySKU, anchorWeek,
 } from '../../lib/backlogAggregation';
 import { Sidebar } from '../shell/Sidebar';
 import { PageHeader } from '../shell/PageHeader';
+import { SupplierInfoCard } from '../sotOtif/SupplierInfoCard';
 import { BacklogTopCards } from './BacklogTopCards';
 import { BacklogClearanceForecast } from './BacklogClearanceForecast';
 import { BacklogKeyInsights } from './BacklogKeyInsights';
+import { BacklogSupplierInsights } from './BacklogSupplierInsights';
 import { BacklogAgeBreakdown } from './BacklogAgeBreakdown';
 import { BacklogSupplierRanking } from './BacklogSupplierRanking';
+import { BacklogBySku } from './BacklogBySku';
+import { BacklogEsdPassedCallout } from './BacklogEsdPassedCallout';
+import { BacklogPOTable } from './BacklogPOTable';
 import { BacklogOutlierCallout } from './BacklogOutlierCallout';
 
 export function BacklogDrilldown() {
@@ -60,6 +65,19 @@ export function BacklogDrilldown() {
   const outliers = useMemo(() => findOutliers(rows, lastCompletedWk, lastCompletedYr), [rows, lastCompletedWk, lastCompletedYr]);
   const supplierSummary = useMemo(() => computeSupplierBacklogSummary(rows), [rows]);
 
+  const isModeB = filters.suppliers.length === 1;
+  const selectedSupplier = isModeB ? filters.suppliers[0] : null;
+  const skuRows = useMemo(() => (isModeB ? computeBacklogBySKU(rows) : []), [isModeB, rows]);
+
+  const [selectedSku, setSelectedSku] = useState<string | null>(null);
+  const [showEsdPassedOnly, setShowEsdPassedOnly] = useState(false);
+  // clear the SKU/ESD-passed table filters when the supplier changes (or Mode B is left) so a
+  // stale filter from a previous supplier can't silently carry over
+  useEffect(() => {
+    setSelectedSku(null);
+    setShowEsdPassedOnly(false);
+  }, [selectedSupplier]);
+
   if (allLines.length === 0) {
     return (
       <div className="h-screen w-full bg-[#f5f2ee] flex overflow-hidden">
@@ -80,7 +98,11 @@ export function BacklogDrilldown() {
       <Sidebar />
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         <PageHeader
-          breadcrumb={[{ label: 'Overview', href: '/' }, { label: 'Backlog Detail' }]}
+          breadcrumb={
+            isModeB
+              ? [{ label: 'Overview', href: '/' }, { label: 'Backlog Detail', href: '/backlog' }, { label: 'Supplier Detail' }]
+              : [{ label: 'Overview', href: '/' }, { label: 'Backlog Detail' }]
+          }
           filters={filters}
           onChange={setFilters}
           allSuppliers={allSuppliers}
@@ -108,40 +130,109 @@ export function BacklogDrilldown() {
           }
         />
 
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 flex flex-col gap-3">
-          <div className="shrink-0">
-            <BacklogTopCards
-              rows={rows}
-              recentCount={recentRows.length}
-              accumulatedCount={accumulatedRows.length}
-              noEsdCount={noEsdRows.length}
-              expectedCount={expectedRows.length}
-              expectedByWeek={expectedByWeek}
-              avgAgeDays={avgAgeDays}
-              expectedClearanceCount={rows.length - noEsdRows.length}
-            />
+        {isModeB && (
+          <div className="px-5 py-1.5 bg-white border-b border-[#e9e3df] shrink-0 flex items-center justify-between">
+            <span className="text-xs font-semibold text-pass flex items-center gap-1">✓ Supplier selected</span>
+            <button onClick={() => setFilters({ ...filters, suppliers: [] })} className="text-xs font-medium text-brand hover:underline">
+              Clear supplier
+            </button>
           </div>
+        )}
 
-          <div style={{ flex: '3 1 220px' }} className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch min-h-0">
-            <div className="lg:col-span-2 min-h-0">
-              <BacklogClearanceForecast points={forecast} />
+        {!isModeB ? (
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 flex flex-col gap-3">
+            <div className="shrink-0">
+              <BacklogTopCards
+                rows={rows}
+                recentCount={recentRows.length}
+                accumulatedCount={accumulatedRows.length}
+                noEsdCount={noEsdRows.length}
+                expectedCount={expectedRows.length}
+                expectedByWeek={expectedByWeek}
+                avgAgeDays={avgAgeDays}
+                expectedClearanceCount={rows.length - noEsdRows.length}
+              />
             </div>
-            <BacklogKeyInsights
-              rows={rows}
-              noEsdCount={noEsdRows.length}
-              supplierSummary={supplierSummary}
-              expectedCount={expectedRows.length}
-              expectedByWeek={expectedByWeek}
-            />
-          </div>
 
-          {outliers.length > 0 && <div className="shrink-0"><BacklogOutlierCallout outliers={outliers} /></div>}
+            <div style={{ flex: '3 1 220px' }} className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch min-h-0">
+              <div className="lg:col-span-2 min-h-0">
+                <BacklogClearanceForecast points={forecast} />
+              </div>
+              <BacklogKeyInsights
+                rows={rows}
+                noEsdCount={noEsdRows.length}
+                supplierSummary={supplierSummary}
+                expectedCount={expectedRows.length}
+                expectedByWeek={expectedByWeek}
+              />
+            </div>
 
-          <div style={{ flex: '2 1 160px' }} className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch min-h-0">
-            <BacklogSupplierRanking summary={supplierSummary} />
-            <BacklogAgeBreakdown bands={ageBands} />
+            {outliers.length > 0 && <div className="shrink-0"><BacklogOutlierCallout outliers={outliers} /></div>}
+
+            <div style={{ flex: '2 1 160px' }} className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch min-h-0">
+              <BacklogSupplierRanking summary={supplierSummary} />
+              <BacklogAgeBreakdown bands={ageBands} />
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 flex flex-col gap-3">
+            <div className="shrink-0 flex gap-3">
+              <SupplierInfoCard
+                supplier={selectedSupplier ?? ''}
+                categories={filters.categories}
+                channels={filters.channels}
+              />
+              <div className="flex-1 min-w-0">
+                <BacklogTopCards
+                  rows={rows}
+                  recentCount={recentRows.length}
+                  accumulatedCount={accumulatedRows.length}
+                  noEsdCount={noEsdRows.length}
+                  expectedCount={expectedRows.length}
+                  expectedByWeek={expectedByWeek}
+                  avgAgeDays={avgAgeDays}
+                  expectedClearanceCount={rows.length - noEsdRows.length}
+                />
+              </div>
+            </div>
+
+            <div style={{ flex: '3 1 220px' }} className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch min-h-0">
+              <div className="lg:col-span-2 min-h-0">
+                <BacklogClearanceForecast points={forecast} />
+              </div>
+              <BacklogSupplierInsights
+                rows={rows}
+                noEsdCount={noEsdRows.length}
+                avgAgeDays={avgAgeDays}
+                expectedCount={expectedRows.length}
+                skus={skuRows}
+                expectedByWeek={expectedByWeek}
+              />
+            </div>
+
+            {outliers.length > 0 && <div className="shrink-0"><BacklogOutlierCallout outliers={outliers} /></div>}
+
+            <div style={{ flex: '2 1 160px' }} className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch min-h-0">
+              <BacklogAgeBreakdown bands={ageBands} />
+              <BacklogEsdPassedCallout
+                count={rows.filter((r) => r.esdPassedNoAsd).length}
+                onViewList={() => setShowEsdPassedOnly(true)}
+              />
+            </div>
+
+            <div style={{ flex: '4 1 260px' }} className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-3 items-stretch min-h-0">
+              <BacklogPOTable
+                rows={rows}
+                today={today}
+                activeSku={selectedSku}
+                onClearSku={() => setSelectedSku(null)}
+                showEsdPassedOnly={showEsdPassedOnly}
+                onClearEsdPassedOnly={() => setShowEsdPassedOnly(false)}
+              />
+              <BacklogBySku skus={skuRows} selectedSku={selectedSku} onSelectSku={setSelectedSku} />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

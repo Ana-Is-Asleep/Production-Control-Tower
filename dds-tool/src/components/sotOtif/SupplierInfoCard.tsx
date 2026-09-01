@@ -7,9 +7,8 @@ interface SupplierInfoCardProps {
   supplier: string;
   categories: SKUCategory[];
   channels: Channel[];
-  weekLabelStart: string;
-  weekLabelEnd: string;
-  weekCount: number;
+  // omitted entirely (not rendered) for current-state pages that have no week-range concept
+  period?: { weekLabelStart: string; weekLabelEnd: string; weekCount: number };
 }
 
 function summarize(values: string[], allLabel: string): string {
@@ -18,7 +17,7 @@ function summarize(values: string[], allLabel: string): string {
   return `${values.length} selected`;
 }
 
-export function SupplierInfoCard({ supplier, categories, channels, weekLabelStart, weekLabelEnd, weekCount }: SupplierInfoCardProps) {
+export function SupplierInfoCard({ supplier, categories, channels, period }: SupplierInfoCardProps) {
   return (
     <div className="bg-white rounded-lg border border-[#e9e3df] p-3 shrink-0 w-[190px] flex flex-col gap-2.5" style={{ boxShadow: 'var(--shadow-card)' }}>
       <div>
@@ -33,10 +32,12 @@ export function SupplierInfoCard({ supplier, categories, channels, weekLabelStar
         <p className="text-[10px] uppercase tracking-widest text-[#9c9794]">Channel</p>
         <p className="text-sm font-bold text-[#403833] truncate mt-0.5">{summarize(channels, 'All channels')}</p>
       </div>
-      <div className="border-t border-[#f4f1ef] pt-2">
-        <p className="text-[10px] uppercase tracking-widest text-[#9c9794]">Evaluating period</p>
-        <p className="text-sm font-bold text-[#403833] mt-0.5">{weekLabelStart} – {weekLabelEnd} <span className="text-[10px] font-medium text-[#9c9794]">({weekCount} weeks)</span></p>
-      </div>
+      {period && (
+        <div className="border-t border-[#f4f1ef] pt-2">
+          <p className="text-[10px] uppercase tracking-widest text-[#9c9794]">Evaluating period</p>
+          <p className="text-sm font-bold text-[#403833] mt-0.5">{period.weekLabelStart} – {period.weekLabelEnd} <span className="text-[10px] font-medium text-[#9c9794]">({period.weekCount} weeks)</span></p>
+        </div>
+      )}
     </div>
   );
 }

@@ -289,9 +289,11 @@ export function SotOtifDrilldown() {
               supplier={selectedSupplier ?? ''}
               categories={filters.categories}
               channels={filters.channels}
-              weekLabelStart={weeksInRange[0]?.label ?? ''}
-              weekLabelEnd={weeksInRange[weeksInRange.length - 1]?.label ?? ''}
-              weekCount={weeksInRange.length}
+              period={{
+                weekLabelStart: weeksInRange[0]?.label ?? '',
+                weekLabelEnd: weeksInRange[weeksInRange.length - 1]?.label ?? '',
+                weekCount: weeksInRange.length,
+              }}
             />
             <div className="flex-1 min-h-0 min-w-0 bg-white rounded-lg border border-[#e9e3df] p-3 flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
               <div className="flex items-center justify-between shrink-0 mb-2">
