@@ -310,40 +310,45 @@ export function SotOtifDrilldown() {
         </div>
       )}
 
-      {/* Bottom section — scrollable, ~65% of screen height */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      {/* Bottom section — fills remaining height; the 3-panel row scrolls internally per-card
+          so "About the metrics" always stays on screen instead of being pushed below the fold. */}
+      <div className="flex-1 min-h-0 overflow-hidden">
         {!isModeB ? (
-          <div className="p-4">
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.3fr_1fr] gap-4 items-stretch">
-              <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
-                <div className="flex items-center justify-between mb-3">
+          <div className="p-4 h-full flex flex-col gap-4">
+            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_1.3fr_1fr] gap-4 items-stretch">
+              <div className="bg-white rounded-lg border border-[#e9e3df] p-4 flex flex-col min-h-0" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <div className="flex items-center justify-between mb-3 shrink-0">
                   <p className="text-sm font-bold text-[#403833]">Performance by Week</p>
                   <span className="text-xs text-brand font-semibold">View data</span>
                 </div>
-                <PerformanceByWeekTable lines={weekRangeLines} weeksInRange={weeksInRange} isChinaSupplier={isChinaSupplier} today={today} />
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                  <PerformanceByWeekTable lines={weekRangeLines} weeksInRange={weeksInRange} isChinaSupplier={isChinaSupplier} today={today} />
+                </div>
               </div>
-              <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
-                <div className="flex items-center justify-between mb-3">
+              <div className="bg-white rounded-lg border border-[#e9e3df] p-4 flex flex-col min-h-0" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <div className="flex items-center justify-between mb-3 shrink-0">
                   <p className="text-sm font-bold text-[#403833]">Supplier Scorecard <span className="text-[11px] font-medium text-[#9c9794]">(Top {Math.min(10, allSuppliers.length)} by volume)</span></p>
                   {allSuppliers.length > 10 && (
-                    <button onClick={() => setScorecardShowAll((v) => !v)} className="text-xs text-brand font-semibold hover:underline">
+                    <button onClick={() => setScorecardShowAll((v) => !v)} className="text-xs text-brand font-semibold hover:underline shrink-0">
                       {scorecardShowAll ? 'Show top 10 only' : `View all (${allSuppliers.length})`}
                     </button>
                   )}
                 </div>
-                <ScorecardMatrix
-                  lines={weekRangeLines}
-                  weeksInRange={weeksInRange}
-                  isChinaSupplier={isChinaSupplier}
-                  today={today}
-                  selectedWeek={selectedWeek}
-                  onSupplierClick={handleSupplierRowClick}
-                  showAll={scorecardShowAll}
-                />
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                  <ScorecardMatrix
+                    lines={weekRangeLines}
+                    weeksInRange={weeksInRange}
+                    isChinaSupplier={isChinaSupplier}
+                    today={today}
+                    selectedWeek={selectedWeek}
+                    onSupplierClick={handleSupplierRowClick}
+                    showAll={scorecardShowAll}
+                  />
+                </div>
               </div>
               <KeyInsightsPanel rollups={scopeRollups} avgDelayDays={avgDelayDays} weekLabel={kpiWeekLabel} />
             </div>
-            <div className="bg-white rounded-lg border border-[#e9e3df] p-4 mt-4" style={{ boxShadow: 'var(--shadow-card)' }}>
+            <div className="bg-white rounded-lg border border-[#e9e3df] p-4 shrink-0" style={{ boxShadow: 'var(--shadow-card)' }}>
               <div className="flex items-center gap-1.5 mb-2">
                 <p className="text-sm font-bold text-[#403833]">About the metrics</p>
                 <Info size={13} className="text-[#9c9794]" />
