@@ -396,8 +396,8 @@ export function SotOtifDrilldown() {
             </div>
           </div>
         ) : (
-          <div className="p-4 space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
+          <div className="p-4 h-full flex flex-col gap-4">
+            <div className="shrink-0 grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
               <SupplierKeyInsights
                 weekLabel={selectedWeek?.label ?? null}
                 sotPct={scopeSOT}
@@ -420,11 +420,13 @@ export function SotOtifDrilldown() {
               selectedWeek={selectedWeek}
               onSelectWeek={handleSelectWeek}
             />
-            {selectedWeek ? (
-              <POList rollups={supplierWeekRollups} today={today} weekLabel={selectedWeek.label} />
-            ) : (
-              <p className="text-xs text-[#9c9794] px-1">Select a week above to see its POs</p>
-            )}
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              {selectedWeek ? (
+                <POList rollups={supplierWeekRollups} today={today} weekLabel={selectedWeek.label} />
+              ) : (
+                <p className="text-xs text-[#9c9794] px-1">Select a week above to see its POs</p>
+              )}
+            </div>
           </div>
         )}
         </div>
