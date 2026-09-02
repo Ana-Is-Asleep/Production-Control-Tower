@@ -1,6 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowRight } from 'lucide-react';
 import { ActionsTabs, type StatusFilter } from './ActionsTabs';
 import type { ActionItem, ActionType } from '../../types/actions';
 
@@ -24,6 +26,7 @@ export function ActionsSidePanel({
   actions, onSave, onAddOpenPoint, filteredPOs, allSuppliers, tab, onTabChange, statusFilter, onStatusFilterChange,
 }: ActionsSidePanelProps) {
   const [expanded, setExpanded] = useState(false);
+  const router = useRouter();
 
   // open (non-closed) actions per supplier — flags respect the same supplier/channel/category
   // filters as the rest of the dashboard; open points without a supplier are excluded here since
@@ -46,6 +49,12 @@ export function ActionsSidePanel({
       <div className="px-4 py-3 border-b border-[#e9e3df] shrink-0">
         <h2 className="text-sm font-semibold text-[#403833]">Actions</h2>
       </div>
+      <button
+        onClick={() => router.push('/actions')}
+        className="flex items-center justify-center gap-1.5 text-xs font-semibold text-brand border-b border-[#e9e3df] py-2.5 hover:bg-[#fff7ed] transition-colors shrink-0"
+      >
+        View all actions <ArrowRight size={13} />
+      </button>
 
       {bySupplier.length > 0 && (
         <div className="px-4 py-3 border-b border-[#e9e3df] shrink-0">

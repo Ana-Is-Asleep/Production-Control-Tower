@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowRight } from 'lucide-react';
 import { ActionsTabs, type StatusFilter } from './ActionsTabs';
 import type { ActionItem, ActionType } from '../../types/actions';
 
@@ -24,6 +26,7 @@ export function ActionsBadgeDrawer({
   actions, onSave, onAddOpenPoint, filteredPOs, allSuppliers, tab, onTabChange, statusFilter, onStatusFilterChange,
 }: ActionsBadgeDrawerProps) {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
   const openCount = actions.filter(
     (a) => a.status !== 'closed' && (a.type === 'open_point' || !a.poReference || filteredPOs.has(a.poReference))
   ).length;
@@ -47,6 +50,12 @@ export function ActionsBadgeDrawer({
             <h2 className="text-sm font-semibold text-[#403833]">Actions</h2>
             <button onClick={() => setOpen(false)} className="text-[#9c9794] hover:text-[#403833] text-lg leading-none">✕</button>
           </div>
+          <button
+            onClick={() => { setOpen(false); router.push('/actions'); }}
+            className="flex items-center justify-center gap-1.5 text-xs font-semibold text-brand border-b border-[#e9e3df] py-2.5 hover:bg-[#fff7ed] transition-colors shrink-0"
+          >
+            View all actions <ArrowRight size={13} />
+          </button>
           <ActionsTabs
             actions={actions} onSave={onSave} onAddOpenPoint={onAddOpenPoint} filteredPOs={filteredPOs} allSuppliers={allSuppliers}
             tab={tab} onTabChange={onTabChange} statusFilter={statusFilter} onStatusFilterChange={onStatusFilterChange}

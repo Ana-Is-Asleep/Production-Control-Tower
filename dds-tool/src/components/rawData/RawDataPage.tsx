@@ -23,7 +23,6 @@ import { MultiCheckDropdown } from '../leadTime/MultiCheckDropdown';
 import { WeekRangeStepper } from '../shared/WeekRangeStepper';
 import { Badge } from '../shared/Badge';
 import { ColumnsPanel } from './ColumnsPanel';
-import { DataDictionaryModal } from './DataDictionaryModal';
 import type { Channel } from '../../lib/channelUtils';
 import type { SKUCategory } from '../../lib/skuUtils';
 
@@ -74,7 +73,6 @@ export function RawDataPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [showDictionary, setShowDictionary] = useState(false);
   const [poVisible, setPoVisible] = useState(new Set(PO_COLUMNS.filter((c) => c.defaultVisible).map((c) => c.id)));
   const [lineVisible, setLineVisible] = useState(new Set(LINE_COLUMNS.filter((c) => c.defaultVisible).map((c) => c.id)));
 
@@ -158,7 +156,6 @@ export function RawDataPage() {
     downloadWorkbook(level === 'po' ? 'Raw Data - PO Level' : 'Raw Data - PO Line Level', [detailSheet('Raw Data', columns, rows)]);
   };
 
-  const allDictEntries = useMemo(() => [...PO_COLUMNS.map((c) => c.dict), ...LINE_COLUMNS.map((c) => c.dict)], []);
   const uniquePOs = useMemo(() => new Set(scoped.map((l) => l.po)).size, [scoped]);
   const dateRangeLabel = weekKeySet.size > 0
     ? `${dateFieldDef.id.toUpperCase()}: W${String(shiftISOWeek(curWeek, curYear, weekRange.start).week).padStart(2, '0')} ${shiftISOWeek(curWeek, curYear, weekRange.start).year} – W${String(shiftISOWeek(curWeek, curYear, weekRange.end).week).padStart(2, '0')} ${shiftISOWeek(curWeek, curYear, weekRange.end).year}`
@@ -192,9 +189,9 @@ export function RawDataPage() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-[#9c9794]">Last refreshed: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
-            <button onClick={() => setShowDictionary(true)} className="flex items-center gap-1.5 text-xs font-semibold text-[#403833] border border-[#e9e3df] rounded-lg px-3 py-1.5 hover:border-[#403833] transition-colors">
+            <Link href="/data-dictionary" className="flex items-center gap-1.5 text-xs font-semibold text-[#403833] border border-[#e9e3df] rounded-lg px-3 py-1.5 hover:border-[#403833] transition-colors">
               <BookOpen size={13} /> Data dictionary
-            </button>
+            </Link>
             <button onClick={handleExport} className="flex items-center gap-1.5 text-xs font-semibold text-white bg-brand rounded-lg px-3 py-1.5 hover:bg-brand-soft transition-colors">
               <Download size={13} /> Export
             </button>
@@ -349,7 +346,6 @@ export function RawDataPage() {
         </div>
       </div>
 
-      {showDictionary && <DataDictionaryModal entries={allDictEntries} onClose={() => setShowDictionary(false)} />}
     </div>
   );
 }
