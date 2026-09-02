@@ -1,3 +1,5 @@
+'use client';
+
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutGrid, FileBarChart, Database } from 'lucide-react';
 
@@ -8,13 +10,12 @@ interface NavItem {
   href: string | null; // null = not a real page yet
 }
 
-// "Raw data" is still a placeholder nav entry — no such page exists yet, so it renders disabled.
-// Dashboard and Reports are real routes; which one is highlighted is driven by the current path,
-// not a hardcoded flag, so this stays correct as more routes are added.
+// Dashboard, Reports and Raw Data are all real routes; which one is highlighted is driven by the
+// current path, not a hardcoded flag, so this stays correct as more routes are added.
 const NAV_ITEMS: NavItem[] = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutGrid, href: '/' },
   { key: 'reports', label: 'Reports', icon: FileBarChart, href: '/reports' },
-  { key: 'raw-data', label: 'Raw data', icon: Database, href: null },
+  { key: 'raw-data', label: 'Raw data', icon: Database, href: '/raw-data' },
 ];
 
 // Fixed light-theme left navigation shell — tokens (colors, radius, spacing) follow the Emma
@@ -33,7 +34,9 @@ export function Sidebar() {
           const Icon = item.icon;
           // Dashboard covers every drill-down page too (they're all reached from it, per their
           // own "Dashboard > ..." breadcrumbs) — it's active whenever no other real route matches.
-          const isActive = item.key === 'dashboard' ? !pathname.startsWith('/reports') : item.href !== null && pathname.startsWith(item.href);
+          const isActive = item.key === 'dashboard'
+            ? !pathname.startsWith('/reports') && !pathname.startsWith('/raw-data')
+            : item.href !== null && pathname.startsWith(item.href);
           const className = `w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[13px] transition-colors ${
             isActive
               ? 'bg-[#f5f2ee] text-[#1c1612] font-bold'

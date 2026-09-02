@@ -134,7 +134,7 @@ function summarySheet(reportName: string, filterLabel: string, kpis: ReportKpi[]
 // Generic detail-sheet builder — auto-styles by JS type (Date -> real Excel date, number ->
 // thousands-formatted, else plain text) so every "PO Detail"/"Line Detail" sheet gets header
 // styling, a frozen header row and a filter without each report builder repeating the boilerplate.
-function detailSheet(name: string, columns: string[], rows: (string | number | Date | null | undefined)[][]): SheetDef {
+export function detailSheet(name: string, columns: string[], rows: (string | number | Date | null | undefined)[][]): SheetDef {
   const header: CellValue[] = columns.map((c) => ({ value: c, style: 'tableHeader' }));
   const body: CellValue[][] = rows.map((r) => r.map((v): CellValue => {
     if (v instanceof Date) return dateCell(v);
