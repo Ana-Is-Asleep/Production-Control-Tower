@@ -1,4 +1,4 @@
-import type { CustomReportConfig } from './reportBuilders';
+import { DEFAULT_REPORT_CONFIG, type CustomReportConfig } from './reportBuilders';
 
 // Saved Reports store CONFIGURATION only (level/group/metrics/filters) — never a data snapshot
 // and never a custom formula. Reopening a saved report reruns it against whatever data is
@@ -16,11 +16,23 @@ export interface SavedReport {
 
 const STORAGE_KEY = 'pct_saved_reports_v1';
 
+// Backfills configs saved before the Scope/Time-basis/Structure wizard fields existed, so reports
+// saved with the older {level, groupBy, metrics} shape still reopen instead of crashing on the
+// now-required config.scope.* lookups.
+function withConfigDefaults(config: Partial<CustomReportConfig>): CustomReportConfig {
+  return {
+    ...DEFAULT_REPORT_CONFIG,
+    ...config,
+    scope: { ...DEFAULT_REPORT_CONFIG.scope, ...config.scope },
+  };
+}
+
 export function loadSavedReports(): SavedReport[] {
   if (typeof window === 'undefined') return [];
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const reports: SavedReport[] = raw ? JSON.parse(raw) : [];
+    return reports.map((r) => ({ ...r, config: withConfigDefaults(r.config) }));
   } catch {
     return [];
   }
