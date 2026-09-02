@@ -26,6 +26,9 @@ export interface InvoiceKPIs {
   approvedNotPaid: InvoiceRow[];
   approvedNotPaidOverdue: InvoiceRow[];
   approvedNotPaidNotYetDue: InvoiceRow[];
+  // Card 5: blocked on goods receipt — the exact inverse of the MISSINGGR exclusion Card 1 applies
+  missingGR: InvoiceRow[];
+  missingGROverdue: InvoiceRow[];
 }
 
 export type InvoiceChannel = 'All' | 'Online' | 'Offline';

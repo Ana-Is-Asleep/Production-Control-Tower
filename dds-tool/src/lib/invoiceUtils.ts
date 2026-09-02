@@ -1,4 +1,4 @@
-import { addDays, startOfISOWeek, endOfISOWeek, isBefore } from 'date-fns';
+import { addDays, addWeeks, differenceInCalendarDays, endOfISOWeek, isBefore } from 'date-fns';
 import type { InvoiceRow, InvoiceKPIs, InvoiceChannel } from '../types/invoice';
 
 // SCF = Supply Chain Finance programme
@@ -76,7 +76,15 @@ export function computeKPIs(rows: InvoiceRow[]): InvoiceKPIs {
   const approvedNotPaidOverdue    = approvedNotPaid.filter((r) => r.effectiveDueDate !== null && isBefore(r.effectiveDueDate, today));
   const approvedNotPaidNotYetDue  = approvedNotPaid.filter((r) => r.effectiveDueDate === null || !isBefore(r.effectiveDueDate, today));
 
-  return { overdueP2w, totalPending, dueByEndOfWeek, approvedNotPaid, approvedNotPaidOverdue, approvedNotPaidNotYetDue };
+  // Card 5: blocked on goods receipt — still pending, but held up by MISSINGGR specifically (the
+  // exact inverse of Card 1's exclusion, not a new classification rule)
+  const missingGR = rows.filter((r) =>
+    (r.invoiceStatus === 'Submitted, but not Approved' || r.invoiceStatus === 'Draft') &&
+    r.reasonCode === 'MISSINGGR'
+  );
+  const missingGROverdue = missingGR.filter((r) => r.effectiveDueDate !== null && isBefore(r.effectiveDueDate, today));
+
+  return { overdueP2w, totalPending, dueByEndOfWeek, approvedNotPaid, approvedNotPaidOverdue, approvedNotPaidNotYetDue, missingGR, missingGROverdue };
 }
 
 // groups invoice amounts by currency and formats them for display
@@ -108,6 +116,65 @@ export function filterBySupplierNames(rows: InvoiceRow[], supplierNames: string[
   );
 }
 
+export interface AgingBucket {
+  label: string;
+  rows: InvoiceRow[];
+  amountByCurrency: string;
+}
+
+const AGING_RANGES: { label: string; min: number; max: number | null }[] = [
+  { label: 'Not yet due', min: -Infinity, max: 0 },
+  { label: '1–7 days overdue', min: 1, max: 7 },
+  { label: '8–14 days overdue', min: 8, max: 14 },
+  { label: '15–30 days overdue', min: 15, max: 30 },
+  { label: '> 30 days overdue', min: 31, max: null },
+];
+
+// Pending-approval aging — scoped to the same "still awaiting approval, not blocked by Missing GR"
+// population Card 1's overdue check draws from, just split by how many days overdue (or not yet
+// due) instead of a single before/after-today cut. Rows with no effective due date can't be aged.
+export function computeAgingBuckets(rows: InvoiceRow[], today: Date = new Date()): AgingBucket[] {
+  const scoped = rows.filter((r) => r.invoiceStatus === 'Submitted, but not Approved' && r.reasonCode !== 'MISSINGGR' && r.effectiveDueDate !== null);
+  const buckets: AgingBucket[] = AGING_RANGES.map((r) => ({ label: r.label, rows: [], amountByCurrency: '' }));
+
+  scoped.forEach((r) => {
+    const days = differenceInCalendarDays(today, r.effectiveDueDate!);
+    const idx = AGING_RANGES.findIndex((rg) => days >= rg.min && (rg.max === null || days <= rg.max));
+    if (idx !== -1) buckets[idx].rows.push(r);
+  });
+
+  buckets.forEach((b) => { b.amountByCurrency = formatAmountsByCurrency(b.rows); });
+  return buckets;
+}
+
+export interface DueDateOutlookBucket {
+  label: string;
+  rows: InvoiceRow[];
+  amountByCurrency: string;
+}
+
+// Forward-looking pending exposure by effective due date — scoped to the full "still requiring
+// processing" population (Card 2's totalPending), so it includes Drafts too, not just the
+// awaiting-approval subset the aging chart uses. Overdue rows only ever land in the Overdue
+// bucket, never double-counted into a future window.
+export function computeDueDateOutlook(rows: InvoiceRow[], today: Date = new Date()): DueDateOutlookBucket[] {
+  const thisWeekEnd = endOfISOWeek(today);
+  const nextWeekEnd = endOfISOWeek(addWeeks(today, 1));
+  const fourWeeksEnd = endOfISOWeek(addWeeks(today, 4));
+
+  const buckets: Record<string, InvoiceRow[]> = { Overdue: [], 'This Week': [], 'Next Week': [], '2–4 Weeks': [], Later: [] };
+  rows.forEach((r) => {
+    if (!r.effectiveDueDate) return;
+    if (isBefore(r.effectiveDueDate, today)) buckets.Overdue.push(r);
+    else if (r.effectiveDueDate <= thisWeekEnd) buckets['This Week'].push(r);
+    else if (r.effectiveDueDate <= nextWeekEnd) buckets['Next Week'].push(r);
+    else if (r.effectiveDueDate <= fourWeeksEnd) buckets['2–4 Weeks'].push(r);
+    else buckets.Later.push(r);
+  });
+
+  return Object.entries(buckets).map(([label, bRows]) => ({ label, rows: bRows, amountByCurrency: formatAmountsByCurrency(bRows) }));
+}
+
 export interface SupplierBreakdown {
   name: string;
   invoiceAccount: string;
@@ -130,4 +197,53 @@ export function supplierBreakdown(rows: InvoiceRow[]): SupplierBreakdown[] {
       amountByCurrency: formatAmountsByCurrency(supplierRows),
     }))
     .sort((a, b) => b.count - a.count);
+}
+
+export interface SupplierExposureRow {
+  supplier: string;
+  invoiceAccount: string;
+  pendingCount: number;
+  pendingAmountByCurrency: string;
+  overdueCount: number;
+  overdueAmountByCurrency: string;
+  missingGRCount: number;
+  oldestOverdueDays: number | null;
+}
+
+// Richer per-supplier exposure table — cross-references the SAME already-computed KPI
+// populations (totalPending / overdueP2w / missingGR), just grouped by supplier. No new
+// classification logic, only aggregation.
+export function computeSupplierExposure(kpis: InvoiceKPIs, today: Date = new Date()): SupplierExposureRow[] {
+  const bySupplier = new Map<string, { name: string; pending: InvoiceRow[]; overdue: InvoiceRow[]; missingGR: InvoiceRow[] }>();
+  const ensure = (r: InvoiceRow) => {
+    if (!bySupplier.has(r.invoiceAccount)) bySupplier.set(r.invoiceAccount, { name: r.name, pending: [], overdue: [], missingGR: [] });
+    return bySupplier.get(r.invoiceAccount)!;
+  };
+  kpis.totalPending.forEach((r) => ensure(r).pending.push(r));
+  kpis.overdueP2w.forEach((r) => ensure(r).overdue.push(r));
+  kpis.missingGR.forEach((r) => ensure(r).missingGR.push(r));
+
+  // Sort rank only — a naive cross-currency sum used purely to order rows, never displayed as a
+  // KPI value (the displayed amounts stay per-currency via formatAmountsByCurrency).
+  const sortRank = (rows: InvoiceRow[]) => rows.reduce((s, r) => s + r.importedInvoiceAmount, 0);
+
+  return [...bySupplier.entries()]
+    .map(([invoiceAccount, g]) => {
+      const oldestOverdueDays = g.overdue.length
+        ? Math.max(...g.overdue.map((r) => (r.effectiveDueDate ? differenceInCalendarDays(today, r.effectiveDueDate) : 0)))
+        : null;
+      return {
+        supplier: g.name,
+        invoiceAccount,
+        pendingCount: g.pending.length,
+        pendingAmountByCurrency: formatAmountsByCurrency(g.pending),
+        overdueCount: g.overdue.length,
+        overdueAmountByCurrency: formatAmountsByCurrency(g.overdue),
+        missingGRCount: g.missingGR.length,
+        oldestOverdueDays,
+        _overdueSortRank: sortRank(g.overdue),
+      };
+    })
+    .sort((a, b) => b._overdueSortRank - a._overdueSortRank)
+    .map(({ _overdueSortRank, ...row }) => row);
 }

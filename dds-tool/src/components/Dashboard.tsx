@@ -27,10 +27,11 @@ import { buildInvoicesHref } from '../lib/invoicesParams';
 import { buildLeadTimeHref } from '../lib/leadTimeParams';
 import type { PurchaseLine } from '../types';
 import type { InvoiceRow } from '../types/invoice';
+import type { InvoiceParseMeta } from '../lib/invoiceParser';
 import type { ActionType } from '../types/actions';
 
 export function Dashboard() {
-  const { allLines, setAllLines, invoices, setInvoices, globalFilters, setGlobalFilters } = useData();
+  const { allLines, setAllLines, invoices, setInvoices, setInvoiceMeta, globalFilters, setGlobalFilters } = useData();
   const [uploadOpen, setUploadOpen] = useState(false);
   // Switch between the two Actions UI variants — 'badge' (floating badge + slide-in drawer) or
   // 'panel' (always-visible right panel that shrinks the main content area). Toggled live via
@@ -56,9 +57,10 @@ export function Dashboard() {
     setGlobalFilters(f);
   };
 
-  const handleLoad = (lines: PurchaseLine[], inv?: InvoiceRow[]) => {
+  const handleLoad = (lines: PurchaseLine[], inv?: InvoiceRow[], invMeta?: InvoiceParseMeta) => {
     setAllLines(lines);
     if (inv) setInvoices(inv);
+    if (invMeta) setInvoiceMeta(invMeta);
     runRules(lines);
   };
 

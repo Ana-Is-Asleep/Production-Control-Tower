@@ -1,6 +1,6 @@
 import type { InvoiceRow } from '../types/invoice';
 import { parseDate } from './dateUtils';
-import { computeEffectiveDueDate } from './invoiceUtils';
+import { computeEffectiveDueDate, SCF_SUPPLIERS } from './invoiceUtils';
 import { readXlsxFile } from './xlsxUtils';
 
 function findCol(headers: string[], needle: string): number {
@@ -34,9 +34,27 @@ function deduplicate(rows: InvoiceRow[]): InvoiceRow[] {
   return result;
 }
 
-export function parseInvoiceFile(file: File): Promise<InvoiceRow[]> {
+// Data Quality diagnostics — moved out of the main analytical UI (per the redesigned Invoicing
+// Detail page) into a secondary "Data Quality" panel, so the operational user sees invoice
+// insights first and ETL diagnostics only on request.
+export interface InvoiceParseMeta {
+  rowsInFile: number;
+  archivedRemoved: number;
+  unrecognizedCostCenterRemoved: number;
+  duplicateRowsDropped: number;
+  rowsAnalyzed: number;
+  scfSuppliersMatched: number;
+}
+
+export interface InvoiceParseResult {
+  rows: InvoiceRow[];
+  meta: InvoiceParseMeta;
+}
+
+export function parseInvoiceFile(file: File): Promise<InvoiceParseResult> {
   return readXlsxFile(file).then(({ rows }) => {
-    if (rows.length < 2) return [];
+    const emptyMeta: InvoiceParseMeta = { rowsInFile: 0, archivedRemoved: 0, unrecognizedCostCenterRemoved: 0, duplicateRowsDropped: 0, rowsAnalyzed: 0, scfSuppliersMatched: 0 };
+    if (rows.length < 2) return { rows: [], meta: emptyMeta };
 
     const headerRow = rows[0] as string[];
     const col = (name: string) => findCol(headerRow, name);
@@ -54,19 +72,23 @@ export function parseInvoiceFile(file: File): Promise<InvoiceRow[]> {
     const costCenterCol      = col('CostCenter');
 
     const raw: InvoiceRow[] = [];
+    let rowsInFile = 0;
+    let archivedRemoved = 0;
+    let unrecognizedCostCenterRemoved = 0;
 
     for (let i = 1; i < rows.length; i++) {
       const r = rows[i] as unknown[];
       if (!r || !r[invoiceCol]) continue;
+      rowsInFile += 1;
 
       const costCenter = String(r[costCenterCol] ?? '');
       // step 1.1: skip archived
       const archived = String(r[archivedCol] ?? '').toLowerCase() === 'yes';
-      if (archived) continue;
+      if (archived) { archivedRemoved += 1; continue; }
       // step 1.2: only 02.13 (Online) or 02.42 (Offline)
       const isOnline  = costCenter.startsWith('02.13');
       const isOffline = costCenter.startsWith('02.42');
-      if (!isOnline && !isOffline) continue;
+      if (!isOnline && !isOffline) { unrecognizedCostCenterRemoved += 1; continue; }
 
       const row: InvoiceRow = {
         invoice:              String(r[invoiceCol] ?? ''),
@@ -90,6 +112,19 @@ export function parseInvoiceFile(file: File): Promise<InvoiceRow[]> {
       raw.push(row);
     }
 
-    return deduplicate(raw);
+    const deduped = deduplicate(raw);
+    const scfSuppliersMatched = new Set(deduped.filter((r) => SCF_SUPPLIERS[r.invoiceAccount]).map((r) => r.invoiceAccount)).size;
+
+    return {
+      rows: deduped,
+      meta: {
+        rowsInFile,
+        archivedRemoved,
+        unrecognizedCostCenterRemoved,
+        duplicateRowsDropped: raw.length - deduped.length,
+        rowsAnalyzed: deduped.length,
+        scfSuppliersMatched,
+      },
+    };
   });
 }

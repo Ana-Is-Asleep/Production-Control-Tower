@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { SlideOver } from '../shared/SlideOver';
 import { Button } from '../shared/Button';
 import { detectBCFileKind, parseLinesFromRows, parseHeadersFromRows, joinLinesWithHeaders } from '../../lib/bcParser';
-import { parseInvoiceFile } from '../../lib/invoiceParser';
+import { parseInvoiceFile, type InvoiceParseMeta } from '../../lib/invoiceParser';
 import { readXlsxFile } from '../../lib/xlsxUtils';
 import type { PurchaseLine } from '../../types';
 import type { InvoiceRow } from '../../types/invoice';
@@ -14,7 +14,7 @@ const D2C_LOCATIONS = ['DS0_FR', 'GXO1_FR', 'LN_IT', 'DS_ES', 'DSV1_UK', 'MS_IE'
 interface UploadPanelProps {
   open: boolean;
   onClose: () => void;
-  onLoad: (lines: PurchaseLine[], invoices?: InvoiceRow[]) => void;
+  onLoad: (lines: PurchaseLine[], invoices?: InvoiceRow[], invoiceMeta?: InvoiceParseMeta) => void;
 }
 
 function looksLikeInvoice(f: File) {
@@ -33,6 +33,7 @@ export function UploadPanel({ open, onClose, onLoad }: UploadPanelProps) {
   const [headerJoined, setHeaderJoined] = useState(false);
   const [invoiceCount, setInvoiceCount] = useState<number | null>(null);
   const [invoiceRows, setInvoiceRows]   = useState<InvoiceRow[]>([]);
+  const [invoiceMeta, setInvoiceMeta]   = useState<InvoiceParseMeta | null>(null);
   const [error, setError]               = useState<string | null>(null);
   const [loading, setLoading]           = useState(false);
   const [dragging, setDragging]         = useState(false);
@@ -60,12 +61,13 @@ export function UploadPanel({ open, onClose, onLoad }: UploadPanelProps) {
       }
       const suppliers = [...new Set(lines.map((l) => l.supplier).filter(Boolean))];
 
-      const parsedInvoices = invoiceFile ? await parseInvoiceFile(invoiceFile) : [];
+      const parsedInvoices = invoiceFile ? await parseInvoiceFile(invoiceFile) : null;
 
       setResult({ lines, lineCount: lines.length, suppliers });
       setHeaderJoined(!!headerFile);
-      setInvoiceRows(parsedInvoices);
-      setInvoiceCount(invoiceFile ? parsedInvoices.length : null);
+      setInvoiceRows(parsedInvoices?.rows ?? []);
+      setInvoiceMeta(parsedInvoices?.meta ?? null);
+      setInvoiceCount(parsedInvoices ? parsedInvoices.rows.length : null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to parse — check the file format');
     } finally {
@@ -127,7 +129,7 @@ export function UploadPanel({ open, onClose, onLoad }: UploadPanelProps) {
               <div className="flex justify-between"><span>Vendors</span><span className="font-medium text-dark">{result.suppliers.length}</span></div>
               <div className="flex justify-between"><span>D2C lines (2026)</span><span className="font-medium text-brand">{d2cCount.toLocaleString()}</span></div>
             </div>
-            <Button className="w-full justify-center" onClick={() => { onLoad(result.lines, invoiceRows.length > 0 ? invoiceRows : undefined); onClose(); }}>
+            <Button className="w-full justify-center" onClick={() => { onLoad(result.lines, invoiceRows.length > 0 ? invoiceRows : undefined, invoiceMeta ?? undefined); onClose(); }}>
               Load Data →
             </Button>
           </div>

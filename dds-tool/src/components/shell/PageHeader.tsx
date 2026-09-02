@@ -26,6 +26,7 @@ interface PageHeaderProps {
   curYear: number;
   rightActions?: ReactNode; // page-specific buttons (Upload/Actions-toggle on the dashboard, Export/etc. on drill-downs)
   showWeekRange?: boolean; // false for pages that are current-state only (e.g. Missing ESD) — no snapshot/history selector
+  showCategory?: boolean; // false where no reliable category concept exists on the underlying data (e.g. Invoices)
 }
 
 const CHANNELS: Channel[] = ['Offline', 'Online'];
@@ -35,7 +36,7 @@ const CHANNELS: Channel[] = ['Offline', 'Online'];
 // logic as before (WeekRangeStepper, VendorDropdown, and the channel/category toggle functions
 // are untouched), just recomposed into one header block with the dropdown affordances layered on
 // top of the existing pill toggles.
-export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWeek, curYear, rightActions, showWeekRange = true }: PageHeaderProps) {
+export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWeek, curYear, rightActions, showWeekRange = true, showCategory = true }: PageHeaderProps) {
   const toggleChannel = (c: Channel) => {
     const next = filters.channels.includes(c) ? filters.channels.filter((x) => x !== c) : [...filters.channels, c];
     onChange({ ...filters, channels: next });
@@ -74,7 +75,7 @@ export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWee
             </div>
           )}
           <VendorDropdown allSuppliers={allSuppliers} selected={filters.suppliers} onChange={(s) => onChange({ ...filters, suppliers: s })} />
-          <CategoryDropdown selected={filters.categories} onChange={(c) => onChange({ ...filters, categories: c })} />
+          {showCategory && <CategoryDropdown selected={filters.categories} onChange={(c) => onChange({ ...filters, categories: c })} />}
           <ChannelDropdown selected={filters.channels} onChange={(c) => onChange({ ...filters, channels: c })} />
 
           {rightActions && (
@@ -96,17 +97,21 @@ export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWee
             {c}
           </button>
         ))}
-        <span className="text-[#e9e3df]">|</span>
-        {SKU_CATEGORIES.map((c) => (
-          <button
-            key={c}
-            onClick={() => toggleCategory(c)}
-            className={`filter-pill text-xs px-3 py-1 rounded-full border font-medium whitespace-nowrap ${filters.categories.includes(c) ? 'text-white border-transparent' : 'border-[#e9e3df] text-[#58524e] hover:border-[#403833]'}`}
-            style={filters.categories.includes(c) ? { background: CATEGORY_COLORS[c] } : {}}
-          >
-            {c}
-          </button>
-        ))}
+        {showCategory && (
+          <>
+            <span className="text-[#e9e3df]">|</span>
+            {SKU_CATEGORIES.map((c) => (
+              <button
+                key={c}
+                onClick={() => toggleCategory(c)}
+                className={`filter-pill text-xs px-3 py-1 rounded-full border font-medium whitespace-nowrap ${filters.categories.includes(c) ? 'text-white border-transparent' : 'border-[#e9e3df] text-[#58524e] hover:border-[#403833]'}`}
+                style={filters.categories.includes(c) ? { background: CATEGORY_COLORS[c] } : {}}
+              >
+                {c}
+              </button>
+            ))}
+          </>
+        )}
         {(filters.suppliers.length > 0 || filters.channels.length > 0 || filters.categories.length > 0 ||
           filters.weekRange.start !== DEFAULT_FILTERS.weekRange.start || filters.weekRange.end !== DEFAULT_FILTERS.weekRange.end) && (
           <button onClick={() => onChange(DEFAULT_FILTERS)} className="flex items-center gap-1 text-xs text-[#9c9794] hover:text-fail transition-colors ml-auto">
