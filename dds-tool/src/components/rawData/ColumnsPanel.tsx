@@ -6,15 +6,16 @@ import type { ColumnDef, ColumnGroup } from '../../lib/rawDataColumns';
 
 const GROUP_ORDER: ColumnGroup[] = ['Identifiers', 'Supply', 'Dates', 'Quantities', 'Calculated', 'Status'];
 
-interface ColumnsPanelProps<Row> {
-  columns: ColumnDef<Row>[];
+interface ColumnsPanelProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- this panel only ever reads id/label/group, never getValue, so it doesn't need to be generic over Row (and being generic here is exactly what broke TS's inference at the PO-vs-Line ternary call site)
+  columns: ColumnDef<any>[];
   visible: Set<string>;
   onChange: (visible: Set<string>) => void;
 }
 
 // Column visibility only — every entry here maps to an existing raw or approved-calculated field
 // (see rawDataColumns.ts). There is no way to add a new field or formula from this panel.
-export function ColumnsPanel<Row>({ columns, visible, onChange }: ColumnsPanelProps<Row>) {
+export function ColumnsPanel({ columns, visible, onChange }: ColumnsPanelProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
