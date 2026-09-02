@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 import { ActionsTabs, type StatusFilter } from './ActionsTabs';
+import { buildActionsHref } from '../../lib/actionsParams';
+import type { ActiveFilters } from '../../hooks/useFilters';
 import type { ActionItem, ActionType } from '../../types/actions';
 
 interface ActionsSidePanelProps {
@@ -12,6 +14,7 @@ interface ActionsSidePanelProps {
   onAddOpenPoint: (item: ActionItem) => void;
   filteredPOs: Set<string>;
   allSuppliers: string[];
+  filters: ActiveFilters; // carried over to the full Actions page's initial filters via "View all actions"
   tab: ActionType;
   onTabChange: (t: ActionType) => void;
   statusFilter: StatusFilter;
@@ -23,7 +26,7 @@ interface ActionsSidePanelProps {
 // parent (shared with ActionsBadgeDrawer) so switching between Badge and Panel modes never
 // resets your place.
 export function ActionsSidePanel({
-  actions, onSave, onAddOpenPoint, filteredPOs, allSuppliers, tab, onTabChange, statusFilter, onStatusFilterChange,
+  actions, onSave, onAddOpenPoint, filteredPOs, allSuppliers, filters, tab, onTabChange, statusFilter, onStatusFilterChange,
 }: ActionsSidePanelProps) {
   const [expanded, setExpanded] = useState(false);
   const router = useRouter();
@@ -50,7 +53,7 @@ export function ActionsSidePanel({
         <h2 className="text-sm font-semibold text-[#403833]">Actions</h2>
       </div>
       <button
-        onClick={() => router.push('/actions')}
+        onClick={() => router.push(buildActionsHref(filters.suppliers, filters.weekRange))}
         className="flex items-center justify-center gap-1.5 text-xs font-semibold text-brand border-b border-[#e9e3df] py-2.5 hover:bg-[#fff7ed] transition-colors shrink-0"
       >
         View all actions <ArrowRight size={13} />

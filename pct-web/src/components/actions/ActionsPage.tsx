@@ -1,14 +1,17 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Download, RotateCcw, Search } from 'lucide-react';
 import { useActions } from '../../hooks/useActions';
 import { useData } from '../../context/DataContext';
 import { emailToDisplayName } from '../../lib/scmEmails';
 import { daysOpen, reasonBucket } from '../../lib/actionsUtils';
+import { parseActionsParams } from '../../lib/actionsParams';
 import { currentISOWeek, shiftISOWeek, getISOWeek, getISOWeekYear, isoWeekLabel } from '../../lib/dateUtils';
 import { WEEK_RANGE_MIN, WEEK_RANGE_MAX } from '../../hooks/useFilters';
 import { WeekRangeStepper } from '../shared/WeekRangeStepper';
+import { VendorDropdown } from '../shared/VendorDropdown';
 import { Sidebar } from '../shell/Sidebar';
 import { Badge } from '../shared/Badge';
 import { ActionDetailModal } from './ActionDetailModal';
@@ -42,9 +45,16 @@ export function ActionsPage() {
   const { allLines } = useData();
 
   const { week: curWeek, year: curYear } = useMemo(() => currentISOWeek(), []);
+  const [searchParams] = useSearchParams();
+  // "View all actions" from the dashboard drawer/panel carries its active supplier + week-range
+  // filter across via the URL (see actionsParams.ts) — arriving here pre-scoped instead of
+  // resetting to "All suppliers" / the full period. Visiting /actions directly (sidebar nav) has
+  // no query string, so it falls back to the page's own defaults.
+  const linkParams = useMemo(() => parseActionsParams(searchParams), [searchParams]);
+
   const [tab, setTab] = useState<TabFilter>('all');
-  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
-  const [weekRange, setWeekRange] = useState({ start: WEEK_RANGE_MIN, end: WEEK_RANGE_MAX }); // default: no period restriction, unlike Raw Data/dashboard
+  const [filters, setFilters] = useState<Filters>(() => (linkParams ? { ...DEFAULT_FILTERS, suppliers: linkParams.suppliers } : DEFAULT_FILTERS));
+  const [weekRange, setWeekRange] = useState(() => linkParams?.weekRange ?? { start: WEEK_RANGE_MIN, end: WEEK_RANGE_MAX }); // default: no period restriction, unlike Raw Data/dashboard
   const [selected, setSelected] = useState<ActionItem | null>(null);
 
   const weekKeySet = useMemo(() => {
@@ -162,10 +172,7 @@ export function ActionsPage() {
                 <option value="blocked">Blocked</option>
                 <option value="closed">Closed</option>
               </select>
-              <select multiple={false} value={filters.suppliers[0] ?? ''} onChange={(e) => setFilters((f) => ({ ...f, suppliers: e.target.value ? [e.target.value] : [] }))} className="text-xs border border-[#e9e3df] rounded-lg px-2.5 py-1.5">
-                <option value="">All suppliers</option>
-                {allSuppliers.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
+              <VendorDropdown allSuppliers={allSuppliers} selected={filters.suppliers} onChange={(s) => setFilters((f) => ({ ...f, suppliers: s }))} />
               <select value={filters.owners[0] ?? ''} onChange={(e) => setFilters((f) => ({ ...f, owners: e.target.value ? [e.target.value] : [] }))} className="text-xs border border-[#e9e3df] rounded-lg px-2.5 py-1.5">
                 <option value="">All owners</option>
                 {availableOwners.map((o) => <option key={o} value={o}>{emailToDisplayName(o)}</option>)}

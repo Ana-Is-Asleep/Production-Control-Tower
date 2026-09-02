@@ -137,7 +137,7 @@ export function Dashboard() {
             </div>
             {actionsUiMode === 'panel' && (
               <ActionsSidePanel
-                actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers}
+                actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers} filters={filters}
                 tab={actionsTab} onTabChange={setActionsTab} statusFilter={actionsStatusFilter} onStatusFilterChange={setActionsStatusFilter}
               />
             )}
@@ -146,7 +146,7 @@ export function Dashboard() {
 
         {hasData && actionsUiMode === 'badge' && (
           <ActionsBadgeDrawer
-            actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers}
+            actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers} filters={filters}
             tab={actionsTab} onTabChange={setActionsTab} statusFilter={actionsStatusFilter} onStatusFilterChange={setActionsStatusFilter}
           />
         )}

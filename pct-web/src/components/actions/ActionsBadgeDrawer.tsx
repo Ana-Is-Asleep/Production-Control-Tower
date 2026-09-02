@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { ActionsTabs, type StatusFilter } from './ActionsTabs';
+import { buildActionsHref } from '../../lib/actionsParams';
+import type { ActiveFilters } from '../../hooks/useFilters';
 import type { ActionItem, ActionType } from '../../types/actions';
 
 interface ActionsBadgeDrawerProps {
@@ -12,6 +14,7 @@ interface ActionsBadgeDrawerProps {
   onAddOpenPoint: (item: ActionItem) => void;
   filteredPOs: Set<string>;
   allSuppliers: string[];
+  filters: ActiveFilters; // carried over to the full Actions page's initial filters via "View all actions"
   tab: ActionType;
   onTabChange: (t: ActionType) => void;
   statusFilter: StatusFilter;
@@ -23,7 +26,7 @@ interface ActionsBadgeDrawerProps {
 // are controlled by the parent (shared with ActionsSidePanel) so switching between Badge and
 // Panel modes never resets your place.
 export function ActionsBadgeDrawer({
-  actions, onSave, onAddOpenPoint, filteredPOs, allSuppliers, tab, onTabChange, statusFilter, onStatusFilterChange,
+  actions, onSave, onAddOpenPoint, filteredPOs, allSuppliers, filters, tab, onTabChange, statusFilter, onStatusFilterChange,
 }: ActionsBadgeDrawerProps) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -51,7 +54,7 @@ export function ActionsBadgeDrawer({
             <button onClick={() => setOpen(false)} className="text-[#9c9794] hover:text-[#403833] text-lg leading-none">✕</button>
           </div>
           <button
-            onClick={() => { setOpen(false); navigate('/actions'); }}
+            onClick={() => { setOpen(false); navigate(buildActionsHref(filters.suppliers, filters.weekRange)); }}
             className="flex items-center justify-center gap-1.5 text-xs font-semibold text-brand border-b border-[#e9e3df] py-2.5 hover:bg-[#fff7ed] transition-colors shrink-0"
           >
             View all actions <ArrowRight size={13} />
