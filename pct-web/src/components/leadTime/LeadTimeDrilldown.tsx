@@ -225,7 +225,11 @@ export function LeadTimeDrilldown() {
 
           {tab === 'overview' ? (
             <>
-              <LeadTimeKpiStrip kpis={kpis} />
+              <LeadTimeKpiStrip
+                kpis={kpis}
+                periodUnit={period === 'weeks' ? 'week' : period === 'months' ? 'month' : 'quarter'}
+                periodUnitPlural={period}
+              />
 
               <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
                 <div className="flex items-center justify-between mb-2">
@@ -289,6 +293,7 @@ export function LeadTimeDrilldown() {
 
               <LeadTimeRecentPeriods
                 periods={periodsSummary}
+                periodUnit={period === 'weeks' ? 'Week' : period === 'months' ? 'Month' : 'Quarter'}
                 getDrillRows={(bucketKey) => {
                   const bucket = buckets.find((b) => b.key === bucketKey);
                   return bucket ? computeDrillRows(scopedLines, bucket, period) : [];
@@ -342,6 +347,7 @@ export function LeadTimeDrilldown() {
               <LeadTimeTrendChart
                 points={overview}
                 categories={categories}
+                height="100%"
                 onBarClick={(bucketKey, category) => {
                   const bucket = buckets.find((b) => b.key === bucketKey);
                   if (!bucket) return;
@@ -368,7 +374,7 @@ export function LeadTimeDrilldown() {
             <table className="w-full text-xs">
               <thead>
                 <tr className="bg-[#403833] text-white">
-                  <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide">Period</th>
+                  <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide">{period === 'weeks' ? 'Week' : period === 'months' ? 'Month' : 'Quarter'}</th>
                   <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wide">Overall</th>
                   {categories.map((c) => <th key={c} className="px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wide">{c}</th>)}
                 </tr>

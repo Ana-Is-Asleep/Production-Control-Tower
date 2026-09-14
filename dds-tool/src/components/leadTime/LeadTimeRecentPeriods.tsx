@@ -1,17 +1,20 @@
 'use client';
 
 import { Fragment, useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download } from 'lucide-react';
 import { LT_TARGET_DAYS, type PeriodSummary, type DrillRow } from '../../lib/leadTimeAnalytics';
+import { detailSheet } from '../../lib/reportBuilders';
+import { downloadWorkbook } from '../../lib/xlsxWriter';
 
 interface LeadTimeRecentPeriodsProps {
   periods: PeriodSummary[];
   getDrillRows: (bucketKey: string) => DrillRow[];
+  periodUnit: string; // 'Week' | 'Month' | 'Quarter' — matches the active granularity toggle
 }
 
 const COLLAPSED_COUNT = 5;
 
-export function LeadTimeRecentPeriods({ periods, getDrillRows }: LeadTimeRecentPeriodsProps) {
+export function LeadTimeRecentPeriods({ periods, getDrillRows, periodUnit }: LeadTimeRecentPeriodsProps) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
 
@@ -19,17 +22,31 @@ export function LeadTimeRecentPeriods({ periods, getDrillRows }: LeadTimeRecentP
   const ordered = [...periods].reverse();
   const visible = showAll ? ordered : ordered.slice(0, COLLAPSED_COUNT);
 
+  const handleExport = () => {
+    const sheet = detailSheet(
+      'Recent Periods',
+      [periodUnit, 'POs in Scope', 'Avg Lead Time (d)', `vs Target (${LT_TARGET_DAYS}d)`, 'Meeting Target'],
+      ordered.map((p) => [p.label, p.poCount, p.avgLeadDays, p.vsTargetDays, p.meetingTarget === null ? '—' : p.meetingTarget ? 'Yes' : 'No'])
+    );
+    downloadWorkbook('Lead Time - Recent Periods', [sheet]);
+  };
+
   return (
     <div className="bg-white rounded-lg border border-[#e9e3df] overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
-      <div className="px-4 pt-3 pb-2 flex items-center justify-between">
+      <div className="px-4 pt-3 pb-2 flex items-center justify-between gap-3">
         <p className="text-sm font-bold text-[#403833]">Recent Periods Detail</p>
-        <p className="text-[11px] text-[#9c9794]">Click a period to view the underlying POs</p>
+        <div className="flex items-center gap-3 shrink-0">
+          <p className="text-[11px] text-[#9c9794]">Click a period to view the underlying POs</p>
+          <button onClick={handleExport} className="flex items-center gap-1.5 text-xs font-semibold text-[#403833] border border-[#e9e3df] rounded-lg px-2.5 py-1.5 hover:border-[#403833] transition-colors">
+            <Download size={13} /> Export
+          </button>
+        </div>
       </div>
       <table className="w-full text-xs">
         <thead>
           <tr className="bg-[#403833] text-white">
             <th className="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap w-6"></th>
-            <th className="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">Period</th>
+            <th className="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">{periodUnit}</th>
             <th className="px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">POs in Scope</th>
             <th className="px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">Average Lead Time</th>
             <th className="px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">vs Target ({LT_TARGET_DAYS}d)</th>

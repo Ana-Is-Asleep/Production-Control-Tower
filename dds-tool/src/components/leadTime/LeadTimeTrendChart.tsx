@@ -9,9 +9,12 @@ interface LeadTimeTrendChartProps {
   points: OverviewPoint[];
   categories: SKUCategory[];
   onBarClick: (bucketKey: string, category: SKUCategory) => void;
+  height?: number | string; // was hardcoded to 320 always, so expanding the chart into the large
+  // modal's taller container had no visible effect — callers with more vertical room can now ask
+  // for it (e.g. '100%' inside a fixed-height modal wrapper).
 }
 
-export function LeadTimeTrendChart({ points, categories, onBarClick }: LeadTimeTrendChartProps) {
+export function LeadTimeTrendChart({ points, categories, onBarClick, height = 320 }: LeadTimeTrendChartProps) {
   const chartData = points.map((p) => ({
     label: p.label,
     bucketKey: p.bucketKey,
@@ -21,7 +24,7 @@ export function LeadTimeTrendChart({ points, categories, onBarClick }: LeadTimeT
   }));
 
   return (
-    <div style={{ height: 320 }}>
+    <div style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={chartData} margin={{ top: 8, right: 16, left: -10, bottom: 0 }}>
           <CartesianGrid strokeDasharray="2 4" stroke={COLOR.border} vertical={false} />

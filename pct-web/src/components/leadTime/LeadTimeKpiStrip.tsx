@@ -5,6 +5,8 @@ import type { LTKpis } from '../../lib/leadTimeAnalytics';
 
 interface LeadTimeKpiStripProps {
   kpis: LTKpis;
+  periodUnit: string; // 'week' | 'month' | 'quarter' — matches the active Weeks/Months/Quarters toggle, so these labels never say "Period" when a concrete unit is known
+  periodUnitPlural: string; // 'weeks' | 'months' | 'quarters'
 }
 
 function fmtDays(v: number | null): string {
@@ -28,7 +30,7 @@ function Card({ label, value, unit, sub, color }: { label: string; value: string
   );
 }
 
-export function LeadTimeKpiStrip({ kpis }: LeadTimeKpiStripProps) {
+export function LeadTimeKpiStrip({ kpis, periodUnit, periodUnitPlural }: LeadTimeKpiStripProps) {
   const vsTargetColor = kpis.vsTargetDays === null ? COLOR.muted : kpis.vsTargetDays <= 0 ? COLOR.pass : COLOR.fail;
   const trendColor = kpis.trendVsPrevDays === null ? COLOR.muted : kpis.trendVsPrevDays < 0 ? COLOR.pass : kpis.trendVsPrevDays > 0 ? COLOR.fail : COLOR.muted;
 
@@ -49,17 +51,17 @@ export function LeadTimeKpiStrip({ kpis }: LeadTimeKpiStripProps) {
         color={vsTargetColor}
       />
       <Card
-        label="Trend vs Previous Period"
+        label={`Trend vs Previous ${periodUnit.charAt(0).toUpperCase()}${periodUnit.slice(1)}`}
         value={fmtSigned(kpis.trendVsPrevDays)}
         unit="days"
         sub={kpis.trendVsPrevDays === null ? '' : kpis.trendVsPrevDays < 0 ? 'Improving' : kpis.trendVsPrevDays > 0 ? 'Worse' : 'Flat'}
         color={trendColor}
       />
       <Card
-        label="Periods Meeting Target"
+        label={`${periodUnitPlural.charAt(0).toUpperCase()}${periodUnitPlural.slice(1)} Meeting Target`}
         value={String(kpis.pctPeriodsUnderTarget)}
         unit="%"
-        sub={`${kpis.periodsUnderTarget} of ${kpis.periodsPresent} periods`}
+        sub={`${kpis.periodsUnderTarget} of ${kpis.periodsPresent} ${periodUnitPlural}`}
         color={COLOR.muted}
       />
     </div>
