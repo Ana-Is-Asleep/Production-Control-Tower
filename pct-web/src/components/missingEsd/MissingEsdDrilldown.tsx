@@ -10,6 +10,8 @@ import {
   parseMissingEsdParams, buildMissingEsdParams, type UrgencyFilter,
 } from '../../lib/missingEsdParams';
 import { computeMissingEsdRows, findConsolidationRisks, EGRD_NEEDING_ACTION_WEEKS } from '../../lib/missingEsdAggregation';
+import { detailSheet } from '../../lib/reportBuilders';
+import { downloadWorkbook } from '../../lib/xlsxWriter';
 import { Sidebar } from '../shell/Sidebar';
 import { PageHeader } from '../shell/PageHeader';
 import { MissingEsdKpiRow } from './MissingEsdKpiRow';
@@ -76,6 +78,15 @@ export function MissingEsdDrilldown() {
     setFilters({ ...filters, suppliers: [supplier] });
   };
 
+  const handleExport = () => {
+    const sheet = detailSheet(
+      'Missing ESD',
+      ['PO', 'Supplier', 'Warehouse', 'PGRD', 'EGRD', 'Qty Confirmed', 'Days Until EGRD', 'Urgency'],
+      scopeRows.map((r) => [r.po, r.supplier, r.warehouse, r.pgrd, r.egrd, r.qtyConfirmed, r.daysUntilEgrd, r.urgency])
+    );
+    downloadWorkbook(`Missing ESD - ${urgency === 'urgent' ? 'Needing Action' : 'Not Urgent'}`, [sheet]);
+  };
+
   if (allLines.length === 0) {
     return (
       <div className="h-screen w-full bg-[#f5f2ee] flex overflow-hidden">
@@ -106,9 +117,8 @@ export function MissingEsdDrilldown() {
           rightActions={
             <>
               <button
-                title="Export (coming soon)"
-                disabled
-                className="flex items-center gap-1.5 text-xs font-semibold text-[#7b7571] border border-[#e9e3df] rounded-lg px-2.5 h-8 opacity-60 cursor-not-allowed"
+                onClick={handleExport}
+                className="flex items-center gap-1.5 text-xs font-semibold text-[#403833] border border-[#e9e3df] rounded-lg px-2.5 h-8 hover:border-[#403833] transition-colors"
               >
                 <Download size={13} />
                 Export

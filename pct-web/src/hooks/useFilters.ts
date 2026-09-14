@@ -119,10 +119,19 @@ export function useFilters(rawLines: PurchaseLine[], initialFilters?: ActiveFilt
     [filteredLines, weekKeySet]
   );
 
-  const allSuppliers = useMemo(() => [...new Set(allLines.map(l => l.supplier).filter(Boolean))].sort(), [allLines]);
+  // Narrowed by the active category/channel selection (but never by the supplier selection
+  // itself) — e.g. picking "Mattresses" only offers mattress suppliers in the vendor dropdown,
+  // instead of the full unfiltered supplier universe.
+  const allSuppliers = useMemo(() => {
+    let scoped = allLines;
+    if (filters.channels.length) scoped = scoped.filter(l => filters.channels.includes(getChannel(l.destination)));
+    if (filters.categories.length) scoped = scoped.filter(l => filters.categories.includes(categorizeSKU(l.sku)));
+    return [...new Set(scoped.map(l => l.supplier).filter(Boolean))].sort();
+  }, [allLines, filters.channels, filters.categories]);
 
   return {
     filters, setFilters,
+    cleanedLines: allLines, // the full cleaned pool (2026+, no Comps/Other, no same-site transfers), unrestricted by any active filter — for callers that must evaluate against ALL in-scope data regardless of what's currently selected (e.g. the rules engine)
     filteredLines,
     weekRangeLines,
     weeksInRange,

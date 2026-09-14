@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useData } from '../context/DataContext';
 import { Sidebar } from './shell/Sidebar';
 import { PageHeader } from './shell/PageHeader';
@@ -43,7 +43,7 @@ export function Dashboard() {
   const [actionsStatusFilter, setActionsStatusFilter] = useState<StatusFilter>('open');
   const { actions, runRules, addAction, updateAction } = useActions();
 
-  const { filters, setFilters: _setFilters, filteredLines, weekRangeLines, weeksInRange, allSuppliers, curWeek, curYear } =
+  const { filters, setFilters: _setFilters, cleanedLines, filteredLines, weekRangeLines, weeksInRange, allSuppliers, curWeek, curYear } =
     useFilters(allLines, globalFilters);
   const { isChinaSupplier } = useVendorMapping();
   const kpis = useKPIs(weekRangeLines, weeksInRange, isChinaSupplier);
@@ -61,8 +61,16 @@ export function Dashboard() {
     setAllLines(lines);
     if (inv) setInvoices(inv);
     if (invMeta) setInvoiceMeta(invMeta);
-    runRules(lines);
   };
+
+  // Runs against the same cleaned pool every KPI/section uses (2026+, no Comps/Other SKUs, no
+  // same-site transfers) — not the raw upload — so flags never fire for POs the rest of the app
+  // already treats as out of scope (e.g. Marketing POs whose SKUs categorize as Comps/Other).
+  // A useEffect (not the handleLoad call site) because cleanedLines depends on the vendor mapping,
+  // which loads asynchronously and lags one render behind the raw upload.
+  useEffect(() => {
+    if (cleanedLines.length > 0) runRules(cleanedLines);
+  }, [cleanedLines, runRules]);
 
   const hasData = allLines.length > 0;
 

@@ -19,7 +19,7 @@ export function CardHeader({ title, infoText, subtitle, total, drillDownLabel = 
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-1.5">
           <p className="text-sm font-bold text-[#403833]">{title}</p>
-          {infoText && <Info size={13} className="text-[#9c9794]" aria-label={infoText} />}
+          {infoText && <Info size={13} className="text-[#9c9794] cursor-help" aria-label={infoText} title={infoText} />}
         </div>
         <p className="text-[10px] text-brand font-semibold shrink-0">{drillDownLabel}</p>
       </div>

@@ -5,8 +5,6 @@ import Link from 'next/link';
 import { Calendar, RotateCcw } from 'lucide-react';
 import { WeekRangeStepper } from '../shared/WeekRangeStepper';
 import { VendorDropdown } from '../shared/VendorDropdown';
-import { CategoryDropdown } from '../shared/CategoryDropdown';
-import { ChannelDropdown } from '../shared/ChannelDropdown';
 import { SKU_CATEGORIES, type SKUCategory } from '../../lib/skuUtils';
 import { CATEGORY_COLORS } from '../../lib/statusColors';
 import { WEEK_RANGE_MIN, WEEK_RANGE_MAX, DEFAULT_FILTERS, type ActiveFilters } from '../../hooks/useFilters';
@@ -75,8 +73,6 @@ export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWee
             </div>
           )}
           <VendorDropdown allSuppliers={allSuppliers} selected={filters.suppliers} onChange={(s) => onChange({ ...filters, suppliers: s })} />
-          {showCategory && <CategoryDropdown selected={filters.categories} onChange={(c) => onChange({ ...filters, categories: c })} />}
-          <ChannelDropdown selected={filters.channels} onChange={(c) => onChange({ ...filters, channels: c })} />
 
           {rightActions && (
             <>

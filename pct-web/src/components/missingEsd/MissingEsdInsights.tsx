@@ -35,8 +35,11 @@ export function MissingEsdInsights({ rows, curWeek, curYear }: MissingEsdInsight
     }
 
     const needingActionRows = rows.filter((r) => r.urgency !== 'watchlist');
+    const supplierCount = new Set(needingActionRows.map((r) => r.supplier)).size;
     const { top } = computeSupplierExposure(needingActionRows, 1);
-    if (top.length && needingActionRows.length > 0 && top[0].needingAction > 0) {
+    // Trivially/always 100% when only one supplier is in scope (e.g. the supplier filter is
+    // active) — only worth surfacing as a "concentration" insight across multiple suppliers.
+    if (top.length && needingActionRows.length > 0 && top[0].needingAction > 0 && supplierCount > 1) {
       const share = Math.round((top[0].needingAction / needingActionRows.length) * 100);
       items.push({ icon: PackageSearch, tone: 'neutral', text: `${share}% of all Needing Action POs belong to ${top[0].supplier}.` });
     }
