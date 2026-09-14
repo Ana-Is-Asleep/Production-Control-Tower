@@ -33,7 +33,7 @@ export function TopGraphSection({ points, sotTarget, otifTarget, drillDownHref }
       <CardHeader
         title="SOT & OTIF Performance"
         infoText="Shipped On Time and On Time In Full performance vs. the 90% target"
-        subtitle="Evolution vs. 90% target"
+        subtitle={latestPast ? `Evolution vs. 90% target · evaluated week ${latestPast.weekLabel}` : 'Evolution vs. 90% target'}
       />
       <div className="flex-1 min-h-0 flex items-stretch gap-5 mt-3">
         <div className="flex flex-col justify-center gap-3 shrink-0 w-[150px]">

@@ -21,8 +21,8 @@ export function TopGraphChart({ points, onWeekClick }: TopGraphChartProps) {
       <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mb-2 shrink-0">
         <MiniLegend
           items={[
-            { label: 'POs SOT or Expected SOT', color: BAR_SHIPPED, type: 'bar' },
-            { label: 'POs Requested', color: BAR_TOTAL, type: 'bar' },
+            { label: 'POs Requested – Shipped', color: BAR_SHIPPED, type: 'bar' },
+            { label: 'POs Requested – Not Shipped', color: BAR_TOTAL, type: 'bar' },
             { label: 'SOT %', color: LINE_SOT, type: 'line' },
             { label: 'OTIF %', color: LINE_OTIF, type: 'line' },
             { label: 'Target (90%)', color: COLOR.muted, type: 'dashed-line' },
@@ -42,9 +42,9 @@ export function TopGraphChart({ points, onWeekClick }: TopGraphChartProps) {
             <XAxis dataKey="weekLabel" tick={{ fill: COLOR.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
             <YAxis yAxisId="pct" orientation="right" domain={[0, 100]} tick={{ fill: COLOR.muted, fontSize: 11 }} unit="%" axisLine={false} tickLine={false} />
             <YAxis yAxisId="pos" orientation="left" tick={{ fill: COLOR.muted, fontSize: 11 }} allowDecimals={false} axisLine={false} tickLine={false} />
-            <ReferenceLine yAxisId="pct" y={90} stroke={COLOR.border} strokeDasharray="4 4" />
-            <Bar yAxisId="pos" dataKey="shippedPOs" stackId="poStack" fill={BAR_SHIPPED} radius={[0, 0, 0, 0]} name="POs SOT or Expected SOT" />
-            <Bar yAxisId="pos" dataKey="backlogPOs" stackId="poStack" fill={BAR_TOTAL} radius={[4, 4, 0, 0]} name="POs Requested" />
+            <ReferenceLine yAxisId="pct" y={90} stroke={COLOR.fail} strokeWidth={1.5} strokeDasharray="4 4" />
+            <Bar yAxisId="pos" dataKey="shippedPOs" stackId="poStack" fill={BAR_SHIPPED} radius={[0, 0, 0, 0]} name="POs Requested – Shipped" />
+            <Bar yAxisId="pos" dataKey="backlogPOs" stackId="poStack" fill={BAR_TOTAL} radius={[4, 4, 0, 0]} name="POs Requested – Not Shipped" />
             <Line yAxisId="pct" dataKey="sotPastPct" stroke={LINE_SOT} strokeWidth={2} dot={{ r: 4, fill: LINE_SOT, stroke: '#fff', strokeWidth: 1.5 }} name="SOT % (actual)" connectNulls />
             <Line yAxisId="pct" dataKey="sotFuturePct" stroke={LINE_SOT} strokeWidth={2} strokeDasharray="5 4" dot={{ r: 4, fill: LINE_SOT, stroke: '#fff', strokeWidth: 1.5 }} name="SOT % (projected)" connectNulls />
             <Line yAxisId="pct" dataKey="otifPastPct" stroke={LINE_OTIF} strokeWidth={2} dot={{ r: 4, fill: LINE_OTIF, stroke: '#fff', strokeWidth: 1.5 }} name="OTIF % (actual)" connectNulls />

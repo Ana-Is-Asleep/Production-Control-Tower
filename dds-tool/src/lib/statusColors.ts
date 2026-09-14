@@ -22,9 +22,10 @@ export const COLOR = {
 export const BAR_TOTAL = 'rgba(255, 137, 0, 0.28)';
 export const BAR_SHIPPED = COLOR.brand;
 
-// SOT/OTIF lines
-export const LINE_SOT = COLOR.brand;
-export const LINE_OTIF = COLOR.pass;
+// SOT/OTIF lines — SOT is the primary eye-catching line (navy/near-black, distinct from the
+// orange bars); OTIF is grey rather than green/orange so it never collides with the bar fills.
+export const LINE_SOT = COLOR.navy;
+export const LINE_OTIF = COLOR.muted;
 
 export const CATEGORY_COLORS = {
   Beds: COLOR.purple,

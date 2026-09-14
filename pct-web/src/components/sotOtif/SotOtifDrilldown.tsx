@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { Download, MoreVertical, Maximize2, Info } from 'lucide-react';
+import { Download, MoreVertical, Maximize2 } from 'lucide-react';
 import { LargeModal } from '../shared/LargeModal';
 import { useData } from '../../context/DataContext';
 import { useFilters, type WeekInRange, type ActiveFilters } from '../../hooks/useFilters';
@@ -388,19 +388,6 @@ export function SotOtifDrilldown() {
                 </div>
               </div>
               <KeyInsightsPanel rollups={scopeRollups} avgDelayDays={avgDelayDays} weekLabel={kpiWeekLabel} />
-            </div>
-            <div className="bg-white rounded-lg border border-[#e9e3df] p-4 shrink-0" style={{ boxShadow: 'var(--shadow-card)' }}>
-              <div className="flex items-center gap-1.5 mb-2">
-                <p className="text-sm font-bold text-[#403833]">About the metrics</p>
-                <Info size={13} className="text-[#9c9794]" />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-[11px] text-[#7b7571]">
-                <p><span className="font-semibold text-[#403833]">SOT %</span> — share of POs shipped on or before their Shipment On Time date.</p>
-                <p><span className="font-semibold text-[#403833]">OTIF %</span> — share of POs delivered on or before their Committed Delivery Date (EGRD), in full.</p>
-                <p><span className="font-semibold text-[#403833]">Target</span> — strategic target for both SOT and OTIF is {kpis.sotTarget}%.</p>
-                <p><span className="font-semibold text-[#403833]">POs in Last Completed Week</span> — all metrics on this page refer to {kpiWeekLabel ?? 'the selected period'}.</p>
-                <div className="bg-[#fff7ed] rounded-md px-2.5 py-2">Percentages are calculated based on POs in scope for the selected period.</div>
-              </div>
             </div>
           </div>
         ) : (

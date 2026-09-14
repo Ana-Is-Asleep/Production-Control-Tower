@@ -35,11 +35,6 @@ function targetHelper(pct: number | null, target: number): string {
 export function SupplierKpiStrip({ weekLabel, posInScope, sotPct, otifPct, sotTarget, otifTarget, onTimeCount, lateCount, otifOnCount, otifOffCount }: SupplierKpiStripProps) {
   return (
     <div className="flex gap-2 px-4 pb-2 pt-2 shrink-0 flex-wrap">
-      <div className="rounded-lg border border-brand px-3 py-2 shrink-0 w-[130px]" style={{ background: '#fff7ed' }}>
-        <p className="text-[10px] font-semibold text-brand uppercase tracking-wide truncate">{weekLabel ? `${weekLabel} selected` : 'Full period'}</p>
-        <p className="text-lg font-extrabold text-[#403833] leading-none mt-1">{posInScope}</p>
-        <p className="text-[10px] text-[#9c9794] mt-0.5">POs in scope</p>
-      </div>
       <KpiBox
         label={`SOT · ${sotTarget}% target`}
         value={pctLabel(sotPct)}
@@ -56,6 +51,11 @@ export function SupplierKpiStrip({ weekLabel, posInScope, sotPct, otifPct, sotTa
         sub={<span className="text-[10px] text-[#9c9794]">{targetHelper(otifPct, otifTarget)}</span>}
         className="w-[130px]"
       />
+      <div className="rounded-lg border border-brand px-3 py-2 shrink-0 w-[130px]" style={{ background: '#fff7ed' }}>
+        <p className="text-[10px] font-semibold text-brand uppercase tracking-wide truncate">{weekLabel ? `${weekLabel} selected` : 'Full period'}</p>
+        <p className="text-lg font-extrabold text-[#403833] leading-none mt-1">{posInScope}</p>
+        <p className="text-[10px] text-[#9c9794] mt-0.5">POs Requested – Total</p>
+      </div>
       <KpiBox label="Shipped On Time" value={onTimeCount} valueClassName="text-xl text-pass" sub={<span className="text-[10px] text-[#9c9794]">{pctOf(onTimeCount, posInScope)}</span>} className="w-[130px]" />
       <KpiBox label="Not Shipped On Time" value={lateCount} valueClassName={`text-xl ${lateCount > 0 ? 'text-fail' : 'text-[#403833]'}`} tint={lateCount > 0 ? 'fail' : 'neutral'} sub={<span className="text-[10px] text-[#9c9794]">{pctOf(lateCount, posInScope)}</span>} className="w-[130px]" />
       <KpiBox label="OTIF" value={otifOnCount} valueClassName="text-xl text-pass" sub={<span className="text-[10px] text-[#9c9794]">{pctOf(otifOnCount, posInScope)}</span>} className="w-[110px]" />
