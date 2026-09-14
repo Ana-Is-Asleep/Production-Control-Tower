@@ -6,7 +6,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Download, MoreVertical } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { useFilters } from '../../hooks/useFilters';
-import { formatDateShort, currentISOWeek } from '../../lib/dateUtils';
+import { currentISOWeek } from '../../lib/dateUtils';
 import {
   parseMissingEsdParams, buildMissingEsdParams, type UrgencyFilter,
 } from '../../lib/missingEsdParams';
@@ -59,7 +59,10 @@ export function MissingEsdDrilldown() {
   const overdueCount = useMemo(() => allRows.filter((r) => r.urgency === 'overdue').length, [allRows]);
 
   const scopeRows = urgency === 'urgent' ? needingActionRows : notUrgentRows;
-  const risks = useMemo(() => findConsolidationRisks(scopeRows), [scopeRows]);
+  // Consolidation-risk callouts ("pickup likely delayed") only make sense for POs that already
+  // need action — flagging a delay risk for Not Urgent rows (EGRD still 3+ weeks out) reads as a
+  // premature/false alarm.
+  const risks = useMemo(() => (urgency === 'urgent' ? findConsolidationRisks(scopeRows) : []), [scopeRows, urgency]);
 
   const handleTabChange = (u: UrgencyFilter) => {
     setUrgency(u);
@@ -157,19 +160,9 @@ export function MissingEsdDrilldown() {
               <MissingEsdSupplierExposure rows={allRows} onSupplierClick={handleSupplierClick} />
             </div>
             <div className="lg:col-span-2">
-              <MissingEsdInsights rows={allRows} curWeek={curWeek} curYear={curYear} />
+              <MissingEsdInsights rows={allRows} curWeek={curWeek} curYear={curYear} risks={risks} />
             </div>
           </div>
-
-          {risks.length > 0 && (
-            <div className="space-y-2">
-              {risks.map((risk) => (
-                <div key={`${risk.supplier}__${risk.egrd.toDateString()}`} className="bg-[#FFF3E0] border border-[#f0b95c] rounded-lg px-4 py-2.5 text-sm text-[#403833]">
-                  ⚠ {risk.supplier} — {risk.poCount} unbooked POs due EGRD {formatDateShort(risk.egrd)}, pickup likely delayed to Monday.
-                </div>
-              ))}
-            </div>
-          )}
 
           <div>
             <div className="flex items-center gap-1 mb-3">
