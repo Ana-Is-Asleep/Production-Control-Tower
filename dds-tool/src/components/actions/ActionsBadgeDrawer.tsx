@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 import { ActionsTabs, type StatusFilter } from './ActionsTabs';
@@ -19,16 +18,18 @@ interface ActionsBadgeDrawerProps {
   onTabChange: (t: ActionType) => void;
   statusFilter: StatusFilter;
   onStatusFilterChange: (f: StatusFilter) => void;
+  open: boolean; // lifted to Dashboard so it can shrink the main content area while the drawer is open, instead of the drawer floating over (and potentially hiding) dashboard cards
+  onOpenChange: (open: boolean) => void;
 }
 
-// Version A: a persistent bottom-right badge that opens a right-side drawer. No backdrop —
-// the rest of the page stays visible and interactive while the drawer is open. tab/statusFilter
-// are controlled by the parent (shared with ActionsSidePanel) so switching between Badge and
-// Panel modes never resets your place.
+// Version A: a bottom-right badge that opens a right-side drawer. No backdrop — the rest of the
+// page stays interactive while the drawer is open, and the caller shrinks the content area's
+// width so dashboard cards on the right edge are never hidden behind it. tab/statusFilter are
+// controlled by the parent (shared with ActionsSidePanel) so switching between Badge and Panel
+// modes never resets your place.
 export function ActionsBadgeDrawer({
-  actions, onSave, onAddOpenPoint, filteredPOs, allSuppliers, filters, tab, onTabChange, statusFilter, onStatusFilterChange,
+  actions, onSave, onAddOpenPoint, filteredPOs, allSuppliers, filters, tab, onTabChange, statusFilter, onStatusFilterChange, open, onOpenChange,
 }: ActionsBadgeDrawerProps) {
-  const [open, setOpen] = useState(false);
   const router = useRouter();
   const openCount = actions.filter(
     (a) => a.status !== 'closed' && (a.type === 'open_point' || !a.poReference || filteredPOs.has(a.poReference))
@@ -37,7 +38,7 @@ export function ActionsBadgeDrawer({
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => onOpenChange(true)}
         className={`fixed bottom-5 right-5 z-40 flex items-center gap-1.5 px-4 py-2.5 rounded-full font-semibold text-xs transition-transform hover:scale-105 ${openCount > 0 ? 'bg-brand text-white' : 'bg-pass text-white'}`}
         style={{ boxShadow: 'var(--shadow-card-hover)' }}
       >
@@ -51,10 +52,10 @@ export function ActionsBadgeDrawer({
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-[#e9e3df] shrink-0">
             <h2 className="text-sm font-semibold text-[#403833]">Actions</h2>
-            <button onClick={() => setOpen(false)} className="text-[#9c9794] hover:text-[#403833] text-lg leading-none">✕</button>
+            <button onClick={() => onOpenChange(false)} className="text-[#9c9794] hover:text-[#403833] text-lg leading-none">✕</button>
           </div>
           <button
-            onClick={() => { setOpen(false); router.push(buildActionsHref(filters.suppliers, filters.weekRange)); }}
+            onClick={() => { onOpenChange(false); router.push(buildActionsHref(filters.suppliers, filters.weekRange)); }}
             className="flex items-center justify-center gap-1.5 text-xs font-semibold text-brand border-b border-[#e9e3df] py-2.5 hover:bg-[#fff7ed] transition-colors shrink-0"
           >
             View all actions <ArrowRight size={13} />

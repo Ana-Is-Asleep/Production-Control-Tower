@@ -37,6 +37,7 @@ export function Dashboard() {
   // 'panel' (always-visible right panel that shrinks the main content area). Toggled live via
   // the header button below rather than a code constant, so both are actually reachable in the UI.
   const [actionsUiMode, setActionsUiMode] = useState<'badge' | 'panel'>('badge');
+  const [actionsDrawerOpen, setActionsDrawerOpen] = useState(false);
   // tab/statusFilter live here (not inside ActionsTabs) so switching between badge and panel mode
   // keeps the same tab and filter selected instead of resetting each time.
   const [actionsTab, setActionsTab] = useState<ActionType>('flag');
@@ -123,7 +124,10 @@ export function Dashboard() {
                   </>
                 }
               />
-              <div className={`p-3 flex-1 min-h-0 flex flex-col gap-3 w-full max-w-[1400px] 2xl:max-w-[1680px] mx-auto overflow-y-auto ${actionsUiMode === 'badge' ? 'pb-14' : ''}`}>
+              <div
+                className={`p-3 flex-1 min-h-0 flex flex-col gap-3 w-full max-w-[1400px] 2xl:max-w-[1680px] mx-auto overflow-y-auto transition-[padding] duration-150 ${actionsUiMode === 'badge' ? 'pb-14' : ''}`}
+                style={actionsUiMode === 'badge' && actionsDrawerOpen ? { paddingRight: 416 } : undefined}
+              >
                 <div style={{ flex: '4 1 220px' }}>
                   <TopGraphSection
                     points={kpis.topGraph}
@@ -156,6 +160,7 @@ export function Dashboard() {
           <ActionsBadgeDrawer
             actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers} filters={filters}
             tab={actionsTab} onTabChange={setActionsTab} statusFilter={actionsStatusFilter} onStatusFilterChange={setActionsStatusFilter}
+            open={actionsDrawerOpen} onOpenChange={setActionsDrawerOpen}
           />
         )}
 

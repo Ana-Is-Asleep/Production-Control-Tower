@@ -22,4 +22,5 @@ export interface ActionItem {
   createdAt: string;         // ISO date string, set on creation, never changes
   updatedAt: string;         // ISO date string, updated on every edit
   closedAt?: string;         // ISO date string, set the moment status first becomes 'closed'; cleared if reopened
+  dueDate?: string;          // ISO date string — optional target resolution date, set manually (mainly for Open Points, which have no auto-derived urgency the way rule-based Flags do)
 }

@@ -67,6 +67,9 @@ export function ActionCard({ action, onSave, startInEdit = false, onDiscard, all
           <span className="truncate">{action.owner ? emailToDisplayName(action.owner) : 'No owner'}</span>
           <span className="shrink-0">{createdLabel}</span>
         </div>
+        {action.dueDate && (
+          <p className="text-[10px] text-brand mt-1 font-semibold">Due {isoWeekLabel(new Date(action.dueDate))} {getISOWeekYear(new Date(action.dueDate))}</p>
+        )}
         {action.comment && <p className="text-[11px] text-[#7b7571] mt-1.5 line-clamp-2">{action.comment}</p>}
       </div>
     );
@@ -100,6 +103,15 @@ export function ActionCard({ action, onSave, startInEdit = false, onDiscard, all
               onChange={(e) => setDraft({ ...draft, poReference: e.target.value })}
               placeholder="PO (optional)"
               className="w-28 text-xs border border-[#e9e3df] rounded px-2 py-1"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] text-[#9c9794] block mb-0.5">Deadline (optional)</label>
+            <input
+              type="date"
+              value={draft.dueDate ? draft.dueDate.slice(0, 10) : ''}
+              onChange={(e) => setDraft({ ...draft, dueDate: e.target.value ? new Date(e.target.value).toISOString() : undefined })}
+              className="text-xs border border-[#e9e3df] rounded px-2 py-1"
             />
           </div>
         </>

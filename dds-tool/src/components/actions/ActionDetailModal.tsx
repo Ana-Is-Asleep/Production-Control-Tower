@@ -68,6 +68,15 @@ export function ActionDetailModal({ action, onSave, onClose }: ActionDetailModal
                 {SCM_EMAILS.map((e) => <option key={e} value={e}>{emailToDisplayName(e)}</option>)}
               </select>
             </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9c9794]">Deadline</p>
+              <input
+                type="date"
+                value={draft.dueDate ? draft.dueDate.slice(0, 10) : ''}
+                onChange={(e) => setDraft({ ...draft, dueDate: e.target.value ? new Date(e.target.value).toISOString() : undefined })}
+                className="mt-0.5 w-full text-xs border border-[#e9e3df] rounded px-1.5 py-1"
+              />
+            </div>
           </div>
 
           <div>
