@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { computeBacklogRows, computeExpectedRows, type BacklogPORow } from '../../lib/backlogAggregation';
 import { isoWeekKey } from '../../lib/dateUtils';
 import { COLOR } from '../../lib/statusColors';
