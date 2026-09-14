@@ -207,18 +207,32 @@ export function RawDataPage() {
             <div><p className="text-xs font-bold text-[#403833]">Suppliers</p><p className="text-[11px] text-[#9c9794] mt-1">{scope.suppliers.length === 0 ? 'All suppliers' : `${scope.suppliers.length} selected`}</p></div>
           </div>
 
-          {/* Filters */}
+          {/* Filters — every control gets the same "label above, control below" treatment so the
+              row reads as one organized filter bar instead of some fields floating unlabeled next
+              to others that have captions. */}
           <div className="bg-white rounded-lg border border-[#e9e3df] p-4 space-y-3">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-              <VendorDropdown allSuppliers={[...new Set(basePool.map((l) => l.supplier))].sort()} selected={scope.suppliers} onChange={(s) => setScope((c) => ({ ...c, suppliers: s }))} />
-              <ChannelDropdown selected={scope.channels as Channel[]} onChange={(s) => setScope((c) => ({ ...c, channels: s }))} />
-              <CategoryDropdown selected={scope.categories as SKUCategory[]} onChange={(s) => setScope((c) => ({ ...c, categories: s }))} />
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              <div>
+                <label className="text-[10px] font-semibold uppercase tracking-wide text-[#9c9794] block mb-1">Supplier</label>
+                <VendorDropdown allSuppliers={[...new Set(basePool.map((l) => l.supplier))].sort()} selected={scope.suppliers} onChange={(s) => setScope((c) => ({ ...c, suppliers: s }))} />
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold uppercase tracking-wide text-[#9c9794] block mb-1">Channel</label>
+                <ChannelDropdown selected={scope.channels as Channel[]} onChange={(s) => setScope((c) => ({ ...c, channels: s }))} />
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold uppercase tracking-wide text-[#9c9794] block mb-1">Category</label>
+                <CategoryDropdown selected={scope.categories as SKUCategory[]} onChange={(s) => setScope((c) => ({ ...c, categories: s }))} />
+              </div>
               <MultiCheckDropdown label="Warehouse" emptyLabel="All warehouses" options={availableWarehouses} selected={scope.warehouses} onChange={(s) => setScope((c) => ({ ...c, warehouses: s }))} />
               <MultiCheckDropdown label="Status" emptyLabel="All statuses" options={availableStatuses} selected={scope.statuses} onChange={(s) => setScope((c) => ({ ...c, statuses: s }))} />
             </div>
-            <div className="flex items-center gap-2">
-              <Search size={13} className="text-[#9c9794]" />
-              <input value={scope.skuSearch} onChange={(e) => setScope((c) => ({ ...c, skuSearch: e.target.value }))} placeholder="Search SKU code or description…" className="flex-1 text-xs border border-[#e9e3df] rounded-lg px-2.5 py-1.5" />
+            <div>
+              <label className="text-[10px] font-semibold uppercase tracking-wide text-[#9c9794] block mb-1">SKU</label>
+              <div className="flex items-center gap-2 border border-[#e9e3df] rounded-lg px-2.5 py-1.5">
+                <Search size={13} className="text-[#9c9794]" />
+                <input value={scope.skuSearch} onChange={(e) => setScope((c) => ({ ...c, skuSearch: e.target.value }))} placeholder="Search SKU code or description…" className="flex-1 text-xs outline-none" />
+              </div>
             </div>
             <div className="flex items-end gap-3 flex-wrap border-t border-[#f4f1ef] pt-3">
               <div>
