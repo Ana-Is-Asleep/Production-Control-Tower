@@ -163,7 +163,7 @@ export function RootCauseDrilldown() {
 
         <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
           <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-3">
-            {mode === 'trend' ? 'Loss Reasons by Week' : `Recent Weeks — ${snapshotWeek?.label ?? ''} highlighted`}
+            {mode === 'trend' ? 'Loss Reasons by Week' : `Recent Weeks — ${(tableFilter?.week ?? snapshotWeek?.label) ?? ''} highlighted`}
           </p>
           {mode === 'trend' ? (
             <TrendChart
@@ -176,7 +176,7 @@ export function RootCauseDrilldown() {
             <SnapshotStrip
               rows={allRangeRows}
               contextWeeks={actualWeeks.slice(-6)}
-              snapshotWeek={snapshotWeek}
+              highlightedWeek={tableFilter?.week ?? snapshotWeek.label}
               onSelectWeek={(week) => setTableFilter({ week })}
               onSelectWeekCategory={(week, category) => setTableFilter({ week, category })}
             />

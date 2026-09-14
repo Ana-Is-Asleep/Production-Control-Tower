@@ -14,7 +14,10 @@ function Card({ label, value, sub, valueColor }: { label: string; value: string;
   return (
     <div className="bg-white rounded-lg border border-[#e9e3df] px-4 py-3 flex-1 min-w-0" style={{ boxShadow: 'var(--shadow-card)' }}>
       <p className="text-[10px] uppercase tracking-widest text-[#9c9794] mb-1 truncate">{label}</p>
-      <p className="font-extrabold text-2xl leading-none truncate" style={{ color: valueColor ?? COLOR.navy }}>{value}</p>
+      {/* text-value cards (e.g. category names) can run longer than a number ever would — wrap up
+          to 2 lines instead of truncating/overflowing, and use a smaller size so long labels
+          still fit within the card's height. */}
+      <p className="font-extrabold text-xl leading-tight line-clamp-2" style={{ color: valueColor ?? COLOR.navy }}>{value}</p>
       {sub && <p className="text-[10px] text-[#9c9794] mt-1 truncate">{sub}</p>}
     </div>
   );

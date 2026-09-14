@@ -8,7 +8,10 @@ import type { PORootCauseRow } from '../../lib/rootCauseAggregation';
 interface SnapshotStripProps {
   rows: PORootCauseRow[]; // full inherited-range rows, for context around the snapshot week
   contextWeeks: WeekInRange[]; // last ~4-6 weeks including the snapshot week
-  snapshotWeek: WeekInRange;
+  highlightedWeek: string; // whichever week is actively selected (defaults to snapshotWeek, but
+  // tracks the last-clicked tile — previously this stayed pinned to snapshotWeek even after
+  // clicking a different week, making earlier weeks look unclickable even though the table filter
+  // underneath it was in fact updating.
   onSelectWeek: (week: string) => void;
   onSelectWeekCategory: (week: string, category: ReasonCategory) => void;
 }
@@ -17,7 +20,7 @@ interface SnapshotStripProps {
 // snapshot (last completed) week visually emphasized against its recent neighbors. The whole tile
 // is clickable (filters the table to that week, all categories) — the thin colored segments
 // underneath are a *finer* drill-in on top of that, not the only way to interact with a week.
-export function SnapshotStrip({ rows, contextWeeks, snapshotWeek, onSelectWeek, onSelectWeekCategory }: SnapshotStripProps) {
+export function SnapshotStrip({ rows, contextWeeks, highlightedWeek, onSelectWeek, onSelectWeekCategory }: SnapshotStripProps) {
   const maxCount = Math.max(
     1,
     ...contextWeeks.map((w) => rows.filter((r) => r.week?.label === w.label).length)
@@ -27,7 +30,7 @@ export function SnapshotStrip({ rows, contextWeeks, snapshotWeek, onSelectWeek, 
     <div className="flex gap-2 overflow-x-auto">
       {contextWeeks.map((w) => {
         const weekRows = rows.filter((r) => r.week?.label === w.label);
-        const isSnapshot = w.label === snapshotWeek.label;
+        const isSnapshot = w.label === highlightedWeek;
         const byCategory = new Map<ReasonCategory, number>();
         for (const r of weekRows) {
           if (!r.finalCategory) continue;
