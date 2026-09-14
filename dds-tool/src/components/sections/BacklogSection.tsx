@@ -2,9 +2,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { differenceInCalendarWeeks } from 'date-fns';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { weekOf } from '../../lib/kpiFormulas';
+import { computeBacklogRows, computeExpectedRows, type BacklogPORow } from '../../lib/backlogAggregation';
 import { isoWeekKey } from '../../lib/dateUtils';
 import { COLOR } from '../../lib/statusColors';
 import { CardHeader } from '../shared/CardHeader';
@@ -16,68 +14,35 @@ interface BacklogSectionProps {
   drillDownHref: string;
 }
 
-interface BacklogPO {
-  po: string;
-  supplier: string;
-  pgrd: Date;
-  esd: Date | null;
-}
-
-function groupByPO(lines: PurchaseLine[]): Map<string, PurchaseLine[]> {
-  const map = new Map<string, PurchaseLine[]>();
-  lines.forEach((l) => {
-    if (!map.has(l.po)) map.set(l.po, []);
-    map.get(l.po)!.push(l);
-  });
-  return map;
-}
-
+// Recent/Accumulated/Expected counts and backlog membership come from computeBacklogRows/
+// computeExpectedRows (backlogAggregation.ts) — the same functions Backlog Detail uses — instead
+// of a second, locally-reimplemented definition. The two previously disagreed (e.g. 202 here vs.
+// 204 in the detail page) because this component used its own week-boundary-based "recent"
+// threshold instead of the shared day-based one.
 export function BacklogSection({ lines, drillDownHref }: BacklogSectionProps) {
   const today = useMemo(() => new Date(), []);
 
   const { recentCount, accumulatedCount, expectedCount, noEsdCount, clearance, outliers } = useMemo(() => {
-    const byPO = groupByPO(lines);
-    const recent: BacklogPO[] = [];
-    const accumulated: BacklogPO[] = [];
-    const expected: BacklogPO[] = [];
+    const backlogRows = computeBacklogRows(lines, today);
+    const expectedRows = computeExpectedRows(lines, today);
 
-    byPO.forEach((poLines, po) => {
-      const pgrd = poLines.find((l) => l.pgrd)?.pgrd;
-      if (!pgrd) return;
-      const supplier = poLines[0].supplier;
-      const esd = poLines.find((l) => l.esd)?.esd ?? null;
-      const hasAnyASD = poLines.some((l) => l.asd);
-      const isPast = weekOf(pgrd) < weekOf(today);
-      const isFuture = weekOf(pgrd) > weekOf(today);
+    const recentCount = backlogRows.filter((r) => r.ageBucket === 'recent').length;
+    const accumulatedCount = backlogRows.filter((r) => r.ageBucket === 'accumulated').length;
+    const noEsdCount = backlogRows.filter((r) => !r.hasEsd).length;
+    const withEsd = backlogRows.filter((r) => r.hasEsd).sort((a, b) => a.esd!.getTime() - b.esd!.getTime());
 
-      if (isPast && !hasAnyASD) {
-        const weeksAgo = differenceInCalendarWeeks(weekOf(today), weekOf(pgrd), { weekStartsOn: 1 });
-        const entry: BacklogPO = { po, supplier, pgrd, esd };
-        if (weeksAgo <= 2) recent.push(entry);
-        else accumulated.push(entry);
-      }
-
-      if (isFuture && esd && esd > pgrd) {
-        expected.push({ po, supplier, pgrd, esd });
-      }
-    });
-
-    const currentBacklog = [...recent, ...accumulated];
-    const noEsdCount = currentBacklog.filter((p) => !p.esd).length;
-    const withEsd = currentBacklog.filter((p) => p.esd).sort((a, b) => a.esd!.getTime() - b.esd!.getTime());
-
-    const byWeek = new Map<string, { weekLabel: string; pos: BacklogPO[] }>();
-    withEsd.forEach((p) => {
-      const key = isoWeekKey(p.esd!);
+    const byWeek = new Map<string, { weekLabel: string; pos: BacklogPORow[] }>();
+    withEsd.forEach((r) => {
+      const key = isoWeekKey(r.esd!);
       if (!byWeek.has(key)) byWeek.set(key, { weekLabel: `W${key.split('-W')[1]}`, pos: [] });
-      byWeek.get(key)!.pos.push(p);
+      byWeek.get(key)!.pos.push(r);
     });
     const sortedWeeks = [...byWeek.entries()].sort(([a], [b]) => (a < b ? -1 : 1));
 
     const threshold = Math.ceil(withEsd.length * 0.9);
     let cumulative = 0;
     const clearance: { weekLabel: string; count: number }[] = [];
-    const outliers: BacklogPO[] = [];
+    const outliers: BacklogPORow[] = [];
     for (const [, { weekLabel, pos }] of sortedWeeks) {
       if (cumulative >= threshold && clearance.length > 0) {
         outliers.push(...pos);
@@ -87,7 +52,7 @@ export function BacklogSection({ lines, drillDownHref }: BacklogSectionProps) {
       }
     }
 
-    return { recentCount: recent.length, accumulatedCount: accumulated.length, expectedCount: expected.length, noEsdCount, clearance, outliers };
+    return { recentCount, accumulatedCount, expectedCount: expectedRows.length, noEsdCount, clearance, outliers };
   }, [lines, today]);
 
   const maxClearance = Math.max(1, ...clearance.map((c) => c.count));
@@ -106,7 +71,7 @@ export function BacklogSection({ lines, drillDownHref }: BacklogSectionProps) {
       <div className="grid grid-cols-3 gap-2 shrink-0 mt-3">
         {([
           { label: 'Recent', tint: recentCount > 0 ? 'warn' : 'neutral', color: 'text-[#403833]', value: recentCount },
-          { label: 'Accumulated', tint: accumulatedCount > 0 ? 'fail' : 'neutral', color: 'text-[#403833]', value: accumulatedCount },
+          { label: 'Critical', tint: accumulatedCount > 0 ? 'fail' : 'neutral', color: 'text-[#403833]', value: accumulatedCount },
           { label: 'Expected', tint: 'neutral', color: 'text-[#403833]', value: expectedCount },
         ] as const).map((c) => (
           <KpiBox key={c.label} label={c.label} value={c.value} valueClassName={`text-xl ${c.color}`} tint={c.tint} />
@@ -127,7 +92,7 @@ export function BacklogSection({ lines, drillDownHref }: BacklogSectionProps) {
                 contentStyle={{ background: COLOR.navy, border: 'none', borderRadius: 8, fontSize: 11, padding: '6px 10px' }}
                 labelStyle={{ color: COLOR.brandSoft, fontWeight: 700 }}
                 itemStyle={{ color: '#f9f7f6' }}
-                formatter={(value) => [`${value} POs`, 'Clearing']}
+                formatter={(value) => [`${value} POs`, '']}
               />
               <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={36}>
                 {clearance.map((c) => (

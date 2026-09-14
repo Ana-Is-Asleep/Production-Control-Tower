@@ -116,7 +116,6 @@ export function BacklogPOTable({ rows, today, activeSku, onClearSku, showEsdPass
               <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">PGRD</th>
               <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">EGRD</th>
               <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">ESD</th>
-              <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">ASD</th>
               <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">ESD Status</th>
               <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">Days in Backlog</th>
               <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">Delay (vs EGRD)</th>
@@ -124,7 +123,7 @@ export function BacklogPOTable({ rows, today, activeSku, onClearSku, showEsdPass
           </thead>
           <tbody>
             {visible.length === 0 && (
-              <tr><td colSpan={8} className="text-center py-6 text-[#9c9794]">No POs match the current selection</td></tr>
+              <tr><td colSpan={7} className="text-center py-6 text-[#9c9794]">No POs match the current selection</td></tr>
             )}
             {visible.map((r) => {
               const status = esdStatus(r, today);
@@ -144,13 +143,12 @@ export function BacklogPOTable({ rows, today, activeSku, onClearSku, showEsdPass
                     <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{formatDateShort(r.pgrd)}</td>
                     <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{formatDateShort(r.egrd)}</td>
                     <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{r.esd ? formatDateShort(r.esd) : '—'}</td>
-                    <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">—</td>
                     <td className="px-3 py-2 whitespace-nowrap font-semibold" style={{ color: TONE_COLOR[status.tone] }}>{status.label}</td>
                     <td className="px-3 py-2 text-center font-semibold text-[#403833]">{r.ageDays}d</td>
                     <td className="px-3 py-2 text-center font-semibold" style={{ color: delay !== null ? '#dc2626' : '#c8c0bb' }}>{delay !== null ? `${delay}d` : '—'}</td>
                   </tr>
                   {isExpanded && hasLineData && (
-                    <tr><td colSpan={8} className="p-0"><LineDetail row={r} /></td></tr>
+                    <tr><td colSpan={7} className="p-0"><LineDetail row={r} /></td></tr>
                   )}
                 </Fragment>
               );

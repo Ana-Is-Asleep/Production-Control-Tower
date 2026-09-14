@@ -2,7 +2,7 @@ import { differenceInCalendarDays } from 'date-fns';
 import { shiftISOWeek, weekRangeFor, lastCompletedWeek, getISOWeek, getISOWeekYear } from './dateUtils';
 import type { PurchaseLine } from '../types';
 
-export const RECENT_THRESHOLD_DAYS = 14;
+export const RECENT_THRESHOLD_DAYS = 7; // 1 week — Ana: "Recent should be last week, accumulated should be anything before last week"
 export const PROJECTION_FORWARD_WEEKS = 4; // today + next 4 weeks
 
 export type AgeBucket = 'recent' | 'accumulated';

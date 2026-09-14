@@ -35,11 +35,11 @@ export function BacklogTopCards({
         <div className="flex items-center gap-4 flex-wrap">
           <div>
             <p className="text-lg font-extrabold leading-none text-brand">{recentCount}</p>
-            <p className="text-[10px] text-[#7b7571] mt-0.5">Recent (≤2wk) · {pct(recentCount, total)}%</p>
+            <p className="text-[10px] text-[#7b7571] mt-0.5">Recent (≤1wk) · {pct(recentCount, total)}%</p>
           </div>
           <div>
             <p className="text-lg font-extrabold leading-none text-fail">{accumulatedCount}</p>
-            <p className="text-[10px] text-[#7b7571] mt-0.5">Accumulated (&gt;2wk) · {pct(accumulatedCount, total)}%</p>
+            <p className="text-[10px] text-[#7b7571] mt-0.5">Critical (&gt;1wk) · {pct(accumulatedCount, total)}%</p>
           </div>
           <div>
             <p className="text-lg font-extrabold leading-none text-fail">{noEsdCount}</p>
@@ -63,7 +63,7 @@ export function BacklogTopCards({
           {expectedByWeek.length === 0 && <span className="text-[11px] text-[#9c9794]">None in the upcoming window</span>}
         </div>
         <div className="bg-[#fff7ed] rounded-md px-2.5 py-2 text-[10px] text-[#7b7571] leading-snug">
-          These POs have a future PGRD, but their confirmed ESD is already later than PGRD. If the current booking remains unchanged, they are expected to enter backlog.
+          These POs have a future PGRD, but their ESD is already later than PGRD. If the current booking remains unchanged, they are expected to enter backlog.
         </div>
       </div>
 
@@ -78,7 +78,7 @@ export function BacklogTopCards({
         <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-1">Expected Clearance</p>
         <p className="text-3xl font-extrabold leading-none text-[#403833]">{expectedClearanceCount} <span className="text-sm font-semibold text-[#9c9794]">POs</span></p>
         <p className="text-[11px] text-[#9c9794] mt-2">Have a known expected clearance date</p>
-        <p className="text-[10px] text-[#c8c0bb] mt-auto pt-2">Based on confirmed ESD</p>
+        <p className="text-[10px] text-[#c8c0bb] mt-auto pt-2">Based on ESD</p>
       </div>
     </div>
   );

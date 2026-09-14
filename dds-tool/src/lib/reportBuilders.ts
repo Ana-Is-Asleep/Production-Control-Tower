@@ -291,8 +291,8 @@ export function buildBacklogOverviewReport(ctx: ReportContext): ReportResult {
 
   const kpis: ReportKpi[] = [
     { label: 'Current Backlog', value: String(rows.length) },
-    { label: 'Recent (≤2wk)', value: String(rows.filter((r) => r.ageBucket === 'recent').length), tint: 'pass' },
-    { label: 'Accumulated (>2wk)', value: String(rows.filter((r) => r.ageBucket === 'accumulated').length), tint: 'fail' },
+    { label: 'Recent (≤1wk)', value: String(rows.filter((r) => r.ageBucket === 'recent').length), tint: 'pass' },
+    { label: 'Critical (>1wk)', value: String(rows.filter((r) => r.ageBucket === 'accumulated').length), tint: 'fail' },
     { label: 'Avg Age', value: `${avgAgeDays}d` },
     { label: 'No ESD', value: String(noEsdCount), tint: noEsdCount > 0 ? 'fail' : 'neutral' },
     { label: 'Expected Clearance', value: String(rows.length - noEsdCount) },

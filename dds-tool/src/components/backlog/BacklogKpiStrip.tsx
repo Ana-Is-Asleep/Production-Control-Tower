@@ -34,8 +34,8 @@ export function BacklogKpiStrip({ total, recent, accumulated, avgAgeDays, noEsdC
   return (
     <div className="flex gap-2">
       <Card label="Total Backlog" value={String(total)} />
-      <Card label="Recent (≤2wk)" value={String(recent)} valueColor={COLOR.brand} />
-      <Card label="Accumulated (>2wk)" value={String(accumulated)} valueColor={COLOR.fail} />
+      <Card label="Recent (≤1wk)" value={String(recent)} valueColor={COLOR.brand} />
+      <Card label="Critical (>1wk)" value={String(accumulated)} valueColor={COLOR.fail} />
       <Card label="Avg Age" value={`${avgAgeDays}d`} />
       <Card label="No-ESD" value={String(noEsdCount)} valueColor={COLOR.fail} />
       <Card label="Expected" value={String(expectedCount)} sub="Future PGRD, ESD booked after it" />
