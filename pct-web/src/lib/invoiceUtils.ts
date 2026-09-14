@@ -108,12 +108,20 @@ export function filterByChannel(rows: InvoiceRow[], channel: InvoiceChannel): In
 }
 
 // dashboard's global Supplier filter uses PurchaseLine supplier names, which don't always match
-// the invoice file's Name field exactly — fuzzy substring match in both directions as a bridge
+// the invoice file's Name field exactly — fuzzy substring match in both directions as a bridge.
+// Some invoice Name values are actually several company names joined with a comma (e.g.
+// "Vitafoam, Vita Cellular") — matching that whole joined string as one blob let an unrelated
+// filter (e.g. "Novaqui SA") false-positive-match if either side happened to be a substring of
+// the concatenation. Matching each comma-separated part individually avoids that.
 export function filterBySupplierNames(rows: InvoiceRow[], supplierNames: string[]): InvoiceRow[] {
   if (supplierNames.length === 0) return rows;
-  return rows.filter((r) =>
-    supplierNames.some((s) => r.name.toLowerCase().includes(s.toLowerCase()) || s.toLowerCase().includes(r.name.toLowerCase()))
-  );
+  return rows.filter((r) => {
+    const namesInRow = r.name.split(',').map((n) => n.trim().toLowerCase()).filter(Boolean);
+    return supplierNames.some((s) => {
+      const sLower = s.toLowerCase();
+      return namesInRow.some((n) => n.includes(sLower) || sLower.includes(n));
+    });
+  });
 }
 
 export interface AgingBucket {

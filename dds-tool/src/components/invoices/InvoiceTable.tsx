@@ -11,6 +11,9 @@ interface InvoiceTableProps {
 }
 
 function daysLabel(row: InvoiceRow, today: Date): { text: string; days: number | null } {
+  // "Days to/from due" only means something for invoices still awaiting payment — an invoice
+  // already Paid isn't overdue regardless of how far past its due date it eventually settled.
+  if (row.postingStatus === 'Paid') return { text: '—', days: null };
   if (!row.effectiveDueDate) return { text: '—', days: null };
   const days = differenceInCalendarDays(today, row.effectiveDueDate);
   if (days === 0) return { text: 'Due today', days };
