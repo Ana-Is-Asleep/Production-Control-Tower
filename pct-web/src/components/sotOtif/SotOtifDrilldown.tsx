@@ -403,8 +403,8 @@ export function SotOtifDrilldown() {
                 posInScope={scopeRollups.length}
                 consistency={consistencyStats}
               />
-              <PerformanceConsistency stats={consistencyStats} periodLabel={periodLabel} />
               <LatenessProfile rollups={supplierWeekRollups} weekLabel={selectedWeek?.label ?? null} />
+              <PerformanceConsistency stats={consistencyStats} periodLabel={periodLabel} />
             </div>
 
             <WeekStrip

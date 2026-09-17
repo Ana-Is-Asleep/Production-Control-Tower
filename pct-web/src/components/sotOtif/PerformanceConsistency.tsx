@@ -21,8 +21,8 @@ export function PerformanceConsistency({ stats, periodLabel }: PerformanceConsis
 
   return (
     <div className="bg-white rounded-lg border border-[#e9e3df] p-4 h-full flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
-      <p className="text-sm font-bold text-[#403833]">Performance Consistency</p>
-      <p className="text-[11px] text-[#9c9794] mb-3">Selected evaluation period, {periodLabel}</p>
+      <p className="text-sm font-bold text-[#403833]">Performance Consistency of Evaluated Period {periodLabel}</p>
+      <p className="text-[11px] text-[#9c9794] mb-3">{completedWeeksCount} completed week{completedWeeksCount === 1 ? '' : 's'} in this period</p>
 
       {completedWeeksCount === 0 ? (
         <p className="text-xs text-[#9c9794]">No completed weeks in the selected period yet.</p>
@@ -54,13 +54,13 @@ export function PerformanceConsistency({ stats, periodLabel }: PerformanceConsis
 
           <div className="grid grid-cols-2 gap-2 mt-auto">
             <div className="rounded-lg border border-[#e9e3df] px-2.5 py-2">
-              <p className="text-[10px] text-[#9c9794] uppercase tracking-wide">Best Week</p>
+              <p className="text-[10px] text-[#9c9794] uppercase tracking-wide">Best Week (by SOT)</p>
               {bestWeek ? (
                 <p className="text-sm font-bold text-pass mt-0.5">{bestWeek.label} <span className="text-[#403833] font-semibold">{pct(bestWeek.sot)}</span></p>
               ) : <p className="text-sm text-[#c8c0bb] mt-0.5">—</p>}
             </div>
             <div className="rounded-lg border border-[#e9e3df] px-2.5 py-2">
-              <p className="text-[10px] text-[#9c9794] uppercase tracking-wide">Worst Week</p>
+              <p className="text-[10px] text-[#9c9794] uppercase tracking-wide">Worst Week (by SOT)</p>
               {worstWeek ? (
                 <p className="text-sm font-bold text-fail mt-0.5">{worstWeek.label} <span className="text-[#403833] font-semibold">{pct(worstWeek.sot)}</span></p>
               ) : <p className="text-sm text-[#c8c0bb] mt-0.5">—</p>}
