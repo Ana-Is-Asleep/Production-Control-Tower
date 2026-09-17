@@ -64,10 +64,12 @@ export function computeKPIs(rows: InvoiceRow[]): InvoiceKPIs {
     r.invoiceStatus === 'Draft'
   );
 
-  // Card 3: due this week — includes already overdue ones since they're also before Sunday
+  // Card 3: due this week but NOT already overdue — already-overdue invoices belong to Card 1
+  // (Overdue — Pending Approval) instead; a due date from months ago is not "due by end of week."
   const dueByEndOfWeek = rows.filter((r) =>
     r.invoiceStatus === 'Submitted, but not Approved' &&
     r.effectiveDueDate !== null &&
+    !isBefore(r.effectiveDueDate, today) &&
     r.effectiveDueDate <= weekEnd
   );
 

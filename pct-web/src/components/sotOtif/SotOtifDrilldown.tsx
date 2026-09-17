@@ -133,12 +133,17 @@ export function SotOtifDrilldown() {
   const kpiWeekLabel = selectedWeek?.label ?? weeksInRange.find((w) => w.isCurrent)?.label ?? null;
 
   const scopeRollups = useMemo(() => rollupByPO(kpiLines, isChinaSupplier, today), [kpiLines, isChinaSupplier, today]);
-  const scopeSOT = useMemo(() => aggregateSOTRate(kpiLines, isChinaSupplier, today), [kpiLines, isChinaSupplier, today]);
-  const scopeOTIF = useMemo(() => aggregateOTIFRate(kpiLines, isChinaSupplier), [kpiLines, isChinaSupplier]);
   const onTimeCount = scopeRollups.filter((r) => r.sot === true).length;
   const lateCount = scopeRollups.filter((r) => r.sot === false).length;
   const otifOnCount = scopeRollups.filter((r) => r.otif === true).length;
   const otifOffCount = scopeRollups.filter((r) => r.otif === false).length;
+  // Matches the PO List table's per-PO SOT/OTIF status (majority vote across a PO's lines, same
+  // as rollupByPO) instead of aggregateSOTRate/aggregateOTIFRate's per-PO fractional average — the
+  // two disagreed whenever a PO's lines split (e.g. 8/9 lines OTIF still counts as "OTIF" in the
+  // table but only scored 0.89 in the fractional average), which is what produced "98%" here next
+  // to a table where all 4 POs read "OTIF" (should read 100%).
+  const scopeSOT = onTimeCount + lateCount > 0 ? Math.round((onTimeCount / (onTimeCount + lateCount)) * 100) : null;
+  const scopeOTIF = otifOnCount + otifOffCount > 0 ? Math.round((otifOnCount / (otifOnCount + otifOffCount)) * 100) : null;
   // Avg delay among POs that actually missed SOT: ship date (ASD if shipped, else ESD) minus
   // PGRD, in days — only counted when that gap is positive, since a "late" PO by the SOT week
   // rule could still have a same-week ship date a few days after PGRD's week started.

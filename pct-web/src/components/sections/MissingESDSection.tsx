@@ -73,7 +73,7 @@ export function MissingESDSection({ lines, weeksInRange, drillDownHref }: Missin
             />
             <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={36}>
               {rows.map((r) => (
-                <Cell key={r.weekLabel} fill={r.count > 0 ? COLOR.fail : COLOR.border} />
+                <Cell key={r.weekLabel} fill={r.count === 0 ? COLOR.border : r.offset <= 3 ? COLOR.fail : '#f3a8a8'} />
               ))}
             </Bar>
           </BarChart>

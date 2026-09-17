@@ -83,7 +83,7 @@ export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWee
         </div>
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap mt-2">
+      <div className="flex items-center gap-2 flex-wrap mt-2 justify-end">
         {CHANNELS.map((c) => (
           <button
             key={c}
@@ -110,7 +110,7 @@ export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWee
         )}
         {(filters.suppliers.length > 0 || filters.channels.length > 0 || filters.categories.length > 0 ||
           filters.weekRange.start !== DEFAULT_FILTERS.weekRange.start || filters.weekRange.end !== DEFAULT_FILTERS.weekRange.end) && (
-          <button onClick={() => onChange(DEFAULT_FILTERS)} className="flex items-center gap-1 text-xs text-[#9c9794] hover:text-fail transition-colors ml-auto">
+          <button onClick={() => onChange(DEFAULT_FILTERS)} className="flex items-center gap-1 text-xs text-[#9c9794] hover:text-fail transition-colors mr-auto">
             <RotateCcw size={12} /> Reset filters
           </button>
         )}
