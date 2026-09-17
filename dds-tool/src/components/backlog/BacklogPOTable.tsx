@@ -75,13 +75,18 @@ const TONE_COLOR: Record<EsdStatus['tone'], string> = { fail: '#dc2626', warn: '
 export function BacklogPOTable({ rows, today, activeSku, onClearSku, showEsdPassedOnly, onClearEsdPassedOnly }: BacklogPOTableProps) {
   const [expandedPO, setExpandedPO] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
     let result = rows;
     if (activeSku) result = result.filter((r) => r.lines.some((l) => l.sku === activeSku));
     if (showEsdPassedOnly) result = result.filter((r) => r.esdPassedNoAsd);
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      result = result.filter((r) => r.po.toLowerCase().includes(q) || r.supplier.toLowerCase().includes(q));
+    }
     return result;
-  }, [rows, activeSku, showEsdPassedOnly]);
+  }, [rows, activeSku, showEsdPassedOnly, search]);
 
   const visible = showAll ? filtered : filtered.slice(0, TOP_N);
 
@@ -93,6 +98,12 @@ export function BacklogPOTable({ rows, today, activeSku, onClearSku, showEsdPass
           <span className="text-xs text-[#9c9794]">{filtered.length} PO{filtered.length === 1 ? '' : 's'} in backlog</span>
         </div>
         <div className="flex items-center gap-2">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search PO or supplier…"
+            className="text-xs border border-[#e9e3df] rounded-lg px-2.5 py-1.5 w-40"
+          />
           {activeSku && (
             <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#fff7ed] text-brand border border-brand/30 flex items-center gap-1.5">
               SKU: {activeSku}
@@ -116,6 +127,7 @@ export function BacklogPOTable({ rows, today, activeSku, onClearSku, showEsdPass
               <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">PGRD</th>
               <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">EGRD</th>
               <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">ESD</th>
+              <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">Qty</th>
               <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">ESD Status</th>
               <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">Days in Backlog</th>
               <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">Delay (vs EGRD)</th>
@@ -123,7 +135,7 @@ export function BacklogPOTable({ rows, today, activeSku, onClearSku, showEsdPass
           </thead>
           <tbody>
             {visible.length === 0 && (
-              <tr><td colSpan={7} className="text-center py-6 text-[#9c9794]">No POs match the current selection</td></tr>
+              <tr><td colSpan={8} className="text-center py-6 text-[#9c9794]">No POs match the current selection</td></tr>
             )}
             {visible.map((r) => {
               const status = esdStatus(r, today);
@@ -143,12 +155,13 @@ export function BacklogPOTable({ rows, today, activeSku, onClearSku, showEsdPass
                     <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{formatDateShort(r.pgrd)}</td>
                     <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{formatDateShort(r.egrd)}</td>
                     <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{r.esd ? formatDateShort(r.esd) : '—'}</td>
+                    <td className="px-3 py-2 text-right text-[#58524e] whitespace-nowrap">{r.qtyConfirmed.toLocaleString()}</td>
                     <td className="px-3 py-2 whitespace-nowrap font-semibold" style={{ color: TONE_COLOR[status.tone] }}>{status.label}</td>
                     <td className="px-3 py-2 text-center font-semibold text-[#403833]">{r.ageDays}d</td>
                     <td className="px-3 py-2 text-center font-semibold" style={{ color: delay !== null ? '#dc2626' : '#c8c0bb' }}>{delay !== null ? `${delay}d` : '—'}</td>
                   </tr>
                   {isExpanded && hasLineData && (
-                    <tr><td colSpan={7} className="p-0"><LineDetail row={r} /></td></tr>
+                    <tr><td colSpan={8} className="p-0"><LineDetail row={r} /></td></tr>
                   )}
                 </Fragment>
               );

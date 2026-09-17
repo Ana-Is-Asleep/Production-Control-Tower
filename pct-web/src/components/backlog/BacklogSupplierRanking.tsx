@@ -21,8 +21,21 @@ export function BacklogSupplierRanking({ summary }: BacklogSupplierRankingProps)
         pctOfBacklog: rest.reduce((s, r) => s + r.pctOfBacklog, 0),
         avgAgeDays: Math.round(rest.reduce((s, r) => s + r.avgAgeDays * r.count, 0) / Math.max(1, rest.reduce((s, r) => s + r.count, 0))),
         noEsdCount: rest.reduce((s, r) => s + r.noEsdCount, 0),
+        qtyAffected: rest.reduce((s, r) => s + r.qtyAffected, 0),
+        esdInPastCount: rest.reduce((s, r) => s + r.esdInPastCount, 0),
       }
     : null;
+
+  function resolvedByCell(s: { resolvedByWeek?: string | null; noEsdCount: number; esdInPastCount: number }) {
+    if (!s.resolvedByWeek) return <span className="text-[#c8c0bb]">—</span>;
+    return (
+      <span>
+        {s.resolvedByWeek}
+        {s.esdInPastCount > 0 && <span className="block text-[10px] text-fail">{s.esdInPastCount} ESD in the past</span>}
+        {s.noEsdCount > 0 && <span className="block text-[10px] text-fail">{s.noEsdCount} unbooked</span>}
+      </span>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg border border-[#e9e3df] p-4 h-full flex flex-col min-h-0" style={{ boxShadow: 'var(--shadow-card)' }}>
@@ -39,7 +52,9 @@ export function BacklogSupplierRanking({ summary }: BacklogSupplierRankingProps)
                 <th className="text-center pb-1.5 px-2">POs</th>
                 <th className="text-center pb-1.5 px-2">% of backlog</th>
                 <th className="text-center pb-1.5 px-2">Avg Age</th>
+                <th className="text-center pb-1.5 px-2">Qty Affected</th>
                 <th className="text-center pb-1.5 px-2">No ESD</th>
+                <th className="text-center pb-1.5 px-2">Booked Ones Resolved By</th>
               </tr>
             </thead>
             <tbody>
@@ -49,7 +64,9 @@ export function BacklogSupplierRanking({ summary }: BacklogSupplierRankingProps)
                   <td className="py-2 px-2 text-center text-[#403833]">{s.count}</td>
                   <td className="py-2 px-2 text-center text-[#58524e]">{s.pctOfBacklog}%</td>
                   <td className="py-2 px-2 text-center text-[#58524e]">{s.avgAgeDays}d</td>
+                  <td className="py-2 px-2 text-center text-[#58524e]">{s.qtyAffected.toLocaleString()}</td>
                   <td className="py-2 px-2 text-center" style={{ color: s.noEsdCount > 0 ? '#dc2626' : '#c8c0bb' }}>{s.noEsdCount}</td>
+                  <td className="py-2 px-2 text-center text-[#58524e]">{resolvedByCell(s)}</td>
                 </tr>
               ))}
               {others && (
@@ -58,7 +75,9 @@ export function BacklogSupplierRanking({ summary }: BacklogSupplierRankingProps)
                   <td className="py-2 px-2 text-center">{others.count}</td>
                   <td className="py-2 px-2 text-center">{others.pctOfBacklog}%</td>
                   <td className="py-2 px-2 text-center">{others.avgAgeDays}d</td>
+                  <td className="py-2 px-2 text-center">{others.qtyAffected.toLocaleString()}</td>
                   <td className="py-2 px-2 text-center" style={{ color: others.noEsdCount > 0 ? '#dc2626' : '#c8c0bb' }}>{others.noEsdCount}</td>
+                  <td className="py-2 px-2 text-center text-[10px]">—</td>
                 </tr>
               )}
               <tr className="border-t-2 border-[#403833] font-bold text-[#403833]">
@@ -68,7 +87,9 @@ export function BacklogSupplierRanking({ summary }: BacklogSupplierRankingProps)
                 <td className="py-2 px-2 text-center">
                   {Math.round(summary.reduce((s, r) => s + r.avgAgeDays * r.count, 0) / Math.max(1, summary.reduce((s, r) => s + r.count, 0)))}d
                 </td>
+                <td className="py-2 px-2 text-center">{summary.reduce((s, r) => s + r.qtyAffected, 0).toLocaleString()}</td>
                 <td className="py-2 px-2 text-center">{summary.reduce((s, r) => s + r.noEsdCount, 0)}</td>
+                <td className="py-2 px-2 text-center text-[10px]">—</td>
               </tr>
             </tbody>
           </table>

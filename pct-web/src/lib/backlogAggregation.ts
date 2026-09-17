@@ -1,5 +1,5 @@
 import { differenceInCalendarDays } from 'date-fns';
-import { shiftISOWeek, weekRangeFor, lastCompletedWeek, getISOWeek, getISOWeekYear } from './dateUtils';
+import { shiftISOWeek, weekRangeFor, lastCompletedWeek, getISOWeek, getISOWeekYear, isoWeekKey } from './dateUtils';
 import type { PurchaseLine } from '../types';
 
 export const RECENT_THRESHOLD_DAYS = 7; // 1 week — Ana: "Recent should be last week, accumulated should be anything before last week"
@@ -177,6 +177,9 @@ export interface SupplierBacklogSummary {
   pctOfBacklog: number;
   avgAgeDays: number;
   noEsdCount: number;
+  qtyAffected: number; // sum of confirmed qty across this supplier's backlog POs
+  resolvedByWeek: string | null; // latest booked ESD week among this supplier's backlog POs, null if none have an ESD
+  esdInPastCount: number; // booked (has ESD) but that ESD has already passed — reuses each row's own esdPassedNoAsd flag
 }
 
 // Ranked by CURRENT backlog count. There is deliberately no week-over-week trend/chronic-vs-spike
@@ -193,13 +196,20 @@ export function computeSupplierBacklogSummary(rows: BacklogPORow[]): SupplierBac
   }
   const total = rows.length;
   return [...bySupplier.entries()]
-    .map(([supplier, poRows]) => ({
-      supplier,
-      count: poRows.length,
-      pctOfBacklog: total ? Math.round((poRows.length / total) * 100) : 0,
-      avgAgeDays: Math.round(poRows.reduce((s, r) => s + r.ageDays, 0) / poRows.length),
-      noEsdCount: poRows.filter((r) => !r.hasEsd).length,
-    }))
+    .map(([supplier, poRows]) => {
+      const booked = poRows.filter((r) => r.hasEsd && r.esd);
+      const latestEsd = booked.length ? booked.reduce((latest, r) => (r.esd! > latest ? r.esd! : latest), booked[0].esd!) : null;
+      return {
+        supplier,
+        count: poRows.length,
+        pctOfBacklog: total ? Math.round((poRows.length / total) * 100) : 0,
+        avgAgeDays: Math.round(poRows.reduce((s, r) => s + r.ageDays, 0) / poRows.length),
+        noEsdCount: poRows.filter((r) => !r.hasEsd).length,
+        qtyAffected: poRows.reduce((s, r) => s + r.qtyConfirmed, 0),
+        resolvedByWeek: latestEsd ? isoWeekKey(latestEsd) : null,
+        esdInPastCount: poRows.filter((r) => r.esdPassedNoAsd).length,
+      };
+    })
     .sort((a, b) => b.count - a.count);
 }
 
