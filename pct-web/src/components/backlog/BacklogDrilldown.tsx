@@ -12,7 +12,8 @@ import {
   computeExpectedByPgrdWeek, findOutliers, computeSupplierBacklogSummary, computeBacklogBySKU, anchorWeek,
 } from '../../lib/backlogAggregation';
 import { Sidebar } from '../shell/Sidebar';
-import { PageHeader } from '../shell/PageHeader';
+import { DetailHeader } from '../shell/DetailHeader';
+import { GlobalActionsBadge } from '../actions/GlobalActionsBadge';
 import { SupplierInfoCard } from '../sotOtif/SupplierInfoCard';
 import { BacklogTopCards } from './BacklogTopCards';
 import { BacklogClearanceForecast } from './BacklogClearanceForecast';
@@ -33,10 +34,9 @@ export function BacklogDrilldown() {
 
   const initialFilters = useMemo(() => parseBacklogParams(searchParams), []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Backlog is a current-state view (Today vs PGRD/ESD), not a snapshot: filteredLines
-  // (supplier/channel/category only) is used instead of weekRangeLines, so there's no PGRD
-  // week-range restriction here — same precedent as the dashboard card and Missing ESD.
-  const { filters, setFilters, filteredLines, allSuppliers, curWeek: sotCurWeek, curYear: sotCurYear } =
+  // Now respects the global week range (Ana: Backlog/Lead Time/Invoices should react to the range
+  // like SOT/OTIF and the overview do) — weekRangeLines instead of filteredLines.
+  const { filters, setFilters, weekRangeLines: filteredLines, allSuppliers, curWeek: sotCurWeek, curYear: sotCurYear } =
     useFilters(allLines, initialFilters);
 
   useEffect(() => {
@@ -99,18 +99,9 @@ export function BacklogDrilldown() {
     <div className={isModeB ? 'min-h-screen w-full bg-[#f5f2ee] flex' : 'h-screen w-full bg-[#f5f2ee] flex overflow-hidden'}>
       <Sidebar />
       <div className={isModeB ? 'flex-1 min-w-0 flex flex-col' : 'flex-1 min-w-0 flex flex-col overflow-hidden'}>
-        <PageHeader
-          breadcrumb={
-            isModeB
-              ? [{ label: 'Dashboard', href: '/' }, { label: 'Backlog Detail', href: '/backlog' }, { label: 'Supplier Detail' }]
-              : [{ label: 'Dashboard', href: '/' }, { label: 'Backlog Detail' }]
-          }
+        <DetailHeader
+          title={isModeB ? 'Backlog Detail — Supplier Detail' : 'Backlog Detail'}
           filters={filters}
-          onChange={setFilters}
-          allSuppliers={allSuppliers}
-          curWeek={sotCurWeek}
-          curYear={sotCurYear}
-          showWeekRange={false}
           rightActions={
             <>
               <button
@@ -236,6 +227,7 @@ export function BacklogDrilldown() {
           </div>
         )}
       </div>
+      <GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />
     </div>
   );
 }

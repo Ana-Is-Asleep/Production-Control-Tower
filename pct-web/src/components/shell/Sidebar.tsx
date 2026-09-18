@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutGrid, FileBarChart, Database, ListChecks, BookOpen, HelpCircle, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutGrid, FileBarChart, Database, ListChecks, HelpCircle, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface NavItem {
   key: string;
@@ -11,15 +11,13 @@ interface NavItem {
   href: string | null; // null = not a real page yet
 }
 
-// Dashboard, Reports, Raw Data, Actions and Data Dictionary are all real routes; which one is
-// highlighted is driven by the current path, not a hardcoded flag, so this stays correct as more
-// routes are added.
+// Dashboard, Reports, Raw Data and Actions are all real routes; which one is highlighted is
+// driven by the current path, not a hardcoded flag, so this stays correct as more routes are added.
 const NAV_ITEMS: NavItem[] = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutGrid, href: '/' },
   { key: 'reports', label: 'Reports', icon: FileBarChart, href: '/reports' },
   { key: 'raw-data', label: 'Raw data', icon: Database, href: '/raw-data' },
   { key: 'actions', label: 'Actions', icon: ListChecks, href: '/actions' },
-  { key: 'data-dictionary', label: 'Data Dictionary', icon: BookOpen, href: '/data-dictionary' },
 ];
 
 // Help/Settings have no destination page yet, so — same as Raw Data before it existed — they

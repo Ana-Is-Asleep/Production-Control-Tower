@@ -18,7 +18,8 @@ import {
 } from '../../lib/leadTimeAnalytics';
 import { downloadWorkbook } from '../../lib/xlsxWriter';
 import { Sidebar } from '../shell/Sidebar';
-import { PageHeader } from '../shell/PageHeader';
+import { DetailHeader } from '../shell/DetailHeader';
+import { GlobalActionsBadge } from '../actions/GlobalActionsBadge';
 import { LargeModal } from '../shared/LargeModal';
 import { LeadTimeKpiStrip } from './LeadTimeKpiStrip';
 import { LeadTimeTrendChart } from './LeadTimeTrendChart';
@@ -166,14 +167,9 @@ export function LeadTimeDrilldown() {
     <div className="min-h-screen w-full bg-[#f5f2ee] flex">
       <Sidebar />
       <div className="flex-1 min-w-0 flex flex-col">
-        <PageHeader
-          breadcrumb={[{ label: 'Dashboard', href: '/' }, { label: 'Lead Time Detail' }]}
+        <DetailHeader
+          title="Lead Time Detail"
           filters={filters}
-          onChange={setFilters}
-          allSuppliers={allSuppliers}
-          curWeek={curWeek}
-          curYear={curYear}
-          showWeekRange={false}
           rightActions={
             <>
               <button
@@ -258,8 +254,8 @@ export function LeadTimeDrilldown() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-                <LeadTimeInsights kpis={kpis} overview={overview} categories={categories} contextLabel={selectedSupplier ?? ''} />
                 {distribution && <LeadTimeDistribution distribution={distribution} />}
+                <LeadTimeInsights kpis={kpis} overview={overview} categories={categories} contextLabel={selectedSupplier ?? ''} />
               </div>
 
               <div className="bg-white rounded-lg border border-[#e9e3df] p-4 space-y-3" style={{ boxShadow: 'var(--shadow-card)' }}>
@@ -402,6 +398,7 @@ export function LeadTimeDrilldown() {
           </div>
         </LargeModal>
       )}
+      <GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />
     </div>
   );
 }

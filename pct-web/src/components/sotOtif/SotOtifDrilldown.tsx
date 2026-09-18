@@ -5,11 +5,12 @@ import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-do
 import { Download, MoreVertical, Maximize2 } from 'lucide-react';
 import { LargeModal } from '../shared/LargeModal';
 import { useData } from '../../context/DataContext';
-import { useFilters, type WeekInRange, type ActiveFilters } from '../../hooks/useFilters';
+import { useFilters, type WeekInRange } from '../../hooks/useFilters';
 import { useKPIs } from '../../hooks/useKPIs';
 import { useVendorMapping } from '../../hooks/useVendorMapping';
 import { Sidebar } from '../shell/Sidebar';
-import { PageHeader } from '../shell/PageHeader';
+import { DetailHeader } from '../shell/DetailHeader';
+import { GlobalActionsBadge } from '../actions/GlobalActionsBadge';
 import { KpiBox } from '../shared/KpiBox';
 import { TopGraphChart } from '../sections/TopGraphChart';
 import { KPICardsRow } from './KPICardsRow';
@@ -66,11 +67,6 @@ export function SotOtifDrilldown() {
     navigate(`${pathname}?${params.toString()}`, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, selectedWeek, pathname]);
-
-  const handleFilterChange = (f: ActiveFilters) => {
-    setFilters(f);
-    if (f.suppliers.length !== 1) setViaScorecard(false);
-  };
 
   const handleSupplierRowClick = (supplier: string) => {
     setFilters({ ...filters, suppliers: [supplier] });
@@ -218,17 +214,9 @@ export function SotOtifDrilldown() {
     <div className={isModeB ? 'min-h-screen w-full bg-[#f5f2ee] flex' : 'h-screen w-full bg-[#f5f2ee] flex overflow-hidden'}>
       <Sidebar />
       <div className={isModeB ? 'flex-1 min-w-0 flex flex-col' : 'flex-1 min-w-0 flex flex-col overflow-hidden'}>
-        <PageHeader
-          breadcrumb={
-            isModeB
-              ? [{ label: 'Dashboard', href: '/' }, { label: 'SOT / OTIF Detail' }]
-              : [{ label: 'Dashboard', href: '/' }, { label: 'SOT / OTIF Performance' }]
-          }
+        <DetailHeader
+          title={isModeB ? 'SOT / OTIF Detail' : 'SOT / OTIF Performance'}
           filters={filters}
-          onChange={handleFilterChange}
-          allSuppliers={allSuppliers}
-          curWeek={curWeek}
-          curYear={curYear}
           rightActions={
             <>
               <button
@@ -495,6 +483,7 @@ export function SotOtifDrilldown() {
           </div>
         </LargeModal>
       )}
+      <GlobalActionsBadge filteredPOs={new Set(weekRangeLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />
     </div>
   );
 }

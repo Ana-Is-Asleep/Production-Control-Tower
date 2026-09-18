@@ -14,6 +14,7 @@ import {
   type PORootCauseRow,
 } from '../../lib/rootCauseAggregation';
 import { formatFilterSummary } from '../../lib/filterSummary';
+import { GlobalActionsBadge } from '../actions/GlobalActionsBadge';
 import { parseRootCauseParams, buildRootCauseParams, type RootCauseMode } from '../../lib/rootCauseParams';
 import { KPIStrip } from './KPIStrip';
 import { TrendChart } from './TrendChart';
@@ -38,7 +39,7 @@ export function RootCauseDrilldown() {
   const initial = useMemo(() => parseRootCauseParams(searchParams), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // read-only: this page inherits the dashboard's filters, it never changes them
-  const { filters, weekRangeLines, weeksInRange } = useFilters(allLines, initial.filters);
+  const { filters, weekRangeLines, weeksInRange, allSuppliers } = useFilters(allLines, initial.filters);
 
   const [mode, setMode] = useState<RootCauseMode>(initial.mode);
   const [tableFilter, setTableFilter] = useState<TableFilter | null>(null);
@@ -209,6 +210,7 @@ export function RootCauseDrilldown() {
           </>
         )}
       </div>
+      <GlobalActionsBadge filteredPOs={new Set(weekRangeLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />
     </div>
   );
 }

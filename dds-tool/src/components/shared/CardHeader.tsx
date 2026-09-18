@@ -1,30 +1,21 @@
 'use client';
 
-import { Info } from 'lucide-react';
-
 interface CardHeaderProps {
   title: string;
-  infoText?: string;
+  infoText?: string; // no longer rendered — Ana asked to remove the info icons entirely rather than keep them as tooltips
   subtitle?: string;
   total?: number;
   drillDownLabel?: string;
 }
 
-// Shared title/subtitle/total pattern for every dashboard card — title + info icon on the top
-// row (with "Drill down →" at the far right, since every card is a Link), and an optional
-// subtitle + right-aligned "Total N" on the row below.
-export function CardHeader({ title, infoText, subtitle, total, drillDownLabel = 'Drill down →' }: CardHeaderProps) {
+// Shared title/subtitle/total pattern for every dashboard card — title (with "Drill down →" at
+// the far right, since every card is a Link), and an optional subtitle + right-aligned "Total N"
+// on the row below.
+export function CardHeader({ title, subtitle, total, drillDownLabel = 'Drill down →' }: CardHeaderProps) {
   return (
     <div className="shrink-0">
       <div className="flex items-start justify-between">
-        <div className="flex items-center gap-1.5">
-          <p className="text-sm font-bold text-[#403833]">{title}</p>
-          {infoText && (
-            <span title={infoText} aria-label={infoText} className="inline-flex cursor-help">
-              <Info size={13} className="text-[#9c9794]" />
-            </span>
-          )}
-        </div>
+        <p className="text-sm font-bold text-[#403833]">{title}</p>
         <p className="text-[10px] text-brand font-semibold shrink-0">{drillDownLabel}</p>
       </div>
       {(subtitle || total !== undefined) && (

@@ -12,7 +12,8 @@ import {
 } from '../../lib/invoiceUtils';
 import { downloadWorkbook } from '../../lib/xlsxWriter';
 import { Sidebar } from '../shell/Sidebar';
-import { PageHeader } from '../shell/PageHeader';
+import { DetailHeader } from '../shell/DetailHeader';
+import { GlobalActionsBadge } from '../actions/GlobalActionsBadge';
 import { LargeModal } from '../shared/LargeModal';
 import { InvoiceTable } from './InvoiceTable';
 import { InvoiceInsights } from './InvoiceInsights';
@@ -58,7 +59,7 @@ export function InvoicesDrilldown() {
     channels: initial.channel === 'All' ? [] : [initial.channel as 'Online' | 'Offline'],
   }), [initial]);
 
-  const { filters, setFilters, allSuppliers, curWeek, curYear } = useFilters(allLines, initialFilters);
+  const { filters, setFilters, filteredLines, allSuppliers, curWeek, curYear } = useFilters(allLines, initialFilters);
   const [drill, setDrill] = useState<DrillSelection | null>(null);
   const [showAllSuppliers, setShowAllSuppliers] = useState(false);
   const [dataQualityOpen, setDataQualityOpen] = useState(false);
@@ -108,15 +109,9 @@ export function InvoicesDrilldown() {
     <div className="min-h-screen w-full bg-[#f5f2ee] flex">
       <Sidebar />
       <div className="flex-1 min-w-0 flex flex-col">
-        <PageHeader
-          breadcrumb={[{ label: 'Dashboard', href: '/' }, { label: 'Invoicing Detail' }]}
+        <DetailHeader
+          title="Invoicing Detail"
           filters={filters}
-          onChange={setFilters}
-          allSuppliers={allSuppliers}
-          curWeek={curWeek}
-          curYear={curYear}
-          showWeekRange={false}
-          showCategory={false}
           rightActions={
             <>
               <button onClick={exportScope} className="flex items-center gap-1.5 text-xs font-semibold text-white bg-brand rounded-lg px-2.5 h-8 hover:bg-brand-soft transition-colors">
@@ -184,12 +179,12 @@ export function InvoicesDrilldown() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-            <InvoiceInsights kpis={kpis} supplierExposure={supplierExposure} contextLabel={selectedSupplier ?? ''} />
             {isModeB ? (
               <InvoiceStatusBreakdown kpis={kpis} contextLabel={selectedSupplier!} onSelectSegment={(title, rows) => setDrill({ title, rows })} />
             ) : (
               <InvoiceOverdueBySupplier suppliers={supplierExposure} onSelectSupplier={(s) => setFilters({ ...filters, suppliers: [s] })} />
             )}
+            <InvoiceInsights kpis={kpis} supplierExposure={supplierExposure} contextLabel={selectedSupplier ?? ''} />
           </div>
 
           <InvoiceAgingChart buckets={aging} onSelectBucket={(label) => {
@@ -249,6 +244,7 @@ export function InvoicesDrilldown() {
       )}
 
       {dataQualityOpen && <InvoiceDataQualityModal meta={invoiceMeta} onClose={() => setDataQualityOpen(false)} />}
+      <GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />
     </div>
   );
 }

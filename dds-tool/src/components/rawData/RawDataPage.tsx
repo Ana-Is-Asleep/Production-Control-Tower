@@ -2,7 +2,7 @@
 
 import { Fragment, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ChevronDown, ChevronRight, Download, BookOpen, RotateCcw, Search } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download, RotateCcw, Search } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { useFilters, WEEK_RANGE_MIN, WEEK_RANGE_MAX, WEEK_RANGE_DEFAULT } from '../../hooks/useFilters';
 import { useVendorMapping } from '../../hooks/useVendorMapping';
@@ -189,9 +189,6 @@ export function RawDataPage() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-[#9c9794]">Last refreshed: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
-            <Link href="/data-dictionary" className="flex items-center gap-1.5 text-xs font-semibold text-[#403833] border border-[#e9e3df] rounded-lg px-3 py-1.5 hover:border-[#403833] transition-colors">
-              <BookOpen size={13} /> Data dictionary
-            </Link>
             <button onClick={handleExport} className="flex items-center gap-1.5 text-xs font-semibold text-white bg-brand rounded-lg px-3 py-1.5 hover:bg-brand-soft transition-colors">
               <Download size={13} /> Export
             </button>

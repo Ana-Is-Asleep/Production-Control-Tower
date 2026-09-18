@@ -13,7 +13,8 @@ import { computeMissingEsdRows, findConsolidationRisks, EGRD_NEEDING_ACTION_WEEK
 import { detailSheet } from '../../lib/reportBuilders';
 import { downloadWorkbook } from '../../lib/xlsxWriter';
 import { Sidebar } from '../shell/Sidebar';
-import { PageHeader } from '../shell/PageHeader';
+import { DetailHeader } from '../shell/DetailHeader';
+import { GlobalActionsBadge } from '../actions/GlobalActionsBadge';
 import { MissingEsdKpiRow } from './MissingEsdKpiRow';
 import { MissingEsdEgrdChart } from './MissingEsdEgrdChart';
 import { MissingEsdSupplierExposure } from './MissingEsdSupplierExposure';
@@ -109,14 +110,9 @@ export function MissingEsdDrilldown() {
     <div className="h-screen w-full bg-[#f5f2ee] flex overflow-hidden">
       <Sidebar />
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-        <PageHeader
-          breadcrumb={[{ label: 'Dashboard', href: '/' }, { label: 'Missing ESD Detail' }]}
+        <DetailHeader
+          title="Missing ESD Detail"
           filters={filters}
-          onChange={setFilters}
-          allSuppliers={allSuppliers}
-          curWeek={sotCurWeek}
-          curYear={sotCurYear}
-          showWeekRange={false}
           rightActions={
             <>
               <button
@@ -188,6 +184,7 @@ export function MissingEsdDrilldown() {
           </div>
         </div>
       </div>
+      <GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />
     </div>
   );
 }
