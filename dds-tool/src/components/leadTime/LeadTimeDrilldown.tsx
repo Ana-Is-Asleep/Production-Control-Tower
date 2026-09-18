@@ -170,6 +170,7 @@ export function LeadTimeDrilldown() {
         <DetailHeader
           title="Lead Time Detail"
           filters={filters}
+          centerContent={<GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />}
           rightActions={
             <>
               <button
@@ -398,7 +399,6 @@ export function LeadTimeDrilldown() {
           </div>
         </LargeModal>
       )}
-      <GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />
     </div>
   );
 }

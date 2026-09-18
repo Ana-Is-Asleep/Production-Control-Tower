@@ -136,7 +136,7 @@ export function RootCauseDrilldown() {
 
   return (
     <div className="h-screen w-full bg-[#f5f2ee] flex flex-col overflow-hidden">
-      <header className="bg-white border-b border-[#e9e3df] px-5 py-2.5 flex items-center gap-3 shrink-0">
+      <header className="relative bg-white border-b border-[#e9e3df] px-5 py-2.5 flex items-center gap-3 shrink-0">
         <Link href="/" className="flex items-center gap-1.5 text-sm font-semibold text-[#403833] hover:text-brand transition-colors shrink-0">
           <span>←</span> Overview
         </Link>
@@ -145,6 +145,9 @@ export function RootCauseDrilldown() {
         <span className="text-[#e9e3df]">|</span>
         <span className="text-xs text-[#7b7571] truncate">Filtered by: {formatFilterSummary(filters)}</span>
         <div className="flex-1" />
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <GlobalActionsBadge filteredPOs={new Set(weekRangeLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />
+        </div>
         <div className="flex items-center gap-1 shrink-0">
           {(['snapshot', 'trend'] as RootCauseMode[]).map((m) => (
             <button
@@ -210,7 +213,6 @@ export function RootCauseDrilldown() {
           </>
         )}
       </div>
-      <GlobalActionsBadge filteredPOs={new Set(weekRangeLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />
     </div>
   );
 }

@@ -103,6 +103,7 @@ export function BacklogDrilldown() {
         <DetailHeader
           title={isModeB ? 'Backlog Detail — Supplier Detail' : 'Backlog Detail'}
           filters={filters}
+          centerContent={<GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />}
           rightActions={
             <>
               <button
@@ -228,7 +229,6 @@ export function BacklogDrilldown() {
           </div>
         )}
       </div>
-      <GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />
     </div>
   );
 }

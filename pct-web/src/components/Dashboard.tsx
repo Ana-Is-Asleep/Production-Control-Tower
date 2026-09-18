@@ -104,6 +104,15 @@ export function Dashboard() {
                 allSuppliers={allSuppliers}
                 curWeek={curWeek}
                 curYear={curYear}
+                centerContent={
+                  actionsUiMode === 'badge' ? (
+                    <ActionsBadgeDrawer
+                      actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers} filters={filters}
+                      tab={actionsTab} onTabChange={setActionsTab} statusFilter={actionsStatusFilter} onStatusFilterChange={setActionsStatusFilter}
+                      open={actionsDrawerOpen} onOpenChange={setActionsDrawerOpen}
+                    />
+                  ) : undefined
+                }
                 rightActions={
                   <>
                     <button
@@ -125,7 +134,7 @@ export function Dashboard() {
                 }
               />
               <div
-                className={`p-3 flex-1 min-h-0 flex flex-col gap-3 w-full max-w-[1400px] 2xl:max-w-[1680px] mx-auto overflow-y-auto transition-[padding] duration-150 ${actionsUiMode === 'badge' ? 'pb-14' : ''}`}
+                className="p-3 flex-1 min-h-0 flex flex-col gap-3 w-full max-w-[1400px] 2xl:max-w-[1680px] mx-auto overflow-y-auto transition-[padding] duration-150"
                 style={actionsUiMode === 'badge' && actionsDrawerOpen ? { paddingRight: 416 } : undefined}
               >
                 <div style={{ flex: '4 1 220px' }}>
@@ -154,14 +163,6 @@ export function Dashboard() {
               />
             )}
           </div>
-        )}
-
-        {hasData && actionsUiMode === 'badge' && (
-          <ActionsBadgeDrawer
-            actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers} filters={filters}
-            tab={actionsTab} onTabChange={setActionsTab} statusFilter={actionsStatusFilter} onStatusFilterChange={setActionsStatusFilter}
-            open={actionsDrawerOpen} onOpenChange={setActionsDrawerOpen}
-          />
         )}
 
         <UploadPanel open={uploadOpen} onClose={() => setUploadOpen(false)} onLoad={handleLoad} />

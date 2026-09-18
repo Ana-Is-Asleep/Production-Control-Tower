@@ -113,6 +113,7 @@ export function InvoicesDrilldown() {
         <DetailHeader
           title="Invoicing Detail"
           filters={filters}
+          centerContent={<GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />}
           rightActions={
             <>
               <button onClick={exportScope} className="flex items-center gap-1.5 text-xs font-semibold text-white bg-brand rounded-lg px-2.5 h-8 hover:bg-brand-soft transition-colors">
@@ -245,7 +246,6 @@ export function InvoicesDrilldown() {
       )}
 
       {dataQualityOpen && <InvoiceDataQualityModal meta={invoiceMeta} onClose={() => setDataQualityOpen(false)} />}
-      <GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />
     </div>
   );
 }

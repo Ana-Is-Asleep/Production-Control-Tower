@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Download, MoreVertical, Maximize2 } from 'lucide-react';
 import { LargeModal } from '../shared/LargeModal';
 import { useData } from '../../context/DataContext';
@@ -36,7 +37,7 @@ function pctLabel(v: number | null) {
 
 export function SotOtifDrilldown() {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { allLines } = useData();
   const { isChinaSupplier } = useVendorMapping();
@@ -64,9 +65,9 @@ export function SotOtifDrilldown() {
   // itself does not persist across a hard reload — only the filter/selection state does)
   useEffect(() => {
     const params = buildSotOtifParams(filters, selectedWeek?.label ?? null);
-    navigate(`${pathname}?${params.toString()}`, { replace: true });
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, selectedWeek, pathname]);
+  }, [filters, selectedWeek, location.pathname]);
 
   const handleSupplierRowClick = (supplier: string) => {
     setFilters({ ...filters, suppliers: [supplier] });
@@ -217,6 +218,7 @@ export function SotOtifDrilldown() {
         <DetailHeader
           title={isModeB ? 'SOT / OTIF Detail' : 'SOT / OTIF Performance'}
           filters={filters}
+          centerContent={<GlobalActionsBadge filteredPOs={new Set(weekRangeLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />}
           rightActions={
             <>
               <button
@@ -483,7 +485,6 @@ export function SotOtifDrilldown() {
           </div>
         </LargeModal>
       )}
-      <GlobalActionsBadge filteredPOs={new Set(weekRangeLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />
     </div>
   );
 }

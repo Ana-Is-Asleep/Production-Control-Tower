@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Download, MoreVertical } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { useFilters } from '../../hooks/useFilters';
@@ -29,7 +30,7 @@ function bucketGroup(key: string): 'needing' | 'not_urgent' {
 
 export function MissingEsdDrilldown() {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { allLines } = useData();
 
@@ -49,9 +50,9 @@ export function MissingEsdDrilldown() {
 
   useEffect(() => {
     const params = buildMissingEsdParams(filters, urgency);
-    navigate(`${pathname}?${params.toString()}`, { replace: true });
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, urgency, pathname]);
+  }, [filters, urgency, location.pathname]);
 
   const allRows = useMemo(() => computeMissingEsdRows(filteredLines), [filteredLines]);
   const needingActionRows = useMemo(() => allRows.filter((r) => r.urgency !== 'watchlist'), [allRows]);
@@ -113,6 +114,7 @@ export function MissingEsdDrilldown() {
         <DetailHeader
           title="Missing ESD Detail"
           filters={filters}
+          centerContent={<GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} bucketFilter="missing_esd" />}
           rightActions={
             <>
               <button
@@ -184,7 +186,6 @@ export function MissingEsdDrilldown() {
           </div>
         </div>
       </div>
-      <GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} bucketFilter="missing_esd" />
     </div>
   );
 }

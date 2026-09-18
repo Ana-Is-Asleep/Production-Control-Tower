@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useData } from '../../context/DataContext';
 import { useFilters } from '../../hooks/useFilters';
 import { useReasonClassification } from '../../hooks/useReasonClassification';
@@ -31,7 +32,7 @@ interface TableFilter {
 
 export function RootCauseDrilldown() {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { allLines } = useData();
 
@@ -45,9 +46,9 @@ export function RootCauseDrilldown() {
 
   useEffect(() => {
     const params = buildRootCauseParams(filters, mode);
-    navigate(`${pathname}?${params.toString()}`, { replace: true });
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, mode, pathname]);
+  }, [filters, mode, location.pathname]);
 
   const linesWithReasons = useMemo(() => weekRangeLines.filter((l) => isSubstantiveReason(l.lossReasonCode)), [weekRangeLines]);
   const { classifications } = useReasonClassification(linesWithReasons.map((l) => l.lossReasonCode));
@@ -135,7 +136,7 @@ export function RootCauseDrilldown() {
 
   return (
     <div className="h-screen w-full bg-[#f5f2ee] flex flex-col overflow-hidden">
-      <header className="bg-white border-b border-[#e9e3df] px-5 py-2.5 flex items-center gap-3 shrink-0">
+      <header className="relative bg-white border-b border-[#e9e3df] px-5 py-2.5 flex items-center gap-3 shrink-0">
         <Link to="/" className="flex items-center gap-1.5 text-sm font-semibold text-[#403833] hover:text-brand transition-colors shrink-0">
           <span>←</span> Overview
         </Link>
@@ -144,6 +145,9 @@ export function RootCauseDrilldown() {
         <span className="text-[#e9e3df]">|</span>
         <span className="text-xs text-[#7b7571] truncate">Filtered by: {formatFilterSummary(filters)}</span>
         <div className="flex-1" />
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <GlobalActionsBadge filteredPOs={new Set(weekRangeLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />
+        </div>
         <div className="flex items-center gap-1 shrink-0">
           {(['snapshot', 'trend'] as RootCauseMode[]).map((m) => (
             <button
@@ -209,7 +213,6 @@ export function RootCauseDrilldown() {
           </>
         )}
       </div>
-      <GlobalActionsBadge filteredPOs={new Set(weekRangeLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />
     </div>
   );
 }

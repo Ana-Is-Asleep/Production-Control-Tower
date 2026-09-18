@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Download, MoreVertical, Info } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { useFilters, DEFAULT_FILTERS } from '../../hooks/useFilters';
@@ -48,7 +49,7 @@ function KpiCard({ label, count, amount, sub, tint, onClick }: { label: string; 
 
 export function InvoicesDrilldown() {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { allLines, invoices, invoiceMeta } = useData();
 
@@ -68,9 +69,9 @@ export function InvoicesDrilldown() {
 
   useEffect(() => {
     const params = buildInvoicesParams(filters.suppliers, channel);
-    navigate(`${pathname}?${params.toString()}`, { replace: true });
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.suppliers, channel, pathname]);
+  }, [filters.suppliers, channel, location.pathname]);
 
   const isModeB = filters.suppliers.length === 1;
   const selectedSupplier = isModeB ? filters.suppliers[0] : null;
@@ -112,6 +113,7 @@ export function InvoicesDrilldown() {
         <DetailHeader
           title="Invoicing Detail"
           filters={filters}
+          centerContent={<GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />}
           rightActions={
             <>
               <button onClick={exportScope} className="flex items-center gap-1.5 text-xs font-semibold text-white bg-brand rounded-lg px-2.5 h-8 hover:bg-brand-soft transition-colors">
@@ -244,7 +246,6 @@ export function InvoicesDrilldown() {
       )}
 
       {dataQualityOpen && <InvoiceDataQualityModal meta={invoiceMeta} onClose={() => setDataQualityOpen(false)} />}
-      <GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />
     </div>
   );
 }

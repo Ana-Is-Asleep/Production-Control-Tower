@@ -114,6 +114,7 @@ export function MissingEsdDrilldown() {
         <DetailHeader
           title="Missing ESD Detail"
           filters={filters}
+          centerContent={<GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} bucketFilter="missing_esd" />}
           rightActions={
             <>
               <button
@@ -185,7 +186,6 @@ export function MissingEsdDrilldown() {
           </div>
         </div>
       </div>
-      <GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} bucketFilter="missing_esd" />
     </div>
   );
 }

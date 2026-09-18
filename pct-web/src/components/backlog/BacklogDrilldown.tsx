@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Download, MoreVertical } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { useFilters } from '../../hooks/useFilters';
@@ -28,7 +29,7 @@ import { BacklogOutlierCallout } from './BacklogOutlierCallout';
 
 export function BacklogDrilldown() {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { allLines } = useData();
 
@@ -41,9 +42,9 @@ export function BacklogDrilldown() {
 
   useEffect(() => {
     const params = buildBacklogParams(filters);
-    navigate(`${pathname}?${params.toString()}`, { replace: true });
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, pathname]);
+  }, [filters, location.pathname]);
 
   const today = useMemo(() => new Date(), []);
   // the literal current ISO week (not "last completed") — the clearance forecast and Expected
@@ -102,6 +103,7 @@ export function BacklogDrilldown() {
         <DetailHeader
           title={isModeB ? 'Backlog Detail — Supplier Detail' : 'Backlog Detail'}
           filters={filters}
+          centerContent={<GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />}
           rightActions={
             <>
               <button
@@ -227,7 +229,6 @@ export function BacklogDrilldown() {
           </div>
         )}
       </div>
-      <GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />
     </div>
   );
 }

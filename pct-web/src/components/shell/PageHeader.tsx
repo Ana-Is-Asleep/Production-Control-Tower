@@ -23,6 +23,7 @@ interface PageHeaderProps {
   curWeek: number;
   curYear: number;
   rightActions?: ReactNode; // page-specific buttons (Upload/Actions-toggle on the dashboard, Export/etc. on drill-downs)
+  centerContent?: ReactNode; // e.g. the orange Actions badge — absolutely centered over the title row so it reads as "top middle"
   showWeekRange?: boolean; // false for pages that are current-state only (e.g. Missing ESD) — no snapshot/history selector
   showCategory?: boolean; // false where no reliable category concept exists on the underlying data (e.g. Invoices)
 }
@@ -34,7 +35,7 @@ const CHANNELS: Channel[] = ['Offline', 'Online'];
 // logic as before (WeekRangeStepper, VendorDropdown, and the channel/category toggle functions
 // are untouched), just recomposed into one header block with the dropdown affordances layered on
 // top of the existing pill toggles.
-export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWeek, curYear, rightActions, showWeekRange = true, showCategory = true }: PageHeaderProps) {
+export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWeek, curYear, rightActions, centerContent, showWeekRange = true, showCategory = true }: PageHeaderProps) {
   const toggleChannel = (c: Channel) => {
     const next = filters.channels.includes(c) ? filters.channels.filter((x) => x !== c) : [...filters.channels, c];
     onChange({ ...filters, channels: next });
@@ -46,7 +47,12 @@ export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWee
 
   return (
     <div className="bg-white border-b border-[#e9e3df] px-5 py-2.5 shrink-0">
-      <div className="flex items-center justify-between gap-6 flex-wrap">
+      <div className="relative flex items-center justify-between gap-6 flex-wrap">
+        {centerContent && (
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            {centerContent}
+          </div>
+        )}
         <div className="shrink-0">
           <h1 className="text-base font-bold text-[#403833] tracking-tight">Production Control Tower</h1>
           {breadcrumb && (

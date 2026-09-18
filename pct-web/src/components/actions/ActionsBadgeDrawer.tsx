@@ -23,9 +23,11 @@ interface ActionsBadgeDrawerProps {
   bucketFilter?: ActionBucket; // when mounted on a specific dashboard detail page, only that bucket's flags show
 }
 
-// Version A: a bottom-right badge that opens a right-side drawer. No backdrop — the rest of the
-// page stays interactive while the drawer is open, and the caller shrinks the content area's
-// width so dashboard cards on the right edge are never hidden behind it. tab/statusFilter are
+// A badge that opens a right-side drawer. No backdrop — the rest of the page stays interactive
+// while the drawer is open, and the caller shrinks the content area's width so dashboard cards on
+// the right edge are never hidden behind it. The trigger renders inline wherever this component
+// is mounted (e.g. centered in a page header) — only the drawer panel itself is fixed-positioned,
+// so where the trigger sits in the DOM doesn't affect the slide-over. tab/statusFilter are
 // controlled by the parent (shared with ActionsSidePanel) so switching between Badge and Panel
 // modes never resets your place.
 export function ActionsBadgeDrawer({
@@ -41,7 +43,7 @@ export function ActionsBadgeDrawer({
     <>
       <button
         onClick={() => onOpenChange(true)}
-        className={`fixed bottom-5 right-5 z-40 flex items-center gap-1.5 px-4 py-2.5 rounded-full font-semibold text-xs transition-transform hover:scale-105 ${openCount > 0 ? 'bg-brand text-white' : 'bg-pass text-white'}`}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-semibold text-xs transition-transform hover:scale-105 shrink-0 ${openCount > 0 ? 'bg-brand text-white' : 'bg-pass text-white'}`}
         style={{ boxShadow: 'var(--shadow-card-hover)' }}
       >
         {openCount > 0 ? `⚠ ${openCount} open action${openCount === 1 ? '' : 's'}` : '✓ No open actions'}

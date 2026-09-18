@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Download, MoreVertical, Maximize2 } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { useFilters } from '../../hooks/useFilters';
@@ -53,7 +54,7 @@ function Seg<T extends string>({ options, value, onChange }: { options: { value:
 
 export function LeadTimeDrilldown() {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { allLines } = useData();
 
@@ -88,9 +89,9 @@ export function LeadTimeDrilldown() {
       filters, tab, period, channel: 'All', view: isModeB ? 'Supplier' : 'General',
       viewCategory: filters.categories[0] ?? 'Mattresses', viewSupplier: selectedSupplier, heatmapRows, heatmapPOs,
     });
-    navigate(`${pathname}?${params.toString()}`, { replace: true });
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, tab, period, heatmapRows, heatmapPOs, pathname, isModeB, selectedSupplier]);
+  }, [filters, tab, period, heatmapRows, heatmapPOs, location.pathname, isModeB, selectedSupplier]);
 
   const categories: SKUCategory[] = filters.categories.length ? filters.categories : SKU_CATEGORIES;
   const scopedLines = filteredLines;
@@ -169,6 +170,7 @@ export function LeadTimeDrilldown() {
         <DetailHeader
           title="Lead Time Detail"
           filters={filters}
+          centerContent={<GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />}
           rightActions={
             <>
               <button
@@ -397,7 +399,6 @@ export function LeadTimeDrilldown() {
           </div>
         </LargeModal>
       )}
-      <GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />
     </div>
   );
 }
