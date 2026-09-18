@@ -2,9 +2,18 @@
 
 import { useState } from 'react';
 import { ActionCard } from './ActionCard';
-import type { ActionItem, ActionType } from '../../types/actions';
+import type { ActionBucket, ActionItem, ActionType } from '../../types/actions';
 
 export type StatusFilter = 'open' | 'all';
+
+export const BUCKET_LABELS: Record<ActionBucket, string> = {
+  missing_esd: 'Missing ESD',
+  sot_otif: 'SOT & OTIF',
+  backlog: 'Backlog',
+  root_cause: 'Root Cause',
+  invoicing: 'Invoicing',
+  lead_time: 'Lead Time',
+};
 
 interface ActionsTabsProps {
   actions: ActionItem[];
@@ -21,6 +30,10 @@ interface ActionsTabsProps {
   onTabChange: (t: ActionType) => void;
   statusFilter: StatusFilter;
   onStatusFilterChange: (f: StatusFilter) => void;
+  // When set (mounted on a specific dashboard detail page), only that bucket's flags show, with
+  // no cluster headers since the list is already homogenous. Unset in the general drawer/panel,
+  // where flags are clustered by bucket instead.
+  bucketFilter?: ActionBucket;
 }
 
 function blankOpenPoint(): ActionItem {
@@ -38,7 +51,7 @@ function blankOpenPoint(): ActionItem {
 
 export function ActionsTabs({
   actions, onSave, onAddOpenPoint, filteredPOs, allSuppliers,
-  tab, onTabChange, statusFilter, onStatusFilterChange,
+  tab, onTabChange, statusFilter, onStatusFilterChange, bucketFilter,
 }: ActionsTabsProps) {
   const [draftingNew, setDraftingNew] = useState(false);
 
@@ -46,11 +59,25 @@ export function ActionsTabs({
 
   const flags = actions
     .filter((a) => a.type === 'flag' && (!a.poReference || filteredPOs.has(a.poReference)) && matchesStatus(a))
+    .filter((a) => !bucketFilter || a.bucket === bucketFilter)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const openPoints = actions
     .filter((a) => a.type === 'open_point' && matchesStatus(a))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const list = tab === 'flag' ? flags : openPoints;
+
+  // Cluster flags by dashboard bucket (only when showing every bucket at once) — each group gets
+  // its own header, e.g. "Missing ESD" above the flags that rule raised.
+  const flagGroups: { bucket: ActionBucket | 'other'; items: ActionItem[] }[] = [];
+  if (tab === 'flag' && !bucketFilter) {
+    const byBucket = new Map<ActionBucket | 'other', ActionItem[]>();
+    for (const a of flags) {
+      const key = a.bucket ?? 'other';
+      if (!byBucket.has(key)) byBucket.set(key, []);
+      byBucket.get(key)!.push(a);
+    }
+    byBucket.forEach((items, bucket) => flagGroups.push({ bucket, items }));
+  }
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -109,9 +136,22 @@ export function ActionsTabs({
         {list.length === 0 && !(tab === 'open_point' && draftingNew) && (
           <p className="text-xs text-[#9c9794] text-center py-6">{tab === 'flag' ? 'No flags' : 'No open points'}</p>
         )}
-        {list.map((a) => (
-          <ActionCard key={a.id} action={a} onSave={(patch) => onSave(a.id, patch)} allSuppliers={allSuppliers} />
-        ))}
+        {tab === 'flag' && !bucketFilter ? (
+          flagGroups.map(({ bucket, items }) => (
+            <div key={bucket} className="space-y-2">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-[#9c9794] pt-1">
+                {bucket === 'other' ? 'Other' : BUCKET_LABELS[bucket]} ({items.length})
+              </p>
+              {items.map((a) => (
+                <ActionCard key={a.id} action={a} onSave={(patch) => onSave(a.id, patch)} allSuppliers={allSuppliers} />
+              ))}
+            </div>
+          ))
+        ) : (
+          list.map((a) => (
+            <ActionCard key={a.id} action={a} onSave={(patch) => onSave(a.id, patch)} allSuppliers={allSuppliers} />
+          ))
+        )}
       </div>
     </div>
   );

@@ -27,6 +27,7 @@ function evaluateR001(lines: PurchaseLine[], existingActions: ActionItem[], toda
       id: crypto.randomUUID(),
       type: 'flag',
       ruleKey: 'R001',
+      bucket: 'missing_esd',
       poReference: line.po,
       supplierCode: line.vendorCode,
       supplierName: line.supplier,

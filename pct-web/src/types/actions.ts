@@ -1,5 +1,9 @@
 export type ActionType = 'flag' | 'open_point';
 export type ActionStatus = 'open' | 'in_progress' | 'blocked' | 'closed';
+// Which dashboard section a flag relates to, so Actions can be clustered/filtered by bucket (e.g.
+// only show Missing ESD's own flags on the Missing ESD page). Open Points have no bucket — they
+// aren't tied to a specific dashboard rule.
+export type ActionBucket = 'missing_esd' | 'sot_otif' | 'backlog' | 'root_cause' | 'invoicing' | 'lead_time';
 
 export interface CommentLogEntry {
   text: string;
@@ -10,6 +14,7 @@ export interface ActionItem {
   id: string;
   type: ActionType;
   ruleKey?: string;         // only for flags — identifies which rule triggered it
+  bucket?: ActionBucket;    // only for flags — which dashboard section this relates to
   poReference?: string;
   supplierCode?: string;
   supplierName?: string;

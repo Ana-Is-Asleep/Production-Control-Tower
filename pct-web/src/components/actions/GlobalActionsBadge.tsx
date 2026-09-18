@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useActions } from '../../hooks/useActions';
 import { ActionsBadgeDrawer } from './ActionsBadgeDrawer';
-import type { ActionType } from '../../types/actions';
+import type { ActionBucket, ActionType } from '../../types/actions';
 import type { StatusFilter } from './ActionsTabs';
 import type { ActiveFilters } from '../../hooks/useFilters';
 
@@ -11,13 +11,16 @@ interface GlobalActionsBadgeProps {
   filteredPOs: Set<string>;
   allSuppliers: string[];
   filters: ActiveFilters;
+  // When set, only that dashboard section's flags count/show — e.g. the Missing ESD page passes
+  // 'missing_esd' so its badge only reflects flags relevant to Missing ESD, not every flag.
+  bucketFilter?: ActionBucket;
 }
 
 // Drop this into any page (not just the Dashboard) to get the same orange "N open actions"
 // floating badge + drawer — Ana: "How are SCMs going to deep dive flagged POs without going
 // through the dashboard?" Each mount owns its own tab/status/open state but reads the same
 // localStorage-backed actions via useActions(), so they always agree on what's open.
-export function GlobalActionsBadge({ filteredPOs, allSuppliers, filters }: GlobalActionsBadgeProps) {
+export function GlobalActionsBadge({ filteredPOs, allSuppliers, filters, bucketFilter }: GlobalActionsBadgeProps) {
   const { actions, updateAction, addAction } = useActions();
   const [tab, setTab] = useState<ActionType>('flag');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('open');
@@ -27,7 +30,7 @@ export function GlobalActionsBadge({ filteredPOs, allSuppliers, filters }: Globa
     <ActionsBadgeDrawer
       actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers} filters={filters}
       tab={tab} onTabChange={setTab} statusFilter={statusFilter} onStatusFilterChange={setStatusFilter}
-      open={open} onOpenChange={setOpen}
+      open={open} onOpenChange={setOpen} bucketFilter={bucketFilter}
     />
   );
 }

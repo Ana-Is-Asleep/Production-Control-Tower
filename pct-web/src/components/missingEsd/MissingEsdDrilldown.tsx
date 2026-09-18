@@ -184,7 +184,7 @@ export function MissingEsdDrilldown() {
           </div>
         </div>
       </div>
-      <GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />
+      <GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} bucketFilter="missing_esd" />
     </div>
   );
 }

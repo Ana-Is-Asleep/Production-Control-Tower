@@ -5,7 +5,7 @@ import { ArrowRight } from 'lucide-react';
 import { ActionsTabs, type StatusFilter } from './ActionsTabs';
 import { buildActionsHref } from '../../lib/actionsParams';
 import type { ActiveFilters } from '../../hooks/useFilters';
-import type { ActionItem, ActionType } from '../../types/actions';
+import type { ActionBucket, ActionItem, ActionType } from '../../types/actions';
 
 interface ActionsBadgeDrawerProps {
   actions: ActionItem[];
@@ -20,6 +20,7 @@ interface ActionsBadgeDrawerProps {
   onStatusFilterChange: (f: StatusFilter) => void;
   open: boolean; // lifted to Dashboard so it can shrink the main content area while the drawer is open, instead of the drawer floating over (and potentially hiding) dashboard cards
   onOpenChange: (open: boolean) => void;
+  bucketFilter?: ActionBucket; // when mounted on a specific dashboard detail page, only that bucket's flags show
 }
 
 // Version A: a bottom-right badge that opens a right-side drawer. No backdrop — the rest of the
@@ -28,11 +29,12 @@ interface ActionsBadgeDrawerProps {
 // controlled by the parent (shared with ActionsSidePanel) so switching between Badge and Panel
 // modes never resets your place.
 export function ActionsBadgeDrawer({
-  actions, onSave, onAddOpenPoint, filteredPOs, allSuppliers, filters, tab, onTabChange, statusFilter, onStatusFilterChange, open, onOpenChange,
+  actions, onSave, onAddOpenPoint, filteredPOs, allSuppliers, filters, tab, onTabChange, statusFilter, onStatusFilterChange, open, onOpenChange, bucketFilter,
 }: ActionsBadgeDrawerProps) {
   const router = useRouter();
   const openCount = actions.filter(
     (a) => a.status !== 'closed' && (a.type === 'open_point' || !a.poReference || filteredPOs.has(a.poReference))
+           && (!bucketFilter || a.type === 'open_point' || a.bucket === bucketFilter)
   ).length;
 
   return (
@@ -63,6 +65,7 @@ export function ActionsBadgeDrawer({
           <ActionsTabs
             actions={actions} onSave={onSave} onAddOpenPoint={onAddOpenPoint} filteredPOs={filteredPOs} allSuppliers={allSuppliers}
             tab={tab} onTabChange={onTabChange} statusFilter={statusFilter} onStatusFilterChange={onStatusFilterChange}
+            bucketFilter={bucketFilter}
           />
         </div>
       )}
