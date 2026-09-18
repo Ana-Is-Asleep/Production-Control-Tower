@@ -23,7 +23,7 @@ interface PageHeaderProps {
   curWeek: number;
   curYear: number;
   rightActions?: ReactNode; // page-specific buttons (Upload/Actions-toggle on the dashboard, Export/etc. on drill-downs)
-  centerContent?: ReactNode; // e.g. the orange Actions badge — absolutely centered over the title row so it reads as "top middle"
+  centerContent?: ReactNode; // e.g. the orange Actions badge — placed in its own grid column over the title row so it reads as "top middle" without ever overlapping the filter controls on narrow screens
   showWeekRange?: boolean; // false for pages that are current-state only (e.g. Missing ESD) — no snapshot/history selector
   showCategory?: boolean; // false where no reliable category concept exists on the underlying data (e.g. Invoices)
 }
@@ -47,13 +47,8 @@ export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWee
 
   return (
     <div className="bg-white border-b border-[#e9e3df] px-5 py-2.5 shrink-0">
-      <div className="relative flex items-center justify-between gap-6 flex-wrap">
-        {centerContent && (
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            {centerContent}
-          </div>
-        )}
-        <div className="shrink-0">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
+        <div className="min-w-0">
           <h1 className="text-base font-bold text-[#403833] tracking-tight">Production Control Tower</h1>
           {breadcrumb && (
             <div className="flex items-center gap-1.5 text-xs text-[#9c9794] mt-0.5">
@@ -71,7 +66,9 @@ export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWee
           )}
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap shrink-0">
+        <div className="flex justify-center">{centerContent}</div>
+
+        <div className="flex items-center gap-2 flex-wrap justify-end min-w-0">
           {showWeekRange && (
             <div className="flex items-center gap-2 bg-white border border-[#e9e3df] rounded-lg px-2.5 h-8">
               <Calendar size={14} className="text-[#7b7571]" />
