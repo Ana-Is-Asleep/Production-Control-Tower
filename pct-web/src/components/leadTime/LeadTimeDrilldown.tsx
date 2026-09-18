@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Download, MoreVertical, Maximize2 } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { useFilters } from '../../hooks/useFilters';
@@ -74,6 +73,7 @@ export function LeadTimeDrilldown() {
   const [skuQuery, setSkuQuery] = useState('');
   const [drill, setDrill] = useState<DrillSelection | null>(null);
   const [chartExpanded, setChartExpanded] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
   const [chartViewData, setChartViewData] = useState(false);
 
   const isModeB = filters.suppliers.length === 1;
@@ -166,11 +166,11 @@ export function LeadTimeDrilldown() {
   return (
     <div className="min-h-screen w-full bg-[#f5f2ee] flex">
       <Sidebar />
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="flex-1 min-w-0 flex flex-col transition-[padding] duration-150" style={{ paddingRight: actionsOpen ? 416 : undefined }}>
         <DetailHeader
           title="Lead Time Detail"
           filters={filters}
-          centerContent={<GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />}
+          centerContent={<GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} bucketFilter="lead_time" onOpenChange={setActionsOpen} />}
           rightActions={
             <>
               <button

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { ActionCard } from './ActionCard';
 import type { ActionBucket, ActionItem, ActionType } from '../../types/actions';
 
@@ -54,6 +55,15 @@ export function ActionsTabs({
   tab, onTabChange, statusFilter, onStatusFilterChange, bucketFilter,
 }: ActionsTabsProps) {
   const [draftingNew, setDraftingNew] = useState(false);
+  const [collapsedBuckets, setCollapsedBuckets] = useState<Set<string>>(new Set());
+  const toggleBucket = (key: string) => {
+    setCollapsedBuckets((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   const matchesStatus = (a: ActionItem) => statusFilter === 'all' || a.status !== 'closed';
 
@@ -137,16 +147,23 @@ export function ActionsTabs({
           <p className="text-xs text-[#9c9794] text-center py-6">{tab === 'flag' ? 'No flags' : 'No open points'}</p>
         )}
         {tab === 'flag' && !bucketFilter ? (
-          flagGroups.map(({ bucket, items }) => (
-            <div key={bucket} className="space-y-2">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-[#9c9794] pt-1">
-                {bucket === 'other' ? 'Other' : BUCKET_LABELS[bucket]} ({items.length})
-              </p>
-              {items.map((a) => (
-                <ActionCard key={a.id} action={a} onSave={(patch) => onSave(a.id, patch)} allSuppliers={allSuppliers} />
-              ))}
-            </div>
-          ))
+          flagGroups.map(({ bucket, items }) => {
+            const collapsed = collapsedBuckets.has(bucket);
+            return (
+              <div key={bucket} className="space-y-2">
+                <button
+                  onClick={() => toggleBucket(bucket)}
+                  className="w-full flex items-center justify-between gap-1 text-[10px] font-bold uppercase tracking-wide text-[#9c9794] pt-1 hover:text-[#403833] transition-colors"
+                >
+                  <span>{bucket === 'other' ? 'Other' : BUCKET_LABELS[bucket]} ({items.length})</span>
+                  {collapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                </button>
+                {!collapsed && items.map((a) => (
+                  <ActionCard key={a.id} action={a} onSave={(patch) => onSave(a.id, patch)} allSuppliers={allSuppliers} />
+                ))}
+              </div>
+            );
+          })
         ) : (
           list.map((a) => (
             <ActionCard key={a.id} action={a} onSave={(patch) => onSave(a.id, patch)} allSuppliers={allSuppliers} />

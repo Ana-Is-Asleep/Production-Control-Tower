@@ -97,7 +97,10 @@ export function Dashboard() {
 
         {hasData && (
           <div className="page-enter flex-1 min-h-0 flex overflow-hidden">
-            <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+            <div
+              className="flex-1 min-w-0 flex flex-col overflow-hidden transition-[padding] duration-150"
+              style={actionsUiMode === 'badge' && actionsDrawerOpen ? { paddingRight: 416 } : undefined}
+            >
               <PageHeader
                 filters={filters}
                 onChange={setFilters}
@@ -133,10 +136,7 @@ export function Dashboard() {
                   </>
                 }
               />
-              <div
-                className="p-3 flex-1 min-h-0 flex flex-col gap-3 w-full max-w-[1400px] 2xl:max-w-[1680px] mx-auto overflow-y-auto transition-[padding] duration-150"
-                style={actionsUiMode === 'badge' && actionsDrawerOpen ? { paddingRight: 416 } : undefined}
-              >
+              <div className="p-3 flex-1 min-h-0 flex flex-col gap-3 w-full max-w-[1400px] 2xl:max-w-[1680px] mx-auto overflow-y-auto">
                 <div style={{ flex: '4 1 220px' }}>
                   <TopGraphSection
                     points={kpis.topGraph}

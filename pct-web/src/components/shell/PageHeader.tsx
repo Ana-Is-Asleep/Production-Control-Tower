@@ -113,7 +113,7 @@ export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWee
         )}
         {(filters.suppliers.length > 0 || filters.channels.length > 0 || filters.categories.length > 0 ||
           filters.weekRange.start !== DEFAULT_FILTERS.weekRange.start || filters.weekRange.end !== DEFAULT_FILTERS.weekRange.end) && (
-          <button onClick={() => onChange(DEFAULT_FILTERS)} className="flex items-center gap-1 text-xs text-[#9c9794] hover:text-fail transition-colors mr-auto">
+          <button onClick={() => onChange(DEFAULT_FILTERS)} className="flex items-center gap-1 text-xs text-[#9c9794] hover:text-fail transition-colors">
             <RotateCcw size={12} /> Reset filters
           </button>
         )}

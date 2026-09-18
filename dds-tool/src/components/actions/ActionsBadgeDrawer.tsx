@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 import { ActionsTabs, type StatusFilter } from './ActionsTabs';
@@ -26,14 +28,20 @@ interface ActionsBadgeDrawerProps {
 // A badge that opens a right-side drawer. No backdrop — the rest of the page stays interactive
 // while the drawer is open, and the caller shrinks the content area's width so dashboard cards on
 // the right edge are never hidden behind it. The trigger renders inline wherever this component
-// is mounted (e.g. centered in a page header) — only the drawer panel itself is fixed-positioned,
-// so where the trigger sits in the DOM doesn't affect the slide-over. tab/statusFilter are
-// controlled by the parent (shared with ActionsSidePanel) so switching between Badge and Panel
+// is mounted (e.g. centered in a page header). The drawer panel itself is portaled to
+// document.body — several pages wrap their content in elements with a `transform` (e.g. the
+// `.page-enter` animation), and CSS makes any transformed ancestor the containing block for a
+// `position: fixed` descendant, which broke the "slide over from the right edge of the viewport"
+// behavior and made the panel render as a small box near the trigger instead. Portaling sidesteps
+// that regardless of what animations/transforms get added to ancestors later. tab/statusFilter
+// are controlled by the parent (shared with ActionsSidePanel) so switching between Badge and Panel
 // modes never resets your place.
 export function ActionsBadgeDrawer({
   actions, onSave, onAddOpenPoint, filteredPOs, allSuppliers, filters, tab, onTabChange, statusFilter, onStatusFilterChange, open, onOpenChange, bucketFilter,
 }: ActionsBadgeDrawerProps) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const openCount = actions.filter(
     (a) => a.status !== 'closed' && (a.type === 'open_point' || !a.poReference || filteredPOs.has(a.poReference))
            && (!bucketFilter || a.type === 'open_point' || a.bucket === bucketFilter)
@@ -49,7 +57,7 @@ export function ActionsBadgeDrawer({
         {openCount > 0 ? `⚠ ${openCount} open action${openCount === 1 ? '' : 's'}` : '✓ No open actions'}
       </button>
 
-      {open && (
+      {open && mounted && createPortal(
         <div
           className="fixed inset-y-0 right-0 z-50 w-[400px] max-w-full bg-white flex flex-col"
           style={{ boxShadow: 'var(--shadow-slide)' }}
@@ -69,7 +77,8 @@ export function ActionsBadgeDrawer({
             tab={tab} onTabChange={onTabChange} statusFilter={statusFilter} onStatusFilterChange={onStatusFilterChange}
             bucketFilter={bucketFilter}
           />
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

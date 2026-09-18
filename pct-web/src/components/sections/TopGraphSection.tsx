@@ -42,12 +42,14 @@ export function TopGraphSection({ points, sotTarget, otifTarget, drillDownHref }
             value={pctLabel(currentSOT)}
             valueClassName={`text-3xl ${currentSOT === null ? 'text-[#c8c0bb]' : currentSOT >= sotTarget ? 'text-pass' : 'text-fail'}`}
             tint={currentSOT === null ? 'neutral' : currentSOT >= sotTarget ? 'pass' : 'fail'}
+            sub={latestPast && <span className="text-[10px] text-[#9c9794]">{latestPast.weekLabel}</span>}
           />
           <KpiBox
             label={`OTIF · ${otifTarget}% target`}
             value={pctLabel(currentOTIF)}
             valueClassName={`text-3xl ${currentOTIF === null ? 'text-[#c8c0bb]' : currentOTIF >= otifTarget ? 'text-pass' : 'text-fail'}`}
             tint={currentOTIF === null ? 'neutral' : currentOTIF >= otifTarget ? 'pass' : 'fail'}
+            sub={latestPast && <span className="text-[10px] text-[#9c9794]">{latestPast.weekLabel}</span>}
           />
         </div>
         <div className="flex-1 min-h-0 min-w-0">

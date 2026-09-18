@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Download, MoreVertical, Maximize2 } from 'lucide-react';
 import { LargeModal } from '../shared/LargeModal';
 import { useData } from '../../context/DataContext';
@@ -57,6 +56,7 @@ export function SotOtifDrilldown() {
   const [scorecardSearch, setScorecardSearch] = useState('');
   const [chartExpanded, setChartExpanded] = useState(false);
   const [perfWeekModalOpen, setPerfWeekModalOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
 
   const today = useMemo(() => new Date(), []);
   const kpis = useKPIs(weekRangeLines, weeksInRange, isChinaSupplier);
@@ -214,11 +214,11 @@ export function SotOtifDrilldown() {
   return (
     <div className={isModeB ? 'min-h-screen w-full bg-[#f5f2ee] flex' : 'h-screen w-full bg-[#f5f2ee] flex overflow-hidden'}>
       <Sidebar />
-      <div className={isModeB ? 'flex-1 min-w-0 flex flex-col' : 'flex-1 min-w-0 flex flex-col overflow-hidden'}>
+      <div className={`${isModeB ? 'flex-1 min-w-0 flex flex-col' : 'flex-1 min-w-0 flex flex-col overflow-hidden'} transition-[padding] duration-150`} style={{ paddingRight: actionsOpen ? 416 : undefined }}>
         <DetailHeader
           title={isModeB ? 'SOT / OTIF Detail' : 'SOT / OTIF Performance'}
           filters={filters}
-          centerContent={<GlobalActionsBadge filteredPOs={new Set(weekRangeLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />}
+          centerContent={<GlobalActionsBadge filteredPOs={new Set(weekRangeLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} bucketFilter="sot_otif" onOpenChange={setActionsOpen} />}
           rightActions={
             <>
               <button

@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Download, MoreVertical, Info } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { useFilters, DEFAULT_FILTERS } from '../../hooks/useFilters';
@@ -64,6 +63,7 @@ export function InvoicesDrilldown() {
   const [drill, setDrill] = useState<DrillSelection | null>(null);
   const [showAllSuppliers, setShowAllSuppliers] = useState(false);
   const [dataQualityOpen, setDataQualityOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
 
   const channel: InvoiceChannel = filters.channels.length === 1 ? filters.channels[0] : 'All';
 
@@ -109,11 +109,11 @@ export function InvoicesDrilldown() {
   return (
     <div className="min-h-screen w-full bg-[#f5f2ee] flex">
       <Sidebar />
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="flex-1 min-w-0 flex flex-col transition-[padding] duration-150" style={{ paddingRight: actionsOpen ? 416 : undefined }}>
         <DetailHeader
           title="Invoicing Detail"
           filters={filters}
-          centerContent={<GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />}
+          centerContent={<GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} bucketFilter="invoicing" onOpenChange={setActionsOpen} />}
           rightActions={
             <>
               <button onClick={exportScope} className="flex items-center gap-1.5 text-xs font-semibold text-white bg-brand rounded-lg px-2.5 h-8 hover:bg-brand-soft transition-colors">

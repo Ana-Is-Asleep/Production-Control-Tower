@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Download, MoreVertical } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { useFilters } from '../../hooks/useFilters';
@@ -47,6 +46,7 @@ export function MissingEsdDrilldown() {
 
   const [urgency, setUrgency] = useState<UrgencyFilter>(initial.urgency);
   const [selectedBucketKeys, setSelectedBucketKeys] = useState<string[] | null>(null);
+  const [actionsOpen, setActionsOpen] = useState(false);
 
   useEffect(() => {
     const params = buildMissingEsdParams(filters, urgency);
@@ -110,11 +110,11 @@ export function MissingEsdDrilldown() {
   return (
     <div className="h-screen w-full bg-[#f5f2ee] flex overflow-hidden">
       <Sidebar />
-      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden transition-[padding] duration-150" style={{ paddingRight: actionsOpen ? 416 : undefined }}>
         <DetailHeader
           title="Missing ESD Detail"
           filters={filters}
-          centerContent={<GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} bucketFilter="missing_esd" />}
+          centerContent={<GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} bucketFilter="missing_esd" onOpenChange={setActionsOpen} />}
           rightActions={
             <>
               <button

@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Download, MoreVertical } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { useFilters } from '../../hooks/useFilters';
@@ -71,6 +70,7 @@ export function BacklogDrilldown() {
 
   const [selectedSku, setSelectedSku] = useState<string | null>(null);
   const [showEsdPassedOnly, setShowEsdPassedOnly] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
   // clear the SKU/ESD-passed table filters when the supplier changes (or Mode B is left) so a
   // stale filter from a previous supplier can't silently carry over
   useEffect(() => {
@@ -99,11 +99,11 @@ export function BacklogDrilldown() {
   return (
     <div className={isModeB ? 'min-h-screen w-full bg-[#f5f2ee] flex' : 'h-screen w-full bg-[#f5f2ee] flex overflow-hidden'}>
       <Sidebar />
-      <div className={isModeB ? 'flex-1 min-w-0 flex flex-col' : 'flex-1 min-w-0 flex flex-col overflow-hidden'}>
+      <div className={`${isModeB ? 'flex-1 min-w-0 flex flex-col' : 'flex-1 min-w-0 flex flex-col overflow-hidden'} transition-[padding] duration-150`} style={{ paddingRight: actionsOpen ? 416 : undefined }}>
         <DetailHeader
           title={isModeB ? 'Backlog Detail — Supplier Detail' : 'Backlog Detail'}
           filters={filters}
-          centerContent={<GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} />}
+          centerContent={<GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} bucketFilter="backlog" onOpenChange={setActionsOpen} />}
           rightActions={
             <>
               <button

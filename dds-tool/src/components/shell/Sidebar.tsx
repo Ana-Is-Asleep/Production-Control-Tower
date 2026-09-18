@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutGrid, FileBarChart, Database, ListChecks, HelpCircle, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutGrid, FileBarChart, Database, ListChecks, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface NavItem {
   key: string;
@@ -19,13 +19,6 @@ const NAV_ITEMS: NavItem[] = [
   { key: 'reports', label: 'Reports', icon: FileBarChart, href: '/reports' },
   { key: 'raw-data', label: 'Raw data', icon: Database, href: '/raw-data' },
   { key: 'actions', label: 'Actions', icon: ListChecks, href: '/actions' },
-];
-
-// Help/Settings have no destination page yet, so — same as Raw Data before it existed — they
-// render as disabled placeholders rather than linking somewhere fake.
-const FOOTER_ITEMS: { key: string; label: string; icon: typeof HelpCircle }[] = [
-  { key: 'help', label: 'Help', icon: HelpCircle },
-  { key: 'settings', label: 'Settings', icon: Settings },
 ];
 
 const EXCLUSIVE_ROUTES = NAV_ITEMS.filter((i) => i.key !== 'dashboard').map((i) => i.href!);
@@ -96,20 +89,6 @@ export function Sidebar() {
       </nav>
 
       <div className="px-2 pb-2 space-y-0.5 border-t border-[#f4f1ef] pt-2">
-        {FOOTER_ITEMS.map((item) => {
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.key}
-              disabled
-              title={collapsed ? item.label : undefined}
-              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[13px] text-[#403833] font-medium opacity-60 cursor-not-allowed"
-            >
-              <Icon size={18} className="text-[#7b7571] shrink-0" strokeWidth={2} />
-              {!collapsed && item.label}
-            </button>
-          );
-        })}
         <button
           onClick={toggleCollapsed}
           className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[13px] text-[#403833] font-medium hover:bg-[#f5f2ee] transition-colors"
