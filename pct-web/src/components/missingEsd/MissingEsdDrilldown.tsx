@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { Download, MoreVertical } from 'lucide-react';
+import { MoreVertical } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { useFilters } from '../../hooks/useFilters';
 import { currentISOWeek } from '../../lib/dateUtils';
@@ -10,8 +10,6 @@ import {
   parseMissingEsdParams, buildMissingEsdParams, type UrgencyFilter,
 } from '../../lib/missingEsdParams';
 import { computeMissingEsdRows, findConsolidationRisks, EGRD_NEEDING_ACTION_WEEKS } from '../../lib/missingEsdAggregation';
-import { detailSheet } from '../../lib/reportBuilders';
-import { downloadWorkbook } from '../../lib/xlsxWriter';
 import { Sidebar } from '../shell/Sidebar';
 import { DetailHeader } from '../shell/DetailHeader';
 import { GlobalActionsBadge } from '../actions/GlobalActionsBadge';
@@ -19,6 +17,7 @@ import { MissingEsdKpiRow } from './MissingEsdKpiRow';
 import { MissingEsdEgrdChart } from './MissingEsdEgrdChart';
 import { MissingEsdSupplierExposure } from './MissingEsdSupplierExposure';
 import { MissingEsdInsights } from './MissingEsdInsights';
+import { MissingEsdConsolidationChart } from './MissingEsdConsolidationChart';
 import { MissingEsdTable } from './MissingEsdTable';
 
 function bucketGroup(key: string): 'needing' | 'not_urgent' {
@@ -83,15 +82,6 @@ export function MissingEsdDrilldown() {
     setFilters({ ...filters, suppliers: [supplier] });
   };
 
-  const handleExport = () => {
-    const sheet = detailSheet(
-      'Missing ESD',
-      ['PO', 'Supplier', 'Warehouse', 'PGRD', 'EGRD', 'Qty Confirmed', 'Days Until EGRD', 'Urgency'],
-      scopeRows.map((r) => [r.po, r.supplier, r.warehouse, r.pgrd, r.egrd, r.qtyConfirmed, r.daysUntilEgrd, r.urgency])
-    );
-    downloadWorkbook(`Missing ESD - ${urgency === 'urgent' ? 'Needing Action' : 'Not Urgent'}`, [sheet]);
-  };
-
   if (allLines.length === 0) {
     return (
       <div className="h-screen w-full bg-[#f5f2ee] flex overflow-hidden">
@@ -116,22 +106,13 @@ export function MissingEsdDrilldown() {
           filters={filters}
           centerContent={<GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} bucketFilter="missing_esd" onOpenChange={setActionsOpen} />}
           rightActions={
-            <>
-              <button
-                onClick={handleExport}
-                className="flex items-center gap-1.5 text-xs font-semibold text-[#403833] border border-[#e9e3df] rounded-lg px-2.5 h-8 hover:border-[#403833] transition-colors"
-              >
-                <Download size={13} />
-                Export
-              </button>
-              <button
-                title="More options (coming soon)"
-                disabled
-                className="flex items-center justify-center w-8 h-8 rounded-lg border border-[#e9e3df] text-[#7b7571] opacity-60 cursor-not-allowed"
-              >
-                <MoreVertical size={15} />
-              </button>
-            </>
+            <button
+              title="More options (coming soon)"
+              disabled
+              className="flex items-center justify-center w-8 h-8 rounded-lg border border-[#e9e3df] text-[#7b7571] opacity-60 cursor-not-allowed"
+            >
+              <MoreVertical size={15} />
+            </button>
           }
         />
 
@@ -143,8 +124,12 @@ export function MissingEsdDrilldown() {
             totalCount={allRows.length}
           />
 
+          {/* Key Insights is about overdue/needing-action urgency specifically (overdue counts,
+              "due within 3 weeks", consolidation risk) — none of that reads sensibly while
+              browsing the Not Urgent tab, so it's dropped there and the other two panels take the
+              freed-up width instead. */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-            <div className="lg:col-span-6">
+            <div className={urgency === 'watchlist' ? 'lg:col-span-7' : 'lg:col-span-6'}>
               <MissingEsdEgrdChart
                 rows={allRows}
                 curWeek={curWeek}
@@ -153,13 +138,17 @@ export function MissingEsdDrilldown() {
                 onSelectBucket={handleChartSelect}
               />
             </div>
-            <div className="lg:col-span-4">
+            <div className={urgency === 'watchlist' ? 'lg:col-span-5' : 'lg:col-span-4'}>
               <MissingEsdSupplierExposure rows={allRows} onSupplierClick={handleSupplierClick} />
             </div>
-            <div className="lg:col-span-2">
-              <MissingEsdInsights rows={allRows} curWeek={curWeek} curYear={curYear} risks={risks} />
-            </div>
+            {urgency !== 'watchlist' && (
+              <div className="lg:col-span-2">
+                <MissingEsdInsights rows={allRows} curWeek={curWeek} curYear={curYear} />
+              </div>
+            )}
           </div>
+
+          {urgency !== 'watchlist' && <MissingEsdConsolidationChart risks={risks} curWeek={curWeek} curYear={curYear} />}
 
           <div>
             <div className="flex items-center gap-1 mb-3">

@@ -216,6 +216,7 @@ export function computeSupplierBacklogSummary(rows: BacklogPORow[]): SupplierBac
 export interface SkuBacklogRow {
   sku: string;
   poCount: number; // distinct backlog POs containing this SKU (a PO can count toward more than one SKU)
+  qty: number; // confirmed qty summed across this SKU's lines within those backlog POs
   pctOfBacklog: number;
   avgAgeDays: number;
   noEsdCount: number;
@@ -224,13 +225,18 @@ export interface SkuBacklogRow {
 // Which actual products are driving this backlog. No SKU description text exists anywhere in this
 // data source (only the bare SKU code) — shown as-is rather than fabricating a human-readable name.
 export function computeBacklogBySKU(rows: BacklogPORow[]): SkuBacklogRow[] {
-  const bySku = new Map<string, { poSet: Set<string>; ageSum: number; noEsd: number }>();
+  const bySku = new Map<string, { poSet: Set<string>; ageSum: number; noEsd: number; qty: number }>();
   for (const r of rows) {
-    const skus = new Set(r.lines.map((l) => l.sku).filter(Boolean));
-    for (const sku of skus) {
-      const cur = bySku.get(sku) ?? { poSet: new Set<string>(), ageSum: 0, noEsd: 0 };
+    const qtyBySku = new Map<string, number>();
+    for (const l of r.lines) {
+      if (!l.sku) continue;
+      qtyBySku.set(l.sku, (qtyBySku.get(l.sku) ?? 0) + l.cqty);
+    }
+    for (const [sku, qty] of qtyBySku) {
+      const cur = bySku.get(sku) ?? { poSet: new Set<string>(), ageSum: 0, noEsd: 0, qty: 0 };
       cur.poSet.add(r.po);
       cur.ageSum += r.ageDays;
+      cur.qty += qty;
       if (!r.hasEsd) cur.noEsd += 1;
       bySku.set(sku, cur);
     }
@@ -240,6 +246,7 @@ export function computeBacklogBySKU(rows: BacklogPORow[]): SkuBacklogRow[] {
     .map(([sku, v]) => ({
       sku,
       poCount: v.poSet.size,
+      qty: v.qty,
       pctOfBacklog: total ? Math.round((v.poSet.size / total) * 100) : 0,
       avgAgeDays: Math.round(v.ageSum / v.poSet.size),
       noEsdCount: v.noEsd,

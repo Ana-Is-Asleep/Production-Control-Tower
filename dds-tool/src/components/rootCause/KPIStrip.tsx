@@ -10,14 +10,16 @@ interface KPIStripProps {
   trendCaption: string;
 }
 
-function Card({ label, value, sub, valueColor }: { label: string; value: string; sub?: string; valueColor?: string }) {
+function Card({ label, value, sub, valueColor, wide }: { label: string; value: string; sub?: string; valueColor?: string; wide?: boolean }) {
   return (
-    <div className="bg-white rounded-lg border border-[#e9e3df] px-4 py-3 flex-1 min-w-0" style={{ boxShadow: 'var(--shadow-card)' }}>
+    <div className={`bg-white rounded-lg border border-[#e9e3df] px-4 py-3 min-w-0 ${wide ? 'flex-[1.6]' : 'flex-1'}`} style={{ boxShadow: 'var(--shadow-card)' }}>
       <p className="text-[10px] uppercase tracking-widest text-[#9c9794] mb-1 truncate">{label}</p>
-      {/* text-value cards (e.g. category names) can run longer than a number ever would — wrap up
-          to 2 lines instead of truncating/overflowing, and use a smaller size so long labels
-          still fit within the card's height. */}
-      <p className="font-extrabold text-xl leading-tight line-clamp-2" style={{ color: valueColor ?? COLOR.navy }}>{value}</p>
+      {/* text-value cards (e.g. category names) can run much longer than a number ever would —
+          wrap up to 2 lines (breaking mid-word if needed, since compound labels like
+          "PO Reshuffling/Rescheduling/ERP System Issue" won't otherwise find a break point) at a
+          smaller size, and get extra flex-basis (wide) so they're not squeezed into the same
+          share of the row as the plain-number cards next to them. */}
+      <p className={`font-extrabold leading-tight line-clamp-2 break-words ${wide ? 'text-lg' : 'text-xl'}`} style={{ color: valueColor ?? COLOR.navy }}>{value}</p>
       {sub && <p className="text-[10px] text-[#9c9794] mt-1 truncate">{sub}</p>}
     </div>
   );
@@ -45,6 +47,7 @@ export function KPIStrip({ kpis, trend, trendCaption }: KPIStripProps) {
         label="Top root cause"
         value={kpis.topCategory ? REASON_CATEGORY_LABELS[kpis.topCategory] : '—'}
         sub={kpis.topCategory ? `${kpis.topCategoryShare}% of flagged POs` : undefined}
+        wide
       />
       <Card
         label="Trend"

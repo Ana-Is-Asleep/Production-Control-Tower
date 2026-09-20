@@ -26,26 +26,47 @@ export function BacklogTopCards({
 }: BacklogTopCardsProps) {
   const total = rows.length;
 
+  // Within each age bucket, how many have no ESD at all vs. an ESD that's already slipped
+  // (esdPassedNoAsd — same field the PO table's "ESD passed — ASD missing" status already uses),
+  // so "Recent"/"Critical" isn't just a raw count but shows what's actually driving it.
+  const recentRows = rows.filter((r) => r.ageBucket === 'recent');
+  const criticalRows = rows.filter((r) => r.ageBucket === 'accumulated');
+  const recentNoEsd = recentRows.filter((r) => !r.hasEsd).length;
+  const recentEsdPast = recentRows.filter((r) => r.esdPassedNoAsd).length;
+  const criticalNoEsd = criticalRows.filter((r) => !r.hasEsd).length;
+  const criticalEsdPast = criticalRows.filter((r) => r.esdPassedNoAsd).length;
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[2fr_2fr_1fr_1fr] gap-3">
       <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
         <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-1 flex items-center gap-1">Current Backlog <Info size={12} /></p>
         <p className="text-3xl font-extrabold leading-none text-[#403833]">{total} <span className="text-sm font-semibold text-[#9c9794]">POs</span></p>
         <p className="text-[11px] text-[#9c9794] mt-1 mb-3">PGRD has passed and PO not yet shipped</p>
-        <div className="flex items-center gap-4 flex-wrap">
-          <div>
-            <p className="text-lg font-extrabold leading-none text-brand">{recentCount}</p>
-            <p className="text-[10px] text-[#7b7571] mt-0.5">Recent (≤1wk) · {pct(recentCount, total)}%</p>
-          </div>
-          <div>
-            <p className="text-lg font-extrabold leading-none text-fail">{accumulatedCount}</p>
-            <p className="text-[10px] text-[#7b7571] mt-0.5">Critical (&gt;1wk) · {pct(accumulatedCount, total)}%</p>
-          </div>
-          <div>
-            <p className="text-lg font-extrabold leading-none text-fail">{noEsdCount}</p>
-            <p className="text-[10px] text-[#7b7571] mt-0.5">No ESD · {pct(noEsdCount, total)}%</p>
-          </div>
-        </div>
+        <table className="w-full text-xs border-collapse">
+          <thead>
+            <tr className="text-[10px] font-semibold uppercase tracking-wide text-[#9c9794]">
+              <th className="text-left pb-1"></th>
+              <th className="text-right pb-1 pl-2">Total</th>
+              <th className="text-right pb-1 pl-2">No ESD</th>
+              <th className="text-right pb-1 pl-2">ESD in the past</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-t border-[#f4f1ef]">
+              <td className="py-1 font-semibold text-brand">Recent (≤1wk)</td>
+              <td className="py-1 text-right font-bold text-[#403833]">{recentCount}</td>
+              <td className="py-1 text-right text-[#58524e]">{recentNoEsd}</td>
+              <td className="py-1 text-right text-[#58524e]">{recentEsdPast}</td>
+            </tr>
+            <tr className="border-t border-[#f4f1ef]">
+              <td className="py-1 font-semibold text-fail">Critical (&gt;1wk)</td>
+              <td className="py-1 text-right font-bold text-[#403833]">{accumulatedCount}</td>
+              <td className="py-1 text-right text-[#58524e]">{criticalNoEsd}</td>
+              <td className="py-1 text-right text-[#58524e]">{criticalEsdPast}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p className="text-[10px] text-[#9c9794] mt-2">{noEsdCount} of {total} POs ({pct(noEsdCount, total)}%) have no ESD at all.</p>
       </div>
 
       <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>

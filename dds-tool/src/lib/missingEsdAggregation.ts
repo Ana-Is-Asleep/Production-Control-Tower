@@ -14,6 +14,7 @@ export interface MissingEsdRow {
   egrd: Date | null;
   qtyConfirmed: number;
   daysUntilEgrd: number | null; // negative = overdue, null = no EGRD to judge urgency by
+  daysUntilPgrd: number | null; // negative = PGRD already passed, null = no PGRD on file
   urgency: UrgencyBucket;
 }
 
@@ -50,6 +51,7 @@ export function computeMissingEsdRows(lines: PurchaseLine[]): MissingEsdRow[] {
     const pgrd = pgrds.length ? new Date(Math.min(...pgrds.map((d) => d.getTime()))) : null;
 
     const daysUntilEgrd = egrd ? differenceInCalendarDays(egrd, new Date()) : null;
+    const daysUntilPgrd = pgrd ? differenceInCalendarDays(pgrd, new Date()) : null;
 
     rows.push({
       po,
@@ -59,6 +61,7 @@ export function computeMissingEsdRows(lines: PurchaseLine[]): MissingEsdRow[] {
       egrd,
       qtyConfirmed,
       daysUntilEgrd,
+      daysUntilPgrd,
       urgency: urgencyFor(daysUntilEgrd),
     });
   }
@@ -79,6 +82,11 @@ export interface EgrdWeekBucket {
   label: string;
   count: number;
   group: 'needing' | 'not_urgent';
+  // Stacked-bar split: PGRD already passed (production should be underway/done, still no ESD —
+  // the more concerning half) vs. PGRD today or in the future (production hasn't started yet, so
+  // no ESD is still expected at this point).
+  pgrdPastCount: number;
+  pgrdFutureCount: number;
 }
 
 // Which EGRD-week bucket a row belongs to — shared by the chart (to aggregate counts) and the
@@ -103,27 +111,43 @@ export function egrdBucketKeyForRow(row: MissingEsdRow, curWeek: number, curYear
 // the old urgency-profile bar.
 export function computeEgrdWeekBuckets(rows: MissingEsdRow[], curWeek: number, curYear: number): EgrdWeekBucket[] {
   const counts = new Map<string, number>();
+  const pastCounts = new Map<string, number>();
+  const futureCounts = new Map<string, number>();
   for (const r of rows) {
     const key = egrdBucketKeyForRow(r, curWeek, curYear);
     counts.set(key, (counts.get(key) ?? 0) + 1);
+    if (r.daysUntilPgrd !== null && r.daysUntilPgrd < 0) {
+      pastCounts.set(key, (pastCounts.get(key) ?? 0) + 1);
+    } else {
+      futureCounts.set(key, (futureCounts.get(key) ?? 0) + 1);
+    }
   }
 
   const buckets: EgrdWeekBucket[] = [
-    { key: 'overdue', label: 'Overdue', count: counts.get('overdue') ?? 0, group: 'needing' },
+    {
+      key: 'overdue', label: 'Overdue', count: counts.get('overdue') ?? 0, group: 'needing',
+      pgrdPastCount: pastCounts.get('overdue') ?? 0, pgrdFutureCount: futureCounts.get('overdue') ?? 0,
+    },
   ];
 
   let lastLabel = '';
   for (let offset = 0; offset < EGRD_WEEKS_AHEAD; offset++) {
     const { week } = shiftISOWeek(curWeek, curYear, offset);
     lastLabel = `W${String(week).padStart(2, '0')}`;
+    const key = `w${offset}`;
     buckets.push({
-      key: `w${offset}`,
+      key,
       label: lastLabel,
-      count: counts.get(`w${offset}`) ?? 0,
+      count: counts.get(key) ?? 0,
       group: offset < EGRD_NEEDING_ACTION_WEEKS ? 'needing' : 'not_urgent',
+      pgrdPastCount: pastCounts.get(key) ?? 0,
+      pgrdFutureCount: futureCounts.get(key) ?? 0,
     });
   }
-  buckets.push({ key: 'further', label: `${lastLabel}+`, count: counts.get('further') ?? 0, group: 'not_urgent' });
+  buckets.push({
+    key: 'further', label: `${lastLabel}+`, count: counts.get('further') ?? 0, group: 'not_urgent',
+    pgrdPastCount: pastCounts.get('further') ?? 0, pgrdFutureCount: futureCounts.get('further') ?? 0,
+  });
 
   return buckets;
 }
@@ -194,4 +218,35 @@ export function findConsolidationRisks(rows: MissingEsdRow[]): ConsolidationRisk
     .filter((g) => g.count > CONSOLIDATION_THRESHOLD)
     .map((g) => ({ supplier: g.supplier, egrd: g.egrd, poCount: g.count }))
     .sort((a, b) => b.poCount - a.poCount);
+}
+
+export interface ConsolidationRiskWeekBucket {
+  key: string; // 'w0'..'w{weeksAhead-1}'
+  label: string;
+  poCount: number;
+}
+
+// Distribution of at-risk PO volume across the next few weeks (by EGRD), for the small chart
+// above the per-supplier risk list — the same risks findConsolidationRisks already flags, just
+// grouped by timing instead of shown as a flat list.
+export function computeConsolidationRiskByWeek(
+  risks: ConsolidationRisk[], curWeek: number, curYear: number, weeksAhead = 3
+): ConsolidationRiskWeekBucket[] {
+  const buckets: ConsolidationRiskWeekBucket[] = [];
+  for (let offset = 0; offset < weeksAhead; offset++) {
+    const { week } = shiftISOWeek(curWeek, curYear, offset);
+    buckets.push({ key: `w${offset}`, label: `W${String(week).padStart(2, '0')}`, poCount: 0 });
+  }
+  for (const r of risks) {
+    const rWeek = getISOWeek(r.egrd);
+    const rYear = getISOWeekYear(r.egrd);
+    for (let offset = 0; offset < weeksAhead; offset++) {
+      const shifted = shiftISOWeek(curWeek, curYear, offset);
+      if (shifted.week === rWeek && shifted.year === rYear) {
+        buckets[offset].poCount += r.poCount;
+        break;
+      }
+    }
+  }
+  return buckets;
 }

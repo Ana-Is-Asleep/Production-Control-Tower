@@ -23,7 +23,9 @@ export function BacklogOutlierCallout({ outliers }: BacklogOutlierCalloutProps) 
           {outliers.map((o) => (
             <div key={o.po} className="flex justify-between text-xs">
               <span className="font-semibold">{o.po} · {o.supplier}</span>
-              <span className="text-[#7b7571]">ESD {formatDateShort(o.esd)}</span>
+              <span className="text-[#7b7571]">
+                PGRD {formatDateShort(o.pgrd)} · EGRD {formatDateShort(o.egrd)} · ESD {formatDateShort(o.esd)}
+              </span>
             </div>
           ))}
         </div>

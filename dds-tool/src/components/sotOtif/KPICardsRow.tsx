@@ -47,7 +47,7 @@ export function KPICardsRow({ totalPOs, onTimeCount, lateCount, avgDelayDays, we
       <IconStatCard icon={CalendarCheck2} tint="brand" label="POs in Last Completed Week" value={String(totalPOs)} sub={weekLabel ?? undefined} />
       <IconStatCard icon={Clock} tint="pass" label="On Time (OTIF)" value={String(onTimeCount)} />
       <IconStatCard icon={Clock} tint="fail" label="Late" value={String(lateCount)} />
-      <IconStatCard icon={Timer} tint="brand" label="Avg Delay (Late POs)" value={avgDelayDays !== null ? `${avgDelayDays} days` : '—'} />
+      <IconStatCard icon={Timer} tint="brand" label="Avg Delay (ASD-PGRD)" value={avgDelayDays !== null ? `${avgDelayDays} days` : '—'} />
       <div className="rounded-lg border border-[#e9e3df] px-4 py-2.5 flex flex-col items-center justify-center shrink-0 w-[100px]" style={{ background: '#f0ede9' }}>
         <p className="text-[9px] tracking-widest text-[#9c9794]">Target</p>
         <p className="text-lg font-extrabold text-[#403833] mt-0.5">{sotTarget}%</p>

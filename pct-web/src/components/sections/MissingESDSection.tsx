@@ -25,8 +25,10 @@ interface WeekRow {
 export function MissingESDSection({ lines, weeksInRange, drillDownHref }: MissingESDSectionProps) {
   const rows = useMemo((): WeekRow[] => {
     return weeksInRange.map((week) => {
+      // Missing ESD's baseline date is EGRD, not PGRD (confirmed by Ana) — same field the detail
+      // page's urgency buckets (computeEgrdWeekBuckets) key off of.
       const weekLines = lines.filter(
-        (l) => l.pgrd && getISOWeek(l.pgrd) === week.week && getISOWeekYear(l.pgrd) === week.year
+        (l) => l.egrd && getISOWeek(l.egrd) === week.week && getISOWeekYear(l.egrd) === week.year
       );
       const byPO = new Map<string, PurchaseLine[]>();
       weekLines.forEach((l) => {

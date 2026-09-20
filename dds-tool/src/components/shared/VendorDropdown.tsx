@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 
 interface VendorDropdownProps {
   allSuppliers: string[];
@@ -10,6 +10,7 @@ interface VendorDropdownProps {
 
 export function VendorDropdown({ allSuppliers, selected, onChange }: VendorDropdownProps) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -17,6 +18,17 @@ export function VendorDropdown({ allSuppliers, selected, onChange }: VendorDropd
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  // Reset the search box each time the dropdown is reopened, rather than leaving a stale filter
+  // from the last time it was used.
+  useEffect(() => {
+    if (open) setQuery('');
+  }, [open]);
+
+  const filteredSuppliers = useMemo(
+    () => allSuppliers.filter((s) => s.toLowerCase().includes(query.trim().toLowerCase())),
+    [allSuppliers, query]
+  );
 
   const label = selected.length === 0 ? 'All vendors' : selected.length === 1 ? selected[0] : `${selected.length} vendors`;
   const toggle = (s: string) => onChange(selected.includes(s) ? selected.filter((x) => x !== s) : [...selected, s]);
@@ -31,17 +43,29 @@ export function VendorDropdown({ allSuppliers, selected, onChange }: VendorDropd
         <span className="opacity-50 text-[10px]">▾</span>
       </button>
       {open && (
-        <div className="absolute left-0 top-full mt-1 bg-white border border-[#e9e3df] rounded-lg shadow-lg z-50 w-72 py-1 max-h-72 overflow-y-auto" style={{ boxShadow: 'var(--shadow-card-hover)' }}>
+        <div className="absolute left-0 top-full mt-1 bg-white border border-[#e9e3df] rounded-lg shadow-lg z-50 w-72 py-1" style={{ boxShadow: 'var(--shadow-card-hover)' }}>
+          <div className="px-2 pb-1 pt-0.5">
+            <input
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search vendors..."
+              className="w-full px-2.5 py-1.5 border border-[#e9e3df] rounded-md text-xs"
+            />
+          </div>
           <button onClick={() => onChange([])} className={`w-full text-left px-4 py-2 text-xs font-medium ${selected.length === 0 ? 'text-brand' : 'text-[#58524e] hover:bg-[#f9f7f6]'}`}>
             All vendors {selected.length === 0 && '✓'}
           </button>
           <div className="border-t border-[#e9e3df] my-1" />
-          {allSuppliers.map((s) => (
-            <button key={s} onClick={() => toggle(s)} className="w-full text-left px-4 py-2 text-xs flex items-center justify-between hover:bg-[#f9f7f6]">
-              <span className={selected.includes(s) ? 'text-[#403833] font-medium' : 'text-[#58524e]'}>{s}</span>
-              {selected.includes(s) && <span className="text-brand text-xs">✓</span>}
-            </button>
-          ))}
+          <div className="max-h-56 overflow-y-auto">
+            {filteredSuppliers.length === 0 && <p className="text-xs text-[#9c9794] px-4 py-2">No matches</p>}
+            {filteredSuppliers.map((s) => (
+              <button key={s} onClick={() => toggle(s)} className="w-full text-left px-4 py-2 text-xs flex items-center justify-between hover:bg-[#f9f7f6]">
+                <span className={selected.includes(s) ? 'text-[#403833] font-medium' : 'text-[#58524e]'}>{s}</span>
+                {selected.includes(s) && <span className="text-brand text-xs">✓</span>}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

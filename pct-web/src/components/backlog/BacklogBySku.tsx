@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import type { SkuBacklogRow } from '../../lib/backlogAggregation';
 
 interface BacklogBySkuProps {
@@ -9,13 +10,28 @@ interface BacklogBySkuProps {
 }
 
 const TOP_N = 10;
+type SortKey = 'poCount' | 'qty';
+
+function SortHeader({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className={`inline-flex items-center gap-0.5 hover:text-[#403833] ${active ? 'text-[#403833]' : ''}`}>
+      {label} <span className="text-[9px]">{active ? '▼' : '▾'}</span>
+    </button>
+  );
+}
 
 // Which actual products are driving this supplier's backlog. No SKU description exists in this
 // data source (only the bare code), so the SKU column shows the code as-is rather than a
-// fabricated name. Clicking a row filters the PO table below to that SKU.
+// fabricated name. Clicking a row filters the PO table below to that SKU; clicking a sortable
+// column header re-ranks the top 10 by that metric instead of always by PO count.
 export function BacklogBySku({ skus, selectedSku, onSelectSku }: BacklogBySkuProps) {
-  const top = skus.slice(0, TOP_N);
-  const maxCount = Math.max(1, ...top.map((s) => s.poCount));
+  const [sortKey, setSortKey] = useState<SortKey>('poCount');
+
+  const top = useMemo(
+    () => [...skus].sort((a, b) => b[sortKey] - a[sortKey]).slice(0, TOP_N),
+    [skus, sortKey]
+  );
+  const maxValue = Math.max(1, ...top.map((s) => s[sortKey]));
 
   return (
     <div className="bg-white rounded-lg border border-[#e9e3df] p-4 flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
@@ -30,7 +46,12 @@ export function BacklogBySku({ skus, selectedSku, onSelectSku }: BacklogBySkuPro
               <tr className="text-[10px] font-semibold uppercase tracking-wide text-[#9c9794]">
                 <th className="text-left pb-1.5">SKU</th>
                 <th className="pb-1.5"></th>
-                <th className="text-center pb-1.5 px-2">Backlog POs</th>
+                <th className="text-center pb-1.5 px-2">
+                  <SortHeader label="Backlog POs" active={sortKey === 'poCount'} onClick={() => setSortKey('poCount')} />
+                </th>
+                <th className="text-center pb-1.5 px-2">
+                  <SortHeader label="Backlog Qty" active={sortKey === 'qty'} onClick={() => setSortKey('qty')} />
+                </th>
                 <th className="text-center pb-1.5 px-2">% Backlog</th>
               </tr>
             </thead>
@@ -46,10 +67,11 @@ export function BacklogBySku({ skus, selectedSku, onSelectSku }: BacklogBySkuPro
                     <td className="py-2 font-semibold text-[#403833] whitespace-nowrap">{s.sku}</td>
                     <td className="py-2 px-2 w-24">
                       <div className="h-1.5 rounded-full bg-[#f5f2ee] overflow-hidden">
-                        <div className="h-full rounded-full bg-brand" style={{ width: `${Math.max((s.poCount / maxCount) * 100, 4)}%` }} />
+                        <div className="h-full rounded-full bg-brand" style={{ width: `${Math.max((s[sortKey] / maxValue) * 100, 4)}%` }} />
                       </div>
                     </td>
                     <td className="py-2 px-2 text-center text-[#403833]">{s.poCount}</td>
+                    <td className="py-2 px-2 text-center text-[#403833]">{s.qty.toLocaleString()}</td>
                     <td className="py-2 px-2 text-center text-[#58524e]">{s.pctOfBacklog}%</td>
                   </tr>
                 );

@@ -1,37 +1,27 @@
 'use client';
 
 import { useMemo } from 'react';
-import { AlertTriangle, Clock, PackageSearch, CheckCircle2, CalendarClock } from 'lucide-react';
-import { computeEgrdWeekBuckets, computeSupplierExposure, EGRD_NEEDING_ACTION_WEEKS, type MissingEsdRow, type ConsolidationRisk } from '../../lib/missingEsdAggregation';
-import { formatDateShort } from '../../lib/dateUtils';
+import { AlertTriangle, Clock, PackageSearch, CheckCircle2 } from 'lucide-react';
+import { computeEgrdWeekBuckets, computeSupplierExposure, EGRD_NEEDING_ACTION_WEEKS, type MissingEsdRow } from '../../lib/missingEsdAggregation';
 
 interface MissingEsdInsightsProps {
   rows: MissingEsdRow[];
   curWeek: number;
   curYear: number;
-  // Friday-EGRD consolidation risks — surfaced here (Key Insights) instead of a separate
-  // highlighted banner, so it's not unclear where the "pickup likely delayed" claim comes from.
-  risks?: ConsolidationRisk[];
 }
 
 const MAX_INSIGHTS = 5;
 
 // Current-state facts only, no week-over-week comparisons — none of this is tracked historically,
-// so every bullet here interprets the current scope rather than restating a KPI number.
-export function MissingEsdInsights({ rows, curWeek, curYear, risks = [] }: MissingEsdInsightsProps) {
+// so every bullet here interprets the current scope rather than restating a KPI number. Friday-
+// EGRD consolidation risks have their own dedicated chart+list (MissingEsdConsolidationChart)
+// instead of living here as bullets.
+export function MissingEsdInsights({ rows, curWeek, curYear }: MissingEsdInsightsProps) {
   const insights = useMemo(() => {
     const items: { icon: typeof AlertTriangle; tone: 'fail' | 'warn' | 'pass' | 'neutral'; text: string }[] = [];
     const buckets = computeEgrdWeekBuckets(rows, curWeek, curYear);
     const overdue = buckets[0].count;
     const upcomingNeeding = buckets.slice(1, 1 + EGRD_NEEDING_ACTION_WEEKS).reduce((s, b) => s + b.count, 0);
-
-    for (const risk of risks) {
-      items.push({
-        icon: CalendarClock,
-        tone: 'warn',
-        text: `${risk.supplier} — ${risk.poCount} unbooked POs due EGRD ${formatDateShort(risk.egrd)} (Friday); pickup risks slipping to Monday.`,
-      });
-    }
 
     if (overdue > 0) {
       items.push({ icon: AlertTriangle, tone: 'fail', text: `${overdue} PO${overdue > 1 ? 's are' : ' is'} already overdue and require immediate attention.` });

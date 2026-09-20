@@ -43,7 +43,7 @@ export function BacklogClearanceForecast({ points }: BacklogClearanceForecastPro
               itemStyle={{ color: '#f9f7f6' }}
               formatter={(v) => [`${v} POs remaining`, 'Backlog']}
             />
-            <Area type="stepAfter" dataKey="remaining" stroke={COLOR.brand} strokeWidth={2} fill="url(#backlogClearanceFill)" dot={{ r: 4, fill: COLOR.brand, stroke: '#fff', strokeWidth: 1.5 }}>
+            <Area type="linear" dataKey="remaining" stroke={COLOR.brand} strokeWidth={2} fill="url(#backlogClearanceFill)" dot={{ r: 4, fill: COLOR.brand, stroke: '#fff', strokeWidth: 1.5 }}>
               <LabelList dataKey="remaining" position="top" style={{ fontSize: 12, fontWeight: 700, fill: COLOR.navy }} />
             </Area>
           </AreaChart>

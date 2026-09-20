@@ -6,8 +6,9 @@ interface BacklogAgeBreakdownProps {
   bands: AgeBand[];
 }
 
-// <2wk = green, 2-4wk = orange, 4-6wk = amber/darker orange, 6wk+ = red.
-const BAND_COLORS = ['#15803d', '#ff7700', '#c2650a', '#dc2626'];
+// Deliberately no green — being in backlog at all isn't a "good" state even at <2wk, so the scale
+// only escalates: <2wk = amber, 2-4wk = orange, 4-6wk = darker orange, 6wk+ = red.
+const BAND_COLORS = ['#f2c14e', '#ff7700', '#c2650a', '#dc2626'];
 
 // How long current backlog POs have already been in backlog (Today - PGRD) — NOT when they're
 // expected to ship (that's the ESD-based clearance forecast elsewhere on the page). One horizontal
