@@ -167,7 +167,10 @@ export function computeLTKpis(overview: OverviewPoint[]): LTKpis {
 
   return {
     currentLeadTime: cur,
-    currentBucketLabel: overview.length ? overview[overview.length - 1].label : '',
+    // The label for the "Current Lead Time" figure must be the bucket that value actually came
+    // from (the latest one WITH data) — not the last bucket in the display window, which can be an
+    // empty future period and would otherwise show a week the figure has nothing to do with.
+    currentBucketLabel: last ? overview[last.i].label : '',
     vsTargetDays: cur !== null ? Math.round((cur - LT_TARGET_DAYS) * 10) / 10 : null,
     trendVsPrevDays: cur !== null && prev ? Math.round((cur - prev.v) * 10) / 10 : null,
     pctPeriodsUnderTarget: present.length ? Math.round((under / present.length) * 100) : 0,

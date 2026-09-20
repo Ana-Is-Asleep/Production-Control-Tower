@@ -131,7 +131,7 @@ const FONTS: FontDef[] = [
   { bold: true, color: COLOR.pass, sz: 16 }, // 6 kpiValuePass
   { bold: true, color: COLOR.fail, sz: 16 }, // 7 kpiValueFail
   { bold: true, color: COLOR.warn, sz: 16 }, // 8 kpiValueWarn
-  { bold: true, color: COLOR.white, sz: 10 }, // 9 tableHeader
+  { bold: true, color: COLOR.navy, sz: 10 }, // 9 tableHeader
   { color: COLOR.navy, sz: 10 }, // 10 tableCell
   { bold: true, color: COLOR.pass, sz: 10 }, // 11 statusPass
   { bold: true, color: COLOR.fail, sz: 10 }, // 12 statusFail
@@ -140,7 +140,7 @@ const FONTS: FontDef[] = [
 
 const FILLS: FillDef[] = [
   { color: '' }, // 0 none
-  { color: COLOR.navy }, // 1 tableHeader bg
+  { color: '' }, // 1 unused (was tableHeader bg — headers are now unfilled, see tableHeader XF)
   { color: COLOR.canvas }, // 2 alt row / kpi label bg
   { color: COLOR.passBg }, // 3
   { color: COLOR.failBg }, // 4
@@ -171,7 +171,7 @@ const XF: Record<StyleName, XfDef> = {
   kpiValuePass: { fontIdx: 6, fillIdx: 3, borderIdx: 1, numFmtId: 0, align: 'left' },
   kpiValueFail: { fontIdx: 7, fillIdx: 4, borderIdx: 1, numFmtId: 0, align: 'left' },
   kpiValueWarn: { fontIdx: 8, fillIdx: 5, borderIdx: 1, numFmtId: 0, align: 'left' },
-  tableHeader: { fontIdx: 9, fillIdx: 1, borderIdx: 1, numFmtId: 0, align: 'left' },
+  tableHeader: { fontIdx: 9, fillIdx: 0, borderIdx: 2, numFmtId: 0, align: 'left' },
   tableCell: { fontIdx: 10, fillIdx: 0, borderIdx: 1, numFmtId: 0 },
   tableCellAlt: { fontIdx: 10, fillIdx: 2, borderIdx: 1, numFmtId: 0 },
   percent: { fontIdx: 10, fillIdx: 0, borderIdx: 1, numFmtId: FMT_PERCENT, align: 'right' },

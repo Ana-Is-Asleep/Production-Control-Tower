@@ -3,33 +3,39 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { getISOWeek, getISOWeekYear } from '../../lib/dateUtils';
+import { getISOWeek, getISOWeekYear, currentISOWeek, shiftISOWeek } from '../../lib/dateUtils';
 import { COLOR } from '../../lib/statusColors';
 import { CardHeader } from '../shared/CardHeader';
-import type { WeekInRange } from '../../hooks/useFilters';
 import type { PurchaseLine } from '../../types';
 
 interface MissingESDSectionProps {
   lines: PurchaseLine[];
-  weeksInRange: WeekInRange[];
   drillDownHref: string;
 }
 
 interface WeekRow {
   weekLabel: string;
   offset: number;
-  isFuture: boolean;
   count: number;
 }
 
-export function MissingESDSection({ lines, weeksInRange, drillDownHref }: MissingESDSectionProps) {
+// Missing ESD is a current-state/forward-risk view (matches the detail page: not scoped to the
+// global week-range filter), so this card always looks at a fixed window anchored to TODAY rather
+// than whatever historical range is selected elsewhere on the dashboard — otherwise the dark/light
+// urgency split could never show its "light" (>3 weeks out) half whenever the global range's
+// forward edge didn't happen to extend past +3 (its default doesn't).
+const WEEKS_BEHIND = 2;
+const WEEKS_AHEAD = 6;
+
+export function MissingESDSection({ lines, drillDownHref }: MissingESDSectionProps) {
   const rows = useMemo((): WeekRow[] => {
-    return weeksInRange.map((week) => {
+    const { week: curWeek, year: curYear } = currentISOWeek();
+    const offsets = Array.from({ length: WEEKS_BEHIND + WEEKS_AHEAD + 1 }, (_, i) => i - WEEKS_BEHIND);
+    return offsets.map((offset) => {
+      const { week, year } = shiftISOWeek(curWeek, curYear, offset);
       // Missing ESD's baseline date is EGRD, not PGRD (confirmed by Ana) — same field the detail
       // page's urgency buckets (computeEgrdWeekBuckets) key off of.
-      const weekLines = lines.filter(
-        (l) => l.egrd && getISOWeek(l.egrd) === week.week && getISOWeekYear(l.egrd) === week.year
-      );
+      const weekLines = lines.filter((l) => l.egrd && getISOWeek(l.egrd) === week && getISOWeekYear(l.egrd) === year);
       const byPO = new Map<string, PurchaseLine[]>();
       weekLines.forEach((l) => {
         if (!byPO.has(l.po)) byPO.set(l.po, []);
@@ -43,9 +49,9 @@ export function MissingESDSection({ lines, weeksInRange, drillDownHref }: Missin
         if (noESD && totalQty > 1) count += 1;
       });
 
-      return { weekLabel: week.label, offset: week.offset, isFuture: week.isFuture, count };
+      return { weekLabel: `W${String(week).padStart(2, '0')}`, offset, count };
     });
-  }, [lines, weeksInRange]);
+  }, [lines]);
 
   const totalMissing = useMemo(() => rows.reduce((s, r) => s + r.count, 0), [rows]);
 

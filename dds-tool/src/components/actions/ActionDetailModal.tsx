@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import type { ActionItem, ActionStatus } from '../../types/actions';
 import { SCM_EMAILS, emailToDisplayName } from '../../lib/scmEmails';
-import { daysOpen, reasonBucket } from '../../lib/actionsUtils';
+import { daysOpen, reasonBucket, displayDescription } from '../../lib/actionsUtils';
 import { formatDateMedium } from '../../lib/dateUtils';
 
 const STATUS_OPTIONS: ActionStatus[] = ['open', 'in_progress', 'blocked', 'closed'];
@@ -53,7 +53,7 @@ export function ActionDetailModal({ action, onSave, onClose }: ActionDetailModal
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9c9794] mb-1">Reason</p>
-            <p className="text-xs text-[#403833]">{action.description || '—'}</p>
+            <p className="text-xs text-[#403833]">{displayDescription(action) || '—'}</p>
             <p className="text-[10px] text-[#9c9794] mt-1">{reasonBucket(action)}</p>
           </div>
 

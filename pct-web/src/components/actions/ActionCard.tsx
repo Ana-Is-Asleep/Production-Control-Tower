@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { ActionItem, ActionStatus } from '../../types/actions';
 import { SCM_EMAILS, emailToDisplayName } from '../../lib/scmEmails';
 import { isoWeekLabel, getISOWeekYear } from '../../lib/dateUtils';
+import { displayDescription } from '../../lib/actionsUtils';
 
 const STATUS_STYLES: Record<ActionStatus, { label: string; bg: string; text: string }> = {
   open: { label: 'Open', bg: '#FEE2E2', text: '#991B1B' },
@@ -59,7 +60,7 @@ export function ActionCard({ action, onSave, startInEdit = false, onDiscard, all
             <p className="text-xs font-semibold text-[#403833] truncate">
               {action.supplierName || 'No supplier'}{action.poReference ? ` · ${action.poReference}` : ''}
             </p>
-            <p className="text-xs text-[#58524e] mt-0.5 line-clamp-2">{action.description || '—'}</p>
+            <p className="text-xs text-[#58524e] mt-0.5 line-clamp-2">{displayDescription(action) || '—'}</p>
           </div>
           <StatusBadge status={action.status} />
         </div>
@@ -120,7 +121,7 @@ export function ActionCard({ action, onSave, startInEdit = false, onDiscard, all
           <p className="text-xs font-semibold text-[#403833]">
             {action.supplierName || 'No supplier'}{action.poReference ? ` · ${action.poReference}` : ''}
           </p>
-          <p className="text-xs text-[#58524e] mt-0.5">{action.description}</p>
+          <p className="text-xs text-[#58524e] mt-0.5">{displayDescription(action)}</p>
         </div>
       )}
 

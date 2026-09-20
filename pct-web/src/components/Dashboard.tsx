@@ -147,7 +147,7 @@ export function Dashboard() {
                 </div>
                 <div style={{ flex: '3 1 190px' }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <RootCauseSection lines={weekRangeLines} weeksInRange={weeksInRange} drillDownHref={buildRootCauseHref(filters)} />
-                  <MissingESDSection lines={weekRangeLines} weeksInRange={weeksInRange} drillDownHref={buildMissingEsdHref(filters)} />
+                  <MissingESDSection lines={filteredLines} drillDownHref={buildMissingEsdHref(filters)} />
                   <BacklogSection lines={filteredLines} drillDownHref={buildBacklogHref(filters)} />
                 </div>
                 <div style={{ flex: '2 1 160px' }} className="grid grid-cols-1 sm:grid-cols-2 gap-3">

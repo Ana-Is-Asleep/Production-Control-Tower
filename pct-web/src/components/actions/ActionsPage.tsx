@@ -6,7 +6,7 @@ import { Download, RotateCcw, Search } from 'lucide-react';
 import { useActions } from '../../hooks/useActions';
 import { useData } from '../../context/DataContext';
 import { emailToDisplayName } from '../../lib/scmEmails';
-import { daysOpen, reasonBucket } from '../../lib/actionsUtils';
+import { daysOpen, reasonBucket, displayDescription } from '../../lib/actionsUtils';
 import { parseActionsParams } from '../../lib/actionsParams';
 import { currentISOWeek, shiftISOWeek, getISOWeek, getISOWeekYear, isoWeekLabel } from '../../lib/dateUtils';
 import { WEEK_RANGE_MIN, WEEK_RANGE_MAX } from '../../hooks/useFilters';
@@ -105,7 +105,7 @@ export function ActionsPage() {
       a.type === 'flag' ? 'Flag' : 'Open Point',
       a.supplierName ?? '—',
       a.poReference ?? '—',
-      a.description,
+      displayDescription(a),
       a.owner ? emailToDisplayName(a.owner) : '—',
       STATUS_BADGE[a.status].label,
       new Date(a.createdAt),
@@ -114,7 +114,11 @@ export function ActionsPage() {
       a.resolutionReason ?? '—',
       a.comment || '—',
     ]);
-    downloadWorkbook('Actions', [detailSheet('Actions', columns, rows)]);
+    const sheet = detailSheet('Actions', columns, rows);
+    // Default column widths are too narrow for this sheet — headers clip and the date columns
+    // render as ### in Excel. Sized to comfortably fit each column's own header/content.
+    sheet.colWidths = [11, 22, 14, 40, 20, 12, 13, 13, 16, 30, 30];
+    downloadWorkbook('Actions', [sheet]);
   };
 
   return (
@@ -223,7 +227,7 @@ export function ActionsPage() {
                         <td className="px-3 py-1.5"><span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${a.type === 'flag' ? 'bg-[#fff7ed] text-brand' : 'bg-[#eef2ff] text-[#4338ca]'}`}>{a.type === 'flag' ? 'Flag' : 'Open Point'}</span></td>
                         <td className="px-3 py-1.5 text-[#403833]">{a.supplierName || '—'}</td>
                         <td className="px-3 py-1.5 text-[#403833]">{a.poReference || '—'}</td>
-                        <td className="px-3 py-1.5 text-[#403833] max-w-[220px] truncate">{a.description}</td>
+                        <td className="px-3 py-1.5 text-[#403833] max-w-[220px] truncate">{displayDescription(a)}</td>
                         <td className="px-3 py-1.5 text-[#403833]">{a.owner ? emailToDisplayName(a.owner) : '—'}</td>
                         <td className="px-3 py-1.5"><Badge variant={STATUS_BADGE[a.status].variant}>{STATUS_BADGE[a.status].label}</Badge></td>
                         <td className="px-3 py-1.5 text-[#403833]">{isNaN(created.getTime()) ? '—' : `${isoWeekLabel(created)} ${getISOWeekYear(created)}`}</td>

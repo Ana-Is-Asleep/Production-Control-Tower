@@ -53,7 +53,7 @@ export function LeadTimeSkuPanel({ title, subtitle, categoryBadge, lines, bucket
                 contentStyle={{ background: COLOR.navy, border: 'none', borderRadius: 8, fontSize: 11, padding: '6px 10px' }}
                 labelStyle={{ color: COLOR.brandSoft, fontWeight: 700 }}
                 itemStyle={{ color: '#f9f7f6' }}
-                formatter={(v: unknown) => (v === null ? ['—', ''] : [`${v}d`, ''])}
+                formatter={(v: unknown, name: string) => (v === null ? ['—', name] : [`${v}d`, name])}
               />
               <Legend verticalAlign="top" align="right" iconSize={8} type="scroll" formatter={(v) => <span style={{ color: COLOR.muted, fontSize: 11 }}>{v}</span>} />
               {series.suppliers.map((s, i) => (

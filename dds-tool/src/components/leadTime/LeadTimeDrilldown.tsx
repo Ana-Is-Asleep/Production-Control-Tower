@@ -3,14 +3,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { Download, MoreVertical, Maximize2 } from 'lucide-react';
+import { Download, MoreVertical } from 'lucide-react';
 import { useData } from '../../context/DataContext';
-import { useFilters } from '../../hooks/useFilters';
+import { useFilters, WEEK_RANGE_MIN, WEEK_RANGE_MAX } from '../../hooks/useFilters';
 import { SKU_CATEGORIES, categorizeSKU, type SKUCategory } from '../../lib/skuUtils';
 import { lastCompletedWeek, shiftISOWeek, weekRangeFor } from '../../lib/dateUtils';
 import {
-  parseLeadTimeParams, buildLeadTimeParams, type LTTab,
+  parseLeadTimeParams, buildLeadTimeParams, LT_WEEK_RANGE_DEFAULT, type LTTab,
 } from '../../lib/leadTimeParams';
+import { WeekRangeStepper } from '../shared/WeekRangeStepper';
 import {
   buildBuckets, computeOverviewSeries, computeLTKpis, computeHeatmap, computeDrillRows,
   computePeriodsSummary, computeLeadTimeDistribution, skuGroupOf, skuVariationOf, LT_TARGET_DAYS,
@@ -73,7 +74,7 @@ export function LeadTimeDrilldown() {
   const [skuVariations, setSkuVariations] = useState<string[]>([]);
   const [skuQuery, setSkuQuery] = useState('');
   const [drill, setDrill] = useState<DrillSelection | null>(null);
-  const [chartExpanded, setChartExpanded] = useState(false);
+  const [weekRange, setWeekRange] = useState(initial.weekRange);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [chartViewData, setChartViewData] = useState(false);
 
@@ -87,24 +88,24 @@ export function LeadTimeDrilldown() {
 
   useEffect(() => {
     const params = buildLeadTimeParams({
-      filters, tab, period, channel: 'All', view: isModeB ? 'Supplier' : 'General',
+      filters, tab, period, weekRange, channel: 'All', view: isModeB ? 'Supplier' : 'General',
       viewCategory: filters.categories[0] ?? 'Mattresses', viewSupplier: selectedSupplier, heatmapRows, heatmapPOs,
     });
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, tab, period, heatmapRows, heatmapPOs, pathname, isModeB, selectedSupplier]);
+  }, [filters, tab, period, weekRange, heatmapRows, heatmapPOs, pathname, isModeB, selectedSupplier]);
 
   const categories: SKUCategory[] = filters.categories.length ? filters.categories : SKU_CATEGORIES;
   const scopedLines = filteredLines;
 
-  // default window: 12 periods back through 4 ahead of the last completed week — same forward
-  // horizon used by the other drill-down pages, just expressed in whatever period granularity is active
+  // window is adjustable via the week-range control below (default: 12 weeks back through 4 ahead
+  // of the last completed week), expressed in whatever period granularity is active
   const buckets = useMemo(() => {
     const { week, year } = lastCompletedWeek();
-    const from = shiftISOWeek(week, year, -12);
-    const to = shiftISOWeek(week, year, 4);
+    const from = shiftISOWeek(week, year, weekRange.start);
+    const to = shiftISOWeek(week, year, weekRange.end);
     return buildBuckets(weekRangeFor(from.week, from.year).start, weekRangeFor(to.week, to.year).end, period);
-  }, [period]);
+  }, [period, weekRange]);
 
   const overview = useMemo(() => computeOverviewSeries(scopedLines, buckets, period, categories), [scopedLines, buckets, period, categories]);
   const kpis = useMemo(() => computeLTKpis(overview), [overview]);
@@ -216,6 +217,10 @@ export function LeadTimeDrilldown() {
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-[#9c9794]">Period</span>
                 <Seg options={[{ value: 'weeks', label: 'Weeks' }, { value: 'months', label: 'Months' }, { value: 'quarters', label: 'Quarters' }]} value={period} onChange={setPeriod} />
               </div>
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-[#9c9794]">Timeframe</span>
+                <WeekRangeStepper min={WEEK_RANGE_MIN} max={WEEK_RANGE_MAX} value={weekRange} onChange={setWeekRange} curWeek={curWeek} curYear={curYear} defaultValue={LT_WEEK_RANGE_DEFAULT} />
+              </div>
             </div>
             <p className="text-[11px] text-[#9c9794]">
               Lead time = Actual Ship Date (latest across PO lines) − Order Date
@@ -238,9 +243,6 @@ export function LeadTimeDrilldown() {
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={() => setChartViewData(true)} className="text-xs font-semibold text-[#403833] border border-[#e9e3df] rounded-lg px-2.5 py-1.5 hover:border-[#403833] transition-colors">View data</button>
-                    <button onClick={() => setChartExpanded(true)} title="Expand chart" aria-label="Expand chart" className="text-[#9c9794] hover:text-[#403833] transition-colors">
-                      <Maximize2 size={15} />
-                    </button>
                   </div>
                 </div>
                 <LeadTimeTrendChart
@@ -338,26 +340,6 @@ export function LeadTimeDrilldown() {
           {drill && <LeadTimeDrillPanel title={drill.title} rows={drill.rows} onClose={() => setDrill(null)} />}
         </div>
       </div>
-
-      {chartExpanded && (
-        <LargeModal title={`Lead Time Evolution${selectedSupplier ? ` — ${selectedSupplier}` : ''}`} onClose={() => setChartExpanded(false)}>
-          <div className="bg-white rounded-lg border border-[#e9e3df] p-4">
-            <div style={{ height: '70vh' }}>
-              <LeadTimeTrendChart
-                points={overview}
-                categories={categories}
-                height="100%"
-                onBarClick={(bucketKey, category) => {
-                  const bucket = buckets.find((b) => b.key === bucketKey);
-                  if (!bucket) return;
-                  setDrill({ title: `${category} — ${bucket.label}`, rows: computeDrillRows(scopedLines, bucket, period, { by: 'Category', value: category }) });
-                  setChartExpanded(false);
-                }}
-              />
-            </div>
-          </div>
-        </LargeModal>
-      )}
 
       {chartViewData && (
         <LargeModal

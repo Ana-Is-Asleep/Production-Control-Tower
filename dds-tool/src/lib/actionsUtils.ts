@@ -27,3 +27,15 @@ export function reasonBucket(action: ActionItem): string {
   if (action.type === 'flag' && action.ruleKey) return RULE_LABELS[action.ruleKey] ?? action.ruleKey;
   return 'Manual entry';
 }
+
+// Older flags (created before the rule text was trimmed) still have their PO number baked into
+// the stored description itself — e.g. "PO PO-E-55114 — EGRD in the past...". Every place that
+// shows a description already shows the PO number right next to it (title line/column), so this
+// strips a leading "PO <poReference> —" if present rather than showing it twice. Purely a display
+// concern — the stored description is never rewritten.
+export function displayDescription(action: ActionItem): string {
+  const desc = action.description ?? '';
+  if (!action.poReference) return desc;
+  const prefix = new RegExp(`^PO\\s+${action.poReference.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*[—-]\\s*`, 'i');
+  return desc.replace(prefix, '');
+}

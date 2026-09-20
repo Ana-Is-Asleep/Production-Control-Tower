@@ -44,7 +44,12 @@ function endOfCurrentWeek(): Date {
   return endOfISOWeek(new Date());
 }
 
-export function computeKPIs(rows: InvoiceRow[]): InvoiceKPIs {
+export function computeKPIs(allRows: InvoiceRow[]): InvoiceKPIs {
+  // A Paid invoice is never pending/overdue for payment purposes, regardless of what its separate
+  // Invoice Status workflow field still says (source data can leave that stale after payment) —
+  // same reasoning InvoiceTable's daysLabel already applies per-row, just enforced up front here
+  // so it can't leak into any of the KPI buckets below.
+  const rows = allRows.filter((r) => r.postingStatus !== 'Paid');
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const weekEnd = endOfCurrentWeek();
@@ -124,6 +129,23 @@ export function filterBySupplierNames(rows: InvoiceRow[], supplierNames: string[
       return namesInRow.some((n) => n.includes(sLower) || sLower.includes(n));
     });
   });
+}
+
+// When a row's Name field joins several companies under one billing account (e.g. "Vitafoam, Vita
+// Cellular"), showing that whole raw string once a supplier filter is active makes an unrelated
+// company look like it "leaked into" the filtered results (e.g. filtering "Bekaert" but seeing
+// "Vitafoam" in the row). Only show the comma-separated part(s) that actually matched the filter.
+export function displaySupplierName(row: InvoiceRow, supplierFilter: string[]): string {
+  const namesInRow = row.name.split(',').map((n) => n.trim()).filter(Boolean);
+  if (namesInRow.length <= 1 || supplierFilter.length === 0) return row.name;
+  const matched = namesInRow.filter((n) => {
+    const nLower = n.toLowerCase();
+    return supplierFilter.some((s) => {
+      const sLower = s.toLowerCase();
+      return nLower.includes(sLower) || sLower.includes(nLower);
+    });
+  });
+  return matched.length ? matched.join(', ') : row.name;
 }
 
 export interface AgingBucket {

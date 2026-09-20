@@ -9,7 +9,7 @@ import { useFilters, DEFAULT_FILTERS } from '../../hooks/useFilters';
 import { parseInvoicesParams, buildInvoicesParams } from '../../lib/invoicesParams';
 import {
   computeKPIs, filterByChannel, filterBySupplierNames, computeAgingBuckets, computeDueDateOutlook,
-  computeSupplierExposure, formatAmountsByCurrency,
+  computeSupplierExposure, formatAmountsByCurrency, displaySupplierName,
 } from '../../lib/invoiceUtils';
 import { downloadWorkbook } from '../../lib/xlsxWriter';
 import { Sidebar } from '../shell/Sidebar';
@@ -86,7 +86,7 @@ export function InvoicesDrilldown() {
   const exportScope = () => {
     const rows: (string | number)[][] = [['Invoice', 'Supplier', 'Channel', 'Invoice Status', 'Posting Status', 'Reason Code', 'Amount', 'Currency', 'Due Date', 'Effective Due Date']];
     scoped.forEach((r) => rows.push([
-      r.invoice, r.name, r.channel ?? '—', r.invoiceStatus, r.postingStatus, r.reasonCode,
+      r.invoice, displaySupplierName(r, filters.suppliers), r.channel ?? '—', r.invoiceStatus, r.postingStatus, r.reasonCode,
       r.importedInvoiceAmount, r.currency, r.dueDate?.toLocaleDateString() ?? '—', r.effectiveDueDate?.toLocaleDateString() ?? '—',
     ]));
     downloadWorkbook('Invoicing Detail', [{ name: 'Invoices', rows }]);
@@ -214,7 +214,7 @@ export function InvoicesDrilldown() {
               <p className="text-sm font-bold text-[#403833]">Invoice Details{selectedSupplier ? ` — ${selectedSupplier}` : ''}</p>
               <p className="text-[11px] text-[#9c9794]">{scoped.length} invoices in scope</p>
             </div>
-            <InvoiceTable rows={scoped} limit={10} />
+            <InvoiceTable rows={scoped} limit={10} supplierFilter={filters.suppliers} />
             {scoped.length > 10 && (
               <button onClick={() => setDrill({ title: `Invoice Details${selectedSupplier ? ` — ${selectedSupplier}` : ''}`, rows: scoped })} className="text-xs text-brand font-semibold hover:underline mt-2">
                 View all invoices ({scoped.length}) →
@@ -232,7 +232,7 @@ export function InvoicesDrilldown() {
             <button
               onClick={() => {
                 const rows: (string | number)[][] = [['Invoice', 'Supplier', 'Channel', 'Invoice Status', 'Amount', 'Currency', 'Effective Due Date']];
-                drill.rows.forEach((r) => rows.push([r.invoice, r.name, r.channel ?? '—', r.invoiceStatus, r.importedInvoiceAmount, r.currency, r.effectiveDueDate?.toLocaleDateString() ?? '—']));
+                drill.rows.forEach((r) => rows.push([r.invoice, displaySupplierName(r, filters.suppliers), r.channel ?? '—', r.invoiceStatus, r.importedInvoiceAmount, r.currency, r.effectiveDueDate?.toLocaleDateString() ?? '—']));
                 downloadWorkbook(drill.title, [{ name: 'Invoices', rows }]);
               }}
               className="flex items-center gap-1.5 text-xs font-semibold text-white bg-brand rounded-lg px-3 py-1.5 hover:bg-brand-soft transition-colors"
@@ -242,7 +242,7 @@ export function InvoicesDrilldown() {
           }
         >
           <p className="text-xs text-[#9c9794] mb-3">{drill.rows.length} invoices{selectedSupplier ? ` · ${selectedSupplier}` : ''}{channel !== 'All' ? ` · ${channel}` : ''}</p>
-          <InvoiceTable rows={drill.rows} />
+          <InvoiceTable rows={drill.rows} supplierFilter={filters.suppliers} />
         </LargeModal>
       )}
 

@@ -11,6 +11,7 @@ interface WeekRangeStepperProps {
   curWeek: number;
   curYear: number;
   className?: string;
+  defaultValue?: { start: number; end: number }; // falls back to the dashboard's global default — pass this page's own default when it differs (e.g. Lead Time's wider -12/+4 window)
 }
 
 function weekLabelFor(curWeek: number, curYear: number, offset: number): string {
@@ -40,8 +41,8 @@ function WeekSelect({ value, min, max, onChange, curWeek, curYear }: {
 // Two independent dropdowns instead of a dual-thumb slider — full flexibility (any exact
 // start/end week), but a select is far easier to hit precisely than dragging two overlapping
 // native range-input thumbs. A reset button restores the default range in one click.
-export function WeekRangeStepper({ min, max, value, onChange, curWeek, curYear, className = '' }: WeekRangeStepperProps) {
-  const isDefault = value.start === WEEK_RANGE_DEFAULT.start && value.end === WEEK_RANGE_DEFAULT.end;
+export function WeekRangeStepper({ min, max, value, onChange, curWeek, curYear, className = '', defaultValue = WEEK_RANGE_DEFAULT }: WeekRangeStepperProps) {
+  const isDefault = value.start === defaultValue.start && value.end === defaultValue.end;
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
@@ -64,7 +65,7 @@ export function WeekRangeStepper({ min, max, value, onChange, curWeek, curYear, 
       />
       {!isDefault && (
         <button
-          onClick={() => onChange(WEEK_RANGE_DEFAULT)}
+          onClick={() => onChange(defaultValue)}
           title="Reset to default range"
           className="text-[11px] text-[#9c9794] hover:text-brand transition-colors"
         >

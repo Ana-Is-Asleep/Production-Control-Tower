@@ -3,11 +3,13 @@
 import { useMemo, useState } from 'react';
 import { differenceInCalendarDays } from 'date-fns';
 import { formatDateShort } from '../../lib/dateUtils';
+import { displaySupplierName } from '../../lib/invoiceUtils';
 import type { InvoiceRow } from '../../types/invoice';
 
 interface InvoiceTableProps {
   rows: InvoiceRow[];
   limit?: number; // when set, shows only the first N rows (a preview, not the full drill-down)
+  supplierFilter?: string[]; // active supplier filter — trims joined multi-company Name fields down to the matched part(s) so an unrelated company never appears to "leak into" a filtered view
 }
 
 function daysLabel(row: InvoiceRow, today: Date): { text: string; days: number | null } {
@@ -39,7 +41,7 @@ function operationalStatus(row: InvoiceRow, days: number | null): { label: strin
 
 type SortKey = 'days' | 'amount';
 
-export function InvoiceTable({ rows, limit }: InvoiceTableProps) {
+export function InvoiceTable({ rows, limit, supplierFilter = [] }: InvoiceTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>('days');
   const today = useMemo(() => new Date(), []);
 
@@ -84,7 +86,7 @@ export function InvoiceTable({ rows, limit }: InvoiceTableProps) {
               return (
                 <tr key={`${row.invoice}-${row.invoiceAccount}`} className="border-b border-[#f4f1ef] hover:bg-[#f9f7f6]">
                   <td className="px-3 py-2 font-semibold text-[#403833] whitespace-nowrap">{row.invoice}</td>
-                  <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{row.name}</td>
+                  <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{displaySupplierName(row, supplierFilter)}</td>
                   <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{row.channel ?? '—'}</td>
                   <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{row.invoiceStatus || '—'}</td>
                   <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{row.postingStatus || '—'}</td>
