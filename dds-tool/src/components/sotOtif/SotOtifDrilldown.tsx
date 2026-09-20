@@ -499,5 +499,6 @@ export function SotOtifDrilldown() {
         </LargeModal>
       )}
     </div>
+  </div>
   );
 }
