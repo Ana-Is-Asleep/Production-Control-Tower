@@ -30,12 +30,12 @@ export function PerformanceConsistency({ stats, periodLabel }: PerformanceConsis
         <>
           <div className="grid grid-cols-2 gap-2 mb-3">
             <div className="rounded-lg bg-pass-bg px-2.5 py-2">
-              <p className="text-xl font-extrabold leading-none text-pass">{weeksMeetingTarget}</p>
+              <p className="text-xl font-extrabold leading-none text-pass">{weeksMeetingTarget} <span className="text-sm font-semibold">of {completedWeeksCount}</span></p>
               <p className="text-[10px] text-pass font-semibold mt-0.5">{meetingPct}%</p>
               <p className="text-[10px] text-[#7b7571] mt-1">Weeks meeting SOT target</p>
             </div>
             <div className="rounded-lg bg-fail-bg px-2.5 py-2">
-              <p className="text-xl font-extrabold leading-none text-fail">{weeksBelowTarget}</p>
+              <p className="text-xl font-extrabold leading-none text-fail">{weeksBelowTarget} <span className="text-sm font-semibold">of {completedWeeksCount}</span></p>
               <p className="text-[10px] text-fail font-semibold mt-0.5">{belowPct}%</p>
               <p className="text-[10px] text-[#7b7571] mt-1">Weeks below SOT target</p>
             </div>
@@ -54,15 +54,15 @@ export function PerformanceConsistency({ stats, periodLabel }: PerformanceConsis
 
           <div className="grid grid-cols-2 gap-2 mt-auto">
             <div className="rounded-lg border border-[#e9e3df] px-2.5 py-2">
-              <p className="text-[10px] text-[#9c9794] uppercase tracking-wide">Best Week (by SOT)</p>
+              <p className="text-[10px] text-[#9c9794] uppercase tracking-wide">Best Week (highest SOT %)</p>
               {bestWeek ? (
-                <p className="text-sm font-bold text-pass mt-0.5">{bestWeek.label} <span className="text-[#403833] font-semibold">{pct(bestWeek.sot)}</span></p>
+                <p className="text-sm font-bold text-pass mt-0.5">{bestWeek.label} <span className="text-[#403833] font-semibold">{pct(bestWeek.sot)} SOT</span></p>
               ) : <p className="text-sm text-[#c8c0bb] mt-0.5">—</p>}
             </div>
             <div className="rounded-lg border border-[#e9e3df] px-2.5 py-2">
-              <p className="text-[10px] text-[#9c9794] uppercase tracking-wide">Worst Week (by SOT)</p>
+              <p className="text-[10px] text-[#9c9794] uppercase tracking-wide">Worst Week (lowest SOT %)</p>
               {worstWeek ? (
-                <p className="text-sm font-bold text-fail mt-0.5">{worstWeek.label} <span className="text-[#403833] font-semibold">{pct(worstWeek.sot)}</span></p>
+                <p className="text-sm font-bold text-fail mt-0.5">{worstWeek.label} <span className="text-[#403833] font-semibold">{pct(worstWeek.sot)} SOT</span></p>
               ) : <p className="text-sm text-[#c8c0bb] mt-0.5">—</p>}
             </div>
           </div>

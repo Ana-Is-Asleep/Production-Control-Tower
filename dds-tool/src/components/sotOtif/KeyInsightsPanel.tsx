@@ -4,16 +4,30 @@ import { useMemo } from 'react';
 import { AlertTriangle, CheckCircle2, Clock, Info } from 'lucide-react';
 import type { PORollup } from '../../lib/poAggregation';
 
+export interface NextWeekProjection {
+  weekLabel: string;
+  sotPct: number | null;
+  otifPct: number | null;
+}
+
 interface KeyInsightsPanelProps {
   rollups: PORollup[];
   avgDelayDays: number | null;
   weekLabel: string | null;
+  // Nearest upcoming week's projected SOT/OTIF, from the same ESD-based projection that drives
+  // the chart's dashed "projected" line — undefined/null just omits the bullet (e.g. no future
+  // week in range, or nothing booked yet to project from).
+  projection?: NextWeekProjection | null;
+  sotTarget?: number;
+  otifTarget?: number;
 }
 
 // Current-state facts derived from this scope's rollups only — no week-over-week trend claims
 // (holding off on trend calculations everywhere, per an earlier decision), so every bullet here
-// is something directly countable from the POs currently in view.
-export function KeyInsightsPanel({ rollups, avgDelayDays, weekLabel }: KeyInsightsPanelProps) {
+// is something directly countable from the POs currently in view. The one exception is the
+// forward-looking projection bullet, which reuses an existing computed projection rather than
+// inventing a new prediction method.
+export function KeyInsightsPanel({ rollups, avgDelayDays, weekLabel, projection, sotTarget, otifTarget }: KeyInsightsPanelProps) {
   const insights = useMemo(() => {
     const items: { icon: typeof AlertTriangle; tone: 'fail' | 'warn' | 'pass' | 'neutral'; text: string }[] = [];
     const total = rollups.length;
@@ -50,8 +64,21 @@ export function KeyInsightsPanel({ rollups, avgDelayDays, weekLabel }: KeyInsigh
       items.push({ icon: CheckCircle2, tone: 'pass', text: 'Every PO in scope shipped on time.' });
     }
 
+    if (projection && (projection.sotPct !== null || projection.otifPct !== null)) {
+      const parts: string[] = [];
+      if (projection.sotPct !== null) parts.push(`${projection.sotPct}% SOT`);
+      if (projection.otifPct !== null) parts.push(`${projection.otifPct}% OTIF`);
+      const belowTarget = (sotTarget !== undefined && projection.sotPct !== null && projection.sotPct < sotTarget)
+        || (otifTarget !== undefined && projection.otifPct !== null && projection.otifPct < otifTarget);
+      items.push({
+        icon: belowTarget ? AlertTriangle : CheckCircle2,
+        tone: belowTarget ? 'warn' : 'pass',
+        text: `Based on currently booked ship dates, ${projection.weekLabel} is projected to reach ${parts.join(' and ')}.`,
+      });
+    }
+
     return items;
-  }, [rollups, avgDelayDays]);
+  }, [rollups, avgDelayDays, projection, sotTarget, otifTarget]);
 
   const toneColor: Record<string, string> = { fail: 'text-fail', warn: 'text-warn', pass: 'text-pass', neutral: 'text-[#7b7571]' };
 

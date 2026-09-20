@@ -130,6 +130,18 @@ export function SotOtifDrilldown() {
   }, [selectedWeek, scopeLines, weekRangeLines, weeksInRange]);
   const kpiWeekLabel = selectedWeek?.label ?? weeksInRange.find((w) => w.isCurrent)?.label ?? null;
 
+  // Every upcoming (not-yet-completed) week's projected SOT/OTIF, in order — same ESD-based
+  // projection already driving the chart's dashed "projected" line (useKPIs.ts). Surfaced two
+  // ways: the nearest week alone for the "next week" bullet, and the full run for the "back on/
+  // off target by week X" bullet, which scans ahead to find where the trend crosses target.
+  const futureProjections = useMemo(
+    () => kpis.topGraph
+      .filter((p) => p.isFuture && !p.isCurrent)
+      .map((p) => ({ weekLabel: p.weekLabel, sotPct: p.sotFuturePct, otifPct: p.otifFuturePct })),
+    [kpis.topGraph]
+  );
+  const nextWeekProjection = futureProjections[0] ?? null;
+
   const scopeRollups = useMemo(() => rollupByPO(kpiLines, isChinaSupplier, today), [kpiLines, isChinaSupplier, today]);
   const onTimeCount = scopeRollups.filter((r) => r.sot === true).length;
   const lateCount = scopeRollups.filter((r) => r.sot === false).length;
@@ -252,7 +264,7 @@ export function SotOtifDrilldown() {
       {/* Top section — persistent chart + context-aware KPI cards. Mode A keeps a viewport-relative
           height (~35% of screen) since that page never scrolls; Mode B uses a fixed height instead
           since the page now scrolls naturally and vh-based sizing doesn't make sense there. */}
-      <div className={isModeB ? 'shrink-0 flex flex-col' : 'shrink-0 flex flex-col overflow-hidden'} style={{ height: isModeB ? '360px' : '38vh' }}>
+      <div className={isModeB ? 'shrink-0 flex flex-col' : 'shrink-0 flex flex-col overflow-hidden'} style={{ height: isModeB ? '300px' : '38vh' }}>
         {!isModeB ? (
           <div className="flex-1 min-h-0 px-4 pt-3 flex gap-3">
             <div className="flex flex-col gap-2 shrink-0 w-[180px]">
@@ -307,12 +319,14 @@ export function SotOtifDrilldown() {
                 </div>
               </div>
               <div className="flex-1 min-h-0">
-                <TopGraphChart points={kpis.topGraph} onWeekClick={handleChartWeekClick} />
+                {/* Week selection happens via the WeekStrip squares below, not by clicking the
+                    chart itself — no onWeekClick here. */}
+                <TopGraphChart points={kpis.topGraph} />
               </div>
             </div>
           </div>
         )}
-        {!isModeB ? (
+        {!isModeB && (
           <KPICardsRow
             sotTarget={kpis.sotTarget}
             totalPOs={scopeRollups.length}
@@ -321,23 +335,10 @@ export function SotOtifDrilldown() {
             avgDelayDays={avgDelayDays}
             weekLabel={kpiWeekLabel}
           />
-        ) : (
-          <SupplierKpiStrip
-            weekLabel={selectedWeek?.label ?? null}
-            posInScope={scopeRollups.length}
-            sotPct={scopeSOT}
-            otifPct={scopeOTIF}
-            sotTarget={kpis.sotTarget}
-            otifTarget={kpis.otifTarget}
-            onTimeCount={onTimeCount}
-            lateCount={lateCount}
-            otifOnCount={otifOnCount}
-            otifOffCount={otifOffCount}
-          />
         )}
       </div>
 
-      {selectedWeek && (
+      {!isModeB && selectedWeek && (
         <div className="px-4 py-1.5 bg-[#fff7ed] border-y border-brand flex items-center gap-2 shrink-0">
           <span className="text-xs font-semibold text-brand">{selectedWeek.label} selected</span>
           <button onClick={handleDeselectWeek} className="text-xs text-[#9c9794] hover:text-brand underline">
@@ -383,12 +384,52 @@ export function SotOtifDrilldown() {
                   />
                 </div>
               </div>
-              <KeyInsightsPanel rollups={scopeRollups} avgDelayDays={avgDelayDays} weekLabel={kpiWeekLabel} />
+              <KeyInsightsPanel
+                rollups={scopeRollups}
+                avgDelayDays={avgDelayDays}
+                weekLabel={kpiWeekLabel}
+                projection={nextWeekProjection}
+                sotTarget={kpis.sotTarget}
+                otifTarget={kpis.otifTarget}
+              />
             </div>
           </div>
         ) : (
           <div className="p-4 flex flex-col gap-4">
+            <WeekStrip
+              lines={weekRangeLines.filter((l) => l.supplier === selectedSupplier)}
+              weeksInRange={weeksInRange}
+              isChinaSupplier={isChinaSupplier}
+              today={today}
+              selectedWeek={selectedWeek}
+              onSelectWeek={handleSelectWeek}
+            />
+
+            {selectedWeek && (
+              <div className="px-4 py-2.5 bg-[#fff7ed] border-2 border-brand rounded-lg flex items-center justify-center gap-3 shrink-0">
+                <span className="text-lg font-extrabold text-brand">{selectedWeek.label} selected</span>
+                <button onClick={handleDeselectWeek} className="text-xs font-semibold text-[#9c9794] hover:text-brand underline">
+                  Clear — view full period
+                </button>
+              </div>
+            )}
+
+            <SupplierKpiStrip
+              weekLabel={selectedWeek?.label ?? null}
+              posInScope={scopeRollups.length}
+              sotPct={scopeSOT}
+              otifPct={scopeOTIF}
+              sotTarget={kpis.sotTarget}
+              otifTarget={kpis.otifTarget}
+              onTimeCount={onTimeCount}
+              lateCount={lateCount}
+              otifOnCount={otifOnCount}
+              otifOffCount={otifOffCount}
+            />
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
+              <LatenessProfile rollups={supplierWeekRollups} weekLabel={selectedWeek?.label ?? null} />
+              <PerformanceConsistency stats={consistencyStats} periodLabel={periodLabel} />
               <SupplierKeyInsights
                 weekLabel={selectedWeek?.label ?? null}
                 sotPct={scopeSOT}
@@ -398,19 +439,11 @@ export function SotOtifDrilldown() {
                 lateCount={lateCount}
                 posInScope={scopeRollups.length}
                 consistency={consistencyStats}
+                projection={nextWeekProjection}
+                futureProjections={futureProjections}
               />
-              <LatenessProfile rollups={supplierWeekRollups} weekLabel={selectedWeek?.label ?? null} />
-              <PerformanceConsistency stats={consistencyStats} periodLabel={periodLabel} />
             </div>
 
-            <WeekStrip
-              lines={weekRangeLines.filter((l) => l.supplier === selectedSupplier)}
-              weeksInRange={weeksInRange}
-              isChinaSupplier={isChinaSupplier}
-              today={today}
-              selectedWeek={selectedWeek}
-              onSelectWeek={handleSelectWeek}
-            />
             {selectedWeek ? (
               <POList rollups={supplierWeekRollups} today={today} weekLabel={selectedWeek.label} />
             ) : (
@@ -482,7 +515,7 @@ export function SotOtifDrilldown() {
       {chartExpanded && (
         <LargeModal title="SOT & OTIF Evolution" onClose={() => setChartExpanded(false)}>
           <div className="bg-white rounded-lg border border-[#e9e3df] p-4 h-full flex flex-col">
-            <TopGraphChart points={kpis.topGraph} onWeekClick={handleChartWeekClick} />
+            <TopGraphChart points={kpis.topGraph} onWeekClick={isModeB ? undefined : handleChartWeekClick} />
           </div>
         </LargeModal>
       )}

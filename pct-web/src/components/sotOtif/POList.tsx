@@ -37,8 +37,9 @@ function sortRank(r: PORollup): number {
 }
 
 // Day offsets purely for display, derived from fields the rollup already carries — not a new
-// SOT/OTIF calculation. SOT Days: ship date vs PGRD (the same anchor the SOT rule uses). Delay
-// Days: EGRD vs PGRD (the same anchor the OTIF week-comparison rule uses), just expressed in days.
+// SOT/OTIF calculation. SOT Delay: ASD vs PGRD (falls back to ESD if not yet shipped) — the same
+// anchor the SOT rule uses. Delay Days: ASD vs EGRD — how the actual ship date compares to the
+// full/final-delivery requirement, expressed in days.
 function daysBetween(a: Date | null, b: Date | null): number | null {
   if (!a || !b) return null;
   return Math.round((a.getTime() - b.getTime()) / 86400000);
@@ -164,20 +165,21 @@ export function POList({ rollups, today, weekLabel }: POListProps) {
             <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">ASD</th>
             <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">Destination</th>
             <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">SOT Status</th>
-            <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">SOT Delay</th>
             <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">OTIF Status</th>
+            <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">SOT Delay</th>
             <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">Delay Days</th>
+            <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">Comment</th>
           </tr>
         </thead>
         <tbody>
           {visible.length === 0 && (
-            <tr><td colSpan={10} className="text-center py-6 text-[#9c9794]">No POs match the current filters</td></tr>
+            <tr><td colSpan={11} className="text-center py-6 text-[#9c9794]">No POs match the current filters</td></tr>
           )}
           {visible.map((r) => {
             const hasLineData = r.lines.some((l) => l.sku);
             const isExpanded = expandedPO === r.po;
             const sotDays = daysBetween(r.asd ?? r.esd, r.pgrd);
-            const delayDays = daysBetween(r.egrd, r.pgrd);
+            const delayDays = daysBetween(r.asd, r.egrd);
             return (
               <Fragment key={r.po}>
                 <tr
@@ -192,22 +194,22 @@ export function POList({ rollups, today, weekLabel }: POListProps) {
                   <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{formatDateShort(r.egrd)}</td>
                   <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{r.esd ? formatDateShort(r.esd) : '—'}</td>
                   <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{r.asd ? formatDateShort(r.asd) : '—'}</td>
-                  <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">
-                    {r.destination}
+                  <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{r.destination}</td>
+                  <td className="px-3 py-2 text-center"><StatusPill ok={r.sot} yesLabel="SOT" noLabel="Not SOT" /></td>
+                  <td className="px-3 py-2 text-center"><StatusPill ok={r.otif} yesLabel="OTIF" noLabel="Not OTIF" /></td>
+                  <td className="px-3 py-2 text-center text-[#58524e] font-semibold whitespace-nowrap">{dayOffsetLabel(sotDays)}</td>
+                  <td className="px-3 py-2 text-center text-[#58524e] font-semibold whitespace-nowrap">{dayOffsetLabel(delayDays)}</td>
+                  <td className="px-3 py-2 whitespace-nowrap">
                     {isAwaitingConfirmation(r, today) && (
-                      <span className="ml-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] whitespace-nowrap">
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] whitespace-nowrap">
                         ASD pending confirmation
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-center"><StatusPill ok={r.sot} yesLabel="SOT" noLabel="Not SOT" /></td>
-                  <td className="px-3 py-2 text-center text-[#58524e] font-semibold whitespace-nowrap">{dayOffsetLabel(sotDays)}</td>
-                  <td className="px-3 py-2 text-center"><StatusPill ok={r.otif} yesLabel="OTIF" noLabel="Not OTIF" /></td>
-                  <td className="px-3 py-2 text-center text-[#58524e] font-semibold whitespace-nowrap">{dayOffsetLabel(delayDays)}</td>
                 </tr>
                 {isExpanded && hasLineData && (
                   <tr>
-                    <td colSpan={10} className="p-0"><LineDetail rollup={r} /></td>
+                    <td colSpan={11} className="p-0"><LineDetail rollup={r} /></td>
                   </tr>
                 )}
               </Fragment>

@@ -136,7 +136,7 @@ export function Dashboard() {
                   </>
                 }
               />
-              <div className="p-3 flex-1 min-h-0 flex flex-col gap-3 w-full max-w-[1400px] 2xl:max-w-[1680px] mx-auto overflow-y-auto">
+              <div className="p-3 flex-1 min-h-0 flex flex-col gap-3 w-full overflow-y-auto">
                 <div style={{ flex: '4 1 220px' }}>
                   <TopGraphSection
                     points={kpis.topGraph}
