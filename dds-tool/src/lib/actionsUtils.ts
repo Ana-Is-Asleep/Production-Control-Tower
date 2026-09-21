@@ -1,6 +1,8 @@
 import { differenceInCalendarDays } from 'date-fns';
 import type { ActionItem } from '../types/actions';
 
+const RULE_KEYS_REQUIRING_ROOT_CAUSE = ['R002'];
+
 // "Time Open" is new presentation logic, not an existing approved KPI — it's plain calendar-day
 // arithmetic on two already-real timestamps (createdAt, and closedAt/today), added specifically
 // for the Actions page per spec. Open: today - createdAt. Closed: closedAt - createdAt (falls back
@@ -16,12 +18,26 @@ export function daysOpen(action: ActionItem, today: Date): number | null {
   return Math.max(0, differenceInCalendarDays(today, created));
 }
 
-// Flags only ever carry a ruleKey today (see rulesEngine.ts) — one rule, R001, exists. Open Points
-// have no structured "reason" at all (description is free text a user types), so they all bucket
-// into "Manual entry" rather than a fabricated taxonomy.
+// Open Points have no structured "reason" at all (description is free text a user types), so they
+// all bucket into "Manual entry" rather than a fabricated taxonomy.
 export const RULE_LABELS: Record<string, string> = {
   R001: 'EGRD in the past with no booking',
+  R002: 'Missed SOT — root cause needed',
 };
+
+// R002 (missed SOT) flags can't be closed without a root cause — and if the SCM picked
+// "Components Delay" or "Covers", the matching follow-up field is required too. Every other flag
+// type and all Open Points have no such requirement.
+export function needsRootCause(action: Pick<ActionItem, 'type' | 'ruleKey'>): boolean {
+  return action.type === 'flag' && !!action.ruleKey && RULE_KEYS_REQUIRING_ROOT_CAUSE.includes(action.ruleKey);
+}
+
+export function rootCauseMissing(item: Pick<ActionItem, 'rootCauseReason' | 'missingComponent' | 'coverPoNumber'>): boolean {
+  if (!item.rootCauseReason) return true;
+  if (item.rootCauseReason === 'components_delay' && !item.missingComponent?.trim()) return true;
+  if (item.rootCauseReason === 'covers' && !item.coverPoNumber?.trim()) return true;
+  return false;
+}
 
 export function reasonBucket(action: ActionItem): string {
   if (action.type === 'flag' && action.ruleKey) return RULE_LABELS[action.ruleKey] ?? action.ruleKey;

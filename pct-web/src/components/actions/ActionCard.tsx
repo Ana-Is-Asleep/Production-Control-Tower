@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import type { ActionItem, ActionStatus } from '../../types/actions';
+import type { ActionItem, ActionStatus, RootCauseReason } from '../../types/actions';
+import { ROOT_CAUSE_REASONS, ROOT_CAUSE_REASON_LABELS } from '../../types/actions';
 import { SCM_EMAILS, emailToDisplayName } from '../../lib/scmEmails';
 import { isoWeekLabel, getISOWeekYear } from '../../lib/dateUtils';
-import { displayDescription } from '../../lib/actionsUtils';
+import { displayDescription, needsRootCause, rootCauseMissing } from '../../lib/actionsUtils';
+import { useData } from '../../context/DataContext';
 
 const STATUS_STYLES: Record<ActionStatus, { label: string; bg: string; text: string }> = {
   open: { label: 'Open', bg: '#FEE2E2', text: '#991B1B' },
@@ -33,15 +35,26 @@ interface ActionCardProps {
 }
 
 export function ActionCard({ action, onSave, startInEdit = false, onDiscard, allSuppliers = [] }: ActionCardProps) {
+  const { allLines } = useData();
   const [editing, setEditing] = useState(startInEdit);
   const [draft, setDraft] = useState<ActionItem>(action);
   const [showCommentError, setShowCommentError] = useState(false);
 
+  // Auto-fills the component supplier from a PO number the SCM types in, if it resolves to a
+  // known PO — a manual override always wins, since this only fires when the PO field itself
+  // changes and looks like a real PO number ("PO-...").
+  const handleComponentPoChange = (value: string) => {
+    const match = value.toUpperCase().startsWith('PO-') ? allLines.find((l) => l.po.toUpperCase() === value.toUpperCase()) : undefined;
+    setDraft((d) => ({ ...d, missingComponentPoNumber: value, ...(match ? { missingComponentSupplier: match.supplier } : {}) }));
+  };
+
   const isClosing = draft.status === 'closed';
   const resolutionReasonMissing = isClosing && !draft.resolutionReason?.trim();
+  const rootCauseRequired = needsRootCause(action);
+  const rootCauseIncomplete = isClosing && rootCauseRequired && rootCauseMissing(draft);
 
   const handleSave = () => {
-    if (resolutionReasonMissing) { setShowCommentError(true); return; }
+    if (resolutionReasonMissing || rootCauseIncomplete) { setShowCommentError(true); return; }
     onSave(draft);
     setEditing(false);
   };
@@ -117,11 +130,65 @@ export function ActionCard({ action, onSave, startInEdit = false, onDiscard, all
           </div>
         </>
       ) : (
-        <div>
-          <p className="text-xs font-semibold text-[#403833]">
-            {action.supplierName || 'No supplier'}{action.poReference ? ` · ${action.poReference}` : ''}
-          </p>
-          <p className="text-xs text-[#58524e] mt-0.5">{displayDescription(action)}</p>
+        <div className="space-y-2">
+          <div>
+            <p className="text-xs font-semibold text-[#403833]">
+              {action.supplierName || 'No supplier'}{action.poReference ? ` · ${action.poReference}` : ''}
+            </p>
+            <p className="text-xs text-[#58524e] mt-0.5">{displayDescription(action)}</p>
+          </div>
+          {rootCauseRequired && (
+            <div className="space-y-1.5">
+              <div>
+                <label className="text-[10px] text-[#9c9794] block mb-0.5">Root cause{isClosing ? ' (required to close)' : ''}</label>
+                <select
+                  value={draft.rootCauseReason ?? ''}
+                  onChange={(e) => {
+                    const value = (e.target.value || undefined) as RootCauseReason | undefined;
+                    setDraft({ ...draft, rootCauseReason: value, missingComponent: undefined, coverPoNumber: undefined });
+                    if (showCommentError) setShowCommentError(false);
+                  }}
+                  className={`w-full text-xs border rounded px-2 py-1.5 ${showCommentError && rootCauseIncomplete ? 'border-fail' : 'border-[#e9e3df]'}`}
+                >
+                  <option value="">Select a root cause…</option>
+                  {ROOT_CAUSE_REASONS.map((r) => <option key={r} value={r}>{ROOT_CAUSE_REASON_LABELS[r]}</option>)}
+                </select>
+              </div>
+              {draft.rootCauseReason === 'components_delay' && (
+                <div className="space-y-1.5">
+                  <input
+                    value={draft.missingComponent ?? ''}
+                    onChange={(e) => { setDraft({ ...draft, missingComponent: e.target.value }); if (showCommentError) setShowCommentError(false); }}
+                    placeholder="Which component is missing? (required)"
+                    className={`w-full text-xs border rounded px-2 py-1.5 ${showCommentError && rootCauseIncomplete ? 'border-fail' : 'border-[#e9e3df]'}`}
+                  />
+                  <input
+                    value={draft.missingComponentPoNumber ?? ''}
+                    onChange={(e) => handleComponentPoChange(e.target.value)}
+                    placeholder="Component supplier's PO number (optional)"
+                    className="w-full text-xs border border-[#e9e3df] rounded px-2 py-1.5"
+                  />
+                  <input
+                    value={draft.missingComponentSupplier ?? ''}
+                    onChange={(e) => setDraft({ ...draft, missingComponentSupplier: e.target.value })}
+                    placeholder="Component supplier (optional)"
+                    className="w-full text-xs border border-[#e9e3df] rounded px-2 py-1.5"
+                  />
+                </div>
+              )}
+              {draft.rootCauseReason === 'covers' && (
+                <input
+                  value={draft.coverPoNumber ?? ''}
+                  onChange={(e) => { setDraft({ ...draft, coverPoNumber: e.target.value }); if (showCommentError) setShowCommentError(false); }}
+                  placeholder="Cover supplier's PO number (delayed)"
+                  className={`w-full text-xs border rounded px-2 py-1.5 ${showCommentError && rootCauseIncomplete ? 'border-fail' : 'border-[#e9e3df]'}`}
+                />
+              )}
+              {showCommentError && rootCauseIncomplete && (
+                <p className="text-[10px] text-fail">A root cause is required to close this item.</p>
+              )}
+            </div>
+          )}
         </div>
       )}
 

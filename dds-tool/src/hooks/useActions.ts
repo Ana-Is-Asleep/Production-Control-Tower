@@ -5,6 +5,7 @@ import type { ActionItem } from '../types/actions';
 import { loadActions, saveActions } from '../lib/actionsStorage';
 import { runRulesEngine } from '../lib/rulesEngine';
 import { SUPPLIER_SCM_MAP } from '../lib/supplierScmMapping';
+import type { IsChinaSupplier } from '../lib/kpiFormulas';
 import type { PurchaseLine } from '../types';
 
 // One-time backfill for flags created before owner auto-assignment existed (or before a
@@ -56,9 +57,9 @@ export function useActions() {
 
   // evaluates every rule against the newly uploaded lines and appends only the new flags —
   // called once per upload
-  const runRules = useCallback((lines: PurchaseLine[]) => {
+  const runRules = useCallback((lines: PurchaseLine[], isChinaSupplier: IsChinaSupplier) => {
     setActions((prev) => {
-      const newFlags = runRulesEngine(lines, prev);
+      const newFlags = runRulesEngine(lines, prev, isChinaSupplier);
       if (newFlags.length === 0) return prev;
       const next = [...prev, ...newFlags];
       saveActions(next);

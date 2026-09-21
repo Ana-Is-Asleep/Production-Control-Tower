@@ -16,6 +16,7 @@ import {
 import { formatFilterSummary } from '../../lib/filterSummary';
 import { GlobalActionsBadge } from '../actions/GlobalActionsBadge';
 import { parseRootCauseParams, buildRootCauseParams, type RootCauseMode } from '../../lib/rootCauseParams';
+import { RootCauseActionQueue } from './RootCauseActionQueue';
 import { KPIStrip } from './KPIStrip';
 import { TrendChart } from './TrendChart';
 import { SnapshotStrip } from './SnapshotStrip';
@@ -166,12 +167,15 @@ export function RootCauseDrilldown() {
       </header>
 
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
+        <RootCauseActionQueue lines={weekRangeLines} filteredPOs={new Set(weekRangeLines.map((l) => l.po))} />
+
         <KPIStrip kpis={kpis} trend={trendDirection} trendCaption={trendCaption} />
 
         <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
-          <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-3">
+          <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">
             {mode === 'trend' ? 'Loss Reasons by Week' : `Recent Weeks — ${(tableFilter?.week ?? snapshotWeek?.label) ?? ''} highlighted`}
           </p>
+          <p className="text-[10px] text-[#b5aaa5] mb-3 normal-case tracking-normal">X-axis: PGRD week</p>
           {mode === 'trend' ? (
             <TrendChart
               rows={allRangeRows}

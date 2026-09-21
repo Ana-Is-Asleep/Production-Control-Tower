@@ -223,7 +223,7 @@ export function LeadTimeDrilldown() {
               </div>
             </div>
             <p className="text-[11px] text-[#9c9794]">
-              Lead time = Actual Ship Date (latest across PO lines) − Order Date
+              Lead time = Actual Ship Date (latest across PO lines) − Order Date · X-axis on every chart below: Actual Ship Date {period}
             </p>
           </div>
 

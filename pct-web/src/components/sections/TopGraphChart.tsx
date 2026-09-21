@@ -30,6 +30,7 @@ export function TopGraphChart({ points, onWeekClick }: TopGraphChartProps) {
           ]}
         />
         <span className="text-[10px] text-[#b5aaa5] italic">(dashed = projected)</span>
+        <span className="text-[10px] text-[#b5aaa5]">· X-axis: PGRD week</span>
       </div>
       <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">

@@ -78,7 +78,8 @@ export function BacklogSection({ lines, drillDownHref }: BacklogSectionProps) {
           <KpiBox key={c.label} label={c.label} value={c.value} valueClassName={`text-xl ${c.color}`} tint={c.tint} />
         ))}
       </div>
-      <div className="flex-1 min-h-0 mt-2">
+      {clearance.length > 0 && <p className="text-[9px] text-[#b5aaa5] mt-2 mb-0 shrink-0">X-axis: ESD week</p>}
+      <div className="flex-1 min-h-0 mt-1">
         {clearance.length === 0 ? (
           <div className="h-full flex items-center">
             <p className="text-[11px] text-[#b5aaa5]">No ESD-booked backlog to project a clearance date for.</p>

@@ -5,6 +5,27 @@ export type ActionStatus = 'open' | 'in_progress' | 'blocked' | 'closed';
 // aren't tied to a specific dashboard rule.
 export type ActionBucket = 'missing_esd' | 'sot_otif' | 'backlog' | 'root_cause' | 'invoicing' | 'lead_time';
 
+// Manually-selected root cause for an R002 (missed SOT) flag — replaces free-text/AI-classified
+// loss reasons as the source of truth for why a specific PO shipped late, per Ana's request that
+// the Root Cause graph be driven by SCM-provided answers rather than inferred from data.
+export const ROOT_CAUSE_REASONS = [
+  'capacity_issues',
+  'components_delay',
+  'covers',
+  'transport_issues',
+  'container_availability',
+  'inbound_capacity',
+] as const;
+export type RootCauseReason = typeof ROOT_CAUSE_REASONS[number];
+export const ROOT_CAUSE_REASON_LABELS: Record<RootCauseReason, string> = {
+  capacity_issues: 'Capacity Issues',
+  components_delay: 'Components Delay',
+  covers: 'Covers',
+  transport_issues: 'Transport Issues',
+  container_availability: 'Container Availability',
+  inbound_capacity: 'Inbound Capacity',
+};
+
 export interface CommentLogEntry {
   text: string;
   at: string; // ISO date string
@@ -28,4 +49,9 @@ export interface ActionItem {
   updatedAt: string;         // ISO date string, updated on every edit
   closedAt?: string;         // ISO date string, set the moment status first becomes 'closed'; cleared if reopened
   dueDate?: string;          // ISO date string — optional target resolution date, set manually (mainly for Open Points, which have no auto-derived urgency the way rule-based Flags do)
+  rootCauseReason?: RootCauseReason; // required to close an R002 (missed SOT) flag
+  missingComponent?: string;         // only when rootCauseReason === 'components_delay' — which component is missing (mandatory)
+  missingComponentSupplier?: string; // only when rootCauseReason === 'components_delay' — the component supplier (optional; auto-filled from missingComponentPoNumber when possible)
+  missingComponentPoNumber?: string; // only when rootCauseReason === 'components_delay' — the component supplier's PO number (optional)
+  coverPoNumber?: string;            // only when rootCauseReason === 'covers' — the delayed cover-supplier PO number
 }

@@ -67,7 +67,8 @@ export function MissingESDSection({ lines, drillDownHref }: MissingESDSectionPro
         subtitle="Open POs without ESD"
         total={totalMissing}
       />
-      <div className="flex-1 min-h-0 mt-3">
+      <p className="text-[9px] text-[#b5aaa5] mt-1 shrink-0">X-axis: EGRD week</p>
+      <div className="flex-1 min-h-0 mt-1">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={rows} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="2 4" stroke={COLOR.border} vertical={false} />

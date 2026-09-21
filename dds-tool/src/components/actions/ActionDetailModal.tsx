@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import type { ActionItem, ActionStatus } from '../../types/actions';
+import type { ActionItem, ActionStatus, RootCauseReason } from '../../types/actions';
+import { ROOT_CAUSE_REASONS, ROOT_CAUSE_REASON_LABELS } from '../../types/actions';
 import { SCM_EMAILS, emailToDisplayName } from '../../lib/scmEmails';
-import { daysOpen, reasonBucket, displayDescription } from '../../lib/actionsUtils';
+import { daysOpen, reasonBucket, displayDescription, needsRootCause, rootCauseMissing } from '../../lib/actionsUtils';
 import { formatDateMedium } from '../../lib/dateUtils';
+import { useData } from '../../context/DataContext';
 
 const STATUS_OPTIONS: ActionStatus[] = ['open', 'in_progress', 'blocked', 'closed'];
 const STATUS_LABELS: Record<ActionStatus, string> = { open: 'Open', in_progress: 'In Progress', blocked: 'Blocked', closed: 'Closed' };
@@ -21,16 +23,27 @@ interface ActionDetailModalProps {
 // Open and the complete comment history, and keeps Resolution Reason distinct from ongoing
 // comments per the "never overwrite the original reason" requirement.
 export function ActionDetailModal({ action, onSave, onClose }: ActionDetailModalProps) {
+  const { allLines } = useData();
   const [draft, setDraft] = useState<ActionItem>(action);
   const [newComment, setNewComment] = useState('');
   const [showError, setShowError] = useState(false);
 
+  // Auto-fills the component supplier from a PO number the SCM types in, if it resolves to a
+  // known PO — a manual override always wins, since this only fires when the PO field itself
+  // changes and looks like a real PO number ("PO-...").
+  const handleComponentPoChange = (value: string) => {
+    const match = value.toUpperCase().startsWith('PO-') ? allLines.find((l) => l.po.toUpperCase() === value.toUpperCase()) : undefined;
+    setDraft((d) => ({ ...d, missingComponentPoNumber: value, ...(match ? { missingComponentSupplier: match.supplier } : {}) }));
+  };
+
   const isClosing = draft.status === 'closed';
   const resolutionReasonMissing = isClosing && !draft.resolutionReason?.trim() && !action.resolutionReason?.trim();
+  const rootCauseRequired = needsRootCause(action);
+  const rootCauseIncomplete = isClosing && rootCauseRequired && rootCauseMissing(draft);
   const today = new Date();
 
   const handleSave = () => {
-    if (resolutionReasonMissing) { setShowError(true); return; }
+    if (resolutionReasonMissing || rootCauseIncomplete) { setShowError(true); return; }
     const patch: Partial<ActionItem> = { ...draft };
     if (newComment.trim()) patch.comment = newComment.trim();
     onSave(patch);
@@ -56,6 +69,57 @@ export function ActionDetailModal({ action, onSave, onClose }: ActionDetailModal
             <p className="text-xs text-[#403833]">{displayDescription(action) || '—'}</p>
             <p className="text-[10px] text-[#9c9794] mt-1">{reasonBucket(action)}</p>
           </div>
+
+          {rootCauseRequired && (
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9c9794] mb-1">
+                Root cause{isClosing ? ' (required to close)' : ''}
+              </p>
+              <select
+                value={draft.rootCauseReason ?? ''}
+                onChange={(e) => {
+                  const value = (e.target.value || undefined) as RootCauseReason | undefined;
+                  setDraft({ ...draft, rootCauseReason: value, missingComponent: undefined, coverPoNumber: undefined });
+                  setShowError(false);
+                }}
+                className={`w-full text-xs border rounded px-2 py-1.5 ${showError && rootCauseIncomplete ? 'border-fail' : 'border-[#e9e3df]'}`}
+              >
+                <option value="">Select a root cause…</option>
+                {ROOT_CAUSE_REASONS.map((r) => <option key={r} value={r}>{ROOT_CAUSE_REASON_LABELS[r]}</option>)}
+              </select>
+              {draft.rootCauseReason === 'components_delay' && (
+                <div className="mt-1.5 space-y-1.5">
+                  <input
+                    value={draft.missingComponent ?? ''}
+                    onChange={(e) => { setDraft({ ...draft, missingComponent: e.target.value }); setShowError(false); }}
+                    placeholder="Which component is missing? (required)"
+                    className={`w-full text-xs border rounded px-2 py-1.5 ${showError && rootCauseIncomplete ? 'border-fail' : 'border-[#e9e3df]'}`}
+                  />
+                  <input
+                    value={draft.missingComponentPoNumber ?? ''}
+                    onChange={(e) => handleComponentPoChange(e.target.value)}
+                    placeholder="Component supplier's PO number (optional)"
+                    className="w-full text-xs border border-[#e9e3df] rounded px-2 py-1.5"
+                  />
+                  <input
+                    value={draft.missingComponentSupplier ?? ''}
+                    onChange={(e) => setDraft({ ...draft, missingComponentSupplier: e.target.value })}
+                    placeholder="Component supplier (optional)"
+                    className="w-full text-xs border border-[#e9e3df] rounded px-2 py-1.5"
+                  />
+                </div>
+              )}
+              {draft.rootCauseReason === 'covers' && (
+                <input
+                  value={draft.coverPoNumber ?? ''}
+                  onChange={(e) => { setDraft({ ...draft, coverPoNumber: e.target.value }); setShowError(false); }}
+                  placeholder="Cover supplier's PO number (delayed)"
+                  className={`mt-1.5 w-full text-xs border rounded px-2 py-1.5 ${showError && rootCauseIncomplete ? 'border-fail' : 'border-[#e9e3df]'}`}
+                />
+              )}
+              {showError && rootCauseIncomplete && <p className="text-[10px] text-fail mt-1">A root cause is required to close this item.</p>}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div><p className="text-[10px] font-semibold uppercase tracking-wide text-[#9c9794]">Created</p><p className="text-[#403833] mt-0.5">{formatDateMedium(new Date(action.createdAt))}</p></div>

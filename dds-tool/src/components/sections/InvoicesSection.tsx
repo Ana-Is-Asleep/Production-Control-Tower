@@ -73,6 +73,7 @@ export function InvoicesSection({ invoices, supplierFilter, drillDownHref }: Inv
           </div>
           <div className="flex-1 min-h-0 mt-4 flex flex-col">
             <p className="text-[10px] uppercase tracking-widest text-[#9c9794] mb-1 shrink-0">Total Pending — by due week</p>
+            <p className="text-[9px] text-[#b5aaa5] mb-1 shrink-0 normal-case tracking-normal">X-axis: Effective Due Date week</p>
             {weeklyPending.length > 0 ? (
               <div className="flex-1 min-h-0">
                 <ResponsiveContainer width="100%" height="100%">

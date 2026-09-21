@@ -36,13 +36,14 @@ export function LeadTimeSection({ lines, drillDownHref }: LeadTimeSectionProps) 
       ) : (
         <div className="flex-1 min-h-0 mt-3 flex flex-col">
           <MiniLegend
-            className="mb-1 shrink-0"
+            className="mb-0.5 shrink-0"
             items={[
               { label: 'Within target', color: COLOR.pass, type: 'bar' },
               { label: 'Above target', color: COLOR.fail, type: 'bar' },
               { label: 'Avg LT', color: COLOR.navy, type: 'line' },
             ]}
           />
+          <p className="text-[9px] text-[#b5aaa5] mb-1 shrink-0">X-axis: ASD (ship date) week</p>
           <div className="flex-1 min-h-0">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={weeklyLTTarget} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>

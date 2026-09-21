@@ -70,8 +70,8 @@ export function Dashboard() {
   // A useEffect (not the handleLoad call site) because cleanedLines depends on the vendor mapping,
   // which loads asynchronously and lags one render behind the raw upload.
   useEffect(() => {
-    if (cleanedLines.length > 0) runRules(cleanedLines);
-  }, [cleanedLines, runRules]);
+    if (cleanedLines.length > 0) runRules(cleanedLines, isChinaSupplier);
+  }, [cleanedLines, runRules, isChinaSupplier]);
 
   const hasData = allLines.length > 0;
 
@@ -107,6 +107,7 @@ export function Dashboard() {
                 allSuppliers={allSuppliers}
                 curWeek={curWeek}
                 curYear={curYear}
+                showCurrentWeek
                 centerContent={
                   actionsUiMode === 'badge' ? (
                     <ActionsBadgeDrawer

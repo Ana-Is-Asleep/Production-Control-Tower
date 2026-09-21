@@ -8,6 +8,7 @@ import { VendorDropdown } from '../shared/VendorDropdown';
 import { SKU_CATEGORIES, type SKUCategory } from '../../lib/skuUtils';
 import { CATEGORY_COLORS } from '../../lib/statusColors';
 import { WEEK_RANGE_MIN, WEEK_RANGE_MAX, DEFAULT_FILTERS, type ActiveFilters } from '../../hooks/useFilters';
+import { currentISOWeek } from '../../lib/dateUtils';
 import type { Channel } from '../../lib/channelUtils';
 
 export interface Breadcrumb {
@@ -26,6 +27,7 @@ interface PageHeaderProps {
   centerContent?: ReactNode; // e.g. the orange Actions badge — placed in its own grid column over the title row so it reads as "top middle" without ever overlapping the filter controls on narrow screens
   showWeekRange?: boolean; // false for pages that are current-state only (e.g. Missing ESD) — no snapshot/history selector
   showCategory?: boolean; // false where no reliable category concept exists on the underlying data (e.g. Invoices)
+  showCurrentWeek?: boolean; // the actual calendar week today falls in — deliberately separate from curWeek/curYear above (the KPIs' last-completed-week anchor), so people don't have to hunt for "what week is it" (Ana's request)
 }
 
 const CHANNELS: Channel[] = ['Offline', 'Online'];
@@ -35,7 +37,8 @@ const CHANNELS: Channel[] = ['Offline', 'Online'];
 // logic as before (WeekRangeStepper, VendorDropdown, and the channel/category toggle functions
 // are untouched), just recomposed into one header block with the dropdown affordances layered on
 // top of the existing pill toggles.
-export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWeek, curYear, rightActions, centerContent, showWeekRange = true, showCategory = true }: PageHeaderProps) {
+export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWeek, curYear, rightActions, centerContent, showWeekRange = true, showCategory = true, showCurrentWeek = false }: PageHeaderProps) {
+  const { week: todayWeek, year: todayYear } = currentISOWeek();
   const toggleChannel = (c: Channel) => {
     const next = filters.channels.includes(c) ? filters.channels.filter((x) => x !== c) : [...filters.channels, c];
     onChange({ ...filters, channels: next });
@@ -48,21 +51,28 @@ export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWee
   return (
     <div className="bg-white border-b border-[#e9e3df] px-5 py-2.5 shrink-0">
       <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
-        <div className="min-w-0">
-          <h1 className="text-base font-bold text-[#403833] tracking-tight">Production Control Tower</h1>
-          {breadcrumb && (
-            <div className="flex items-center gap-1.5 text-xs text-[#9c9794] mt-0.5">
-              {breadcrumb.map((b, i) => (
-                <span key={b.label} className="flex items-center gap-1.5">
-                  {i > 0 && <span className="text-[#d6cfc9]">›</span>}
-                  {b.href ? (
-                    <Link to={b.href} className="hover:text-brand transition-colors">{b.label}</Link>
-                  ) : (
-                    <span className="text-[#403833] font-medium">{b.label}</span>
-                  )}
-                </span>
-              ))}
-            </div>
+        <div className="min-w-0 flex items-center gap-2.5">
+          <div>
+            <h1 className="text-base font-bold text-[#403833] tracking-tight">Production Control Tower</h1>
+            {breadcrumb && (
+              <div className="flex items-center gap-1.5 text-xs text-[#9c9794] mt-0.5">
+                {breadcrumb.map((b, i) => (
+                  <span key={b.label} className="flex items-center gap-1.5">
+                    {i > 0 && <span className="text-[#d6cfc9]">›</span>}
+                    {b.href ? (
+                      <Link to={b.href} className="hover:text-brand transition-colors">{b.label}</Link>
+                    ) : (
+                      <span className="text-[#403833] font-medium">{b.label}</span>
+                    )}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          {showCurrentWeek && (
+            <span className="text-[11px] font-semibold text-[#7b7571] bg-[#f5f2ee] border border-[#e9e3df] rounded-full px-2.5 py-1 whitespace-nowrap">
+              Today: W{String(todayWeek).padStart(2, '0')} {todayYear}
+            </span>
           )}
         </div>
 
