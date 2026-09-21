@@ -18,9 +18,12 @@ export const COLOR = {
   green: '#34A853',
 } as const;
 
-// Top Graph bars: light orange = total POs, dark orange = shipped subset
+// Top Graph bars: light orange = that week's own not-yet-shipped POs, dark orange = shipped
+// subset, muted red = older backlog carried forward from earlier weeks (a distinct hue so the
+// "this week" vs "aging overhang" split reads at a glance)
 export const BAR_TOTAL = 'rgba(255, 137, 0, 0.28)';
 export const BAR_SHIPPED = COLOR.brand;
+export const BAR_ACCUMULATED_BACKLOG = 'rgba(220, 38, 38, 0.45)';
 
 // SOT/OTIF lines — SOT is the primary eye-catching line (navy/near-black, distinct from the
 // orange bars); OTIF is grey rather than green/orange so it never collides with the bar fills.

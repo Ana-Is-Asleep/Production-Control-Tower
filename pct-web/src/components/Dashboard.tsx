@@ -47,7 +47,7 @@ export function Dashboard() {
   const { filters, setFilters: _setFilters, cleanedLines, filteredLines, weekRangeLines, weeksInRange, allSuppliers, curWeek, curYear } =
     useFilters(allLines, globalFilters);
   const { isChinaSupplier } = useVendorMapping();
-  const kpis = useKPIs(weekRangeLines, weeksInRange, isChinaSupplier);
+  const kpis = useKPIs(weekRangeLines, filteredLines, weeksInRange, isChinaSupplier);
 
   // POs surviving the supplier/channel/category filters (not the week range) — flags are
   // filtered against this so they respect the same non-date filters as the rest of the dashboard.

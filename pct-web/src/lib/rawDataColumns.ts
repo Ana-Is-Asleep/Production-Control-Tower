@@ -63,8 +63,10 @@ export function statusTint(text: string): StatusTint {
   const t = text.toLowerCase();
   if (t.includes('deliver')) return 'pass';
   if (t.includes('ship') || t.includes('transit')) return 'pass';
+  if (t.includes('on track')) return 'pass';
   if (t.includes('book')) return 'warn';
   if (t.includes('no booking') || t.includes('missing')) return 'fail';
+  if (t.includes('backlog')) return 'fail';
   return 'neutral';
 }
 
@@ -74,6 +76,22 @@ export function statusTint(text: string): StatusTint {
 // multiple SKU categories; "Mixed" is shown rather than silently picking one).
 // ---------------------------------------------------------------------------
 
+// A single, mutually-exclusive classification per PO — reuses the same eligibility checks already
+// approved elsewhere (Backlog: kpiFormulas.ts's isBacklog test; Missing ESD: the dashboard card's
+// "every line missing ESD, qty>1" rule) rather than inventing a new taxonomy. Checked in priority
+// order since a PO can technically satisfy more than one raw condition (e.g. a backlog PO that also
+// has no ESD) — Shipped and Backlog are the more specific/urgent facts, so they win.
+export type Cluster = 'Shipped' | 'Backlog' | 'Missing ESD' | 'On Track';
+
+export function clusterFor(rollup: PORollup, cqty: number, today: Date): Cluster {
+  if (rollup.asd) return 'Shipped';
+  if (rollup.pgrd && weekOf(rollup.pgrd) < weekOf(today)) return 'Backlog';
+  if (rollup.lines.every((l) => !l.esd) && cqty > 1) return 'Missing ESD';
+  return 'On Track';
+}
+
+export const CLUSTERS: Cluster[] = ['Missing ESD', 'Backlog', 'On Track', 'Shipped'];
+
 export interface PORow {
   rollup: PORollup;
   qty: number;
@@ -82,6 +100,7 @@ export interface PORow {
   channel: Channel;
   category: SKUCategory | 'Mixed';
   daysInBacklog: number | null;
+  cluster: Cluster;
   statusText: string;
 }
 
@@ -90,6 +109,7 @@ export function buildPORows(lines: PurchaseLine[], isChinaSupplier: IsChinaSuppl
   return rollups.map((rollup) => {
     const categories = new Set(rollup.lines.map((l) => categorizeSKU(l.sku)));
     const category: SKUCategory | 'Mixed' = categories.size === 1 ? [...categories][0] : 'Mixed';
+    const cqty = rollup.lines.reduce((s, l) => s + l.cqty, 0);
     // Days in Backlog reuses the exact same eligibility test (weekOf(pgrd) < weekOf(today) && no
     // ASD yet — see kpiFormulas.ts's isBacklog) and day-count formula
     // (differenceInCalendarDays(today, pgrd)) as backlogAggregation.ts's computeBacklogRows,
@@ -99,11 +119,12 @@ export function buildPORows(lines: PurchaseLine[], isChinaSupplier: IsChinaSuppl
     return {
       rollup,
       qty: rollup.lines.reduce((s, l) => s + l.qty, 0),
-      cqty: rollup.lines.reduce((s, l) => s + l.cqty, 0),
+      cqty,
       lineCount: rollup.lines.length,
       channel: getChannel(rollup.destination),
       category,
       daysInBacklog,
+      cluster: clusterFor(rollup, cqty, today),
       statusText: rawStatusText(rollup.lines[0]),
     };
   });
@@ -140,6 +161,8 @@ export const PO_COLUMNS: ColumnDef<PORow>[] = [
     dict: { label: 'Qty Confirmed', description: 'Total confirmed quantity across all lines on this PO.', source: 'Sum of Confirmed Quantity', level: 'PO', type: 'Number' } },
   { id: 'daysInBacklog', label: 'Days in Backlog', group: 'Calculated', defaultVisible: false, align: 'right', getValue: (r) => r.daysInBacklog,
     dict: { label: 'Days in Backlog', description: 'Calendar days since PGRD, only for POs currently in backlog (PGRD passed, not yet shipped) — same eligibility and formula as the Backlog section.', source: 'Calculated — backlogAggregation.ts', level: 'PO', type: 'Calculated' } },
+  { id: 'cluster', label: 'Cluster', group: 'Status', defaultVisible: true, getValue: (r) => r.cluster,
+    dict: { label: 'Cluster', description: 'One-of-four grouping — Shipped (ASD present) / Backlog (PGRD passed, not shipped) / Missing ESD (no ESD booked on any line, qty>1) / On Track (none of the above). Checked in that priority order, reusing the same eligibility rules as the Backlog and Missing ESD sections — not a new status taxonomy.', source: 'Calculated — rawDataColumns.ts clusterFor()', level: 'PO', type: 'Calculated' } },
   { id: 'status', label: 'Status', group: 'Status', defaultVisible: true, getValue: (r) => r.statusText,
     dict: { label: 'Status', description: 'Raw status text from the BC export (Confirmed Status if present, else Status). Not a normalized/derived state.', source: 'Status / Confirmed Status', level: 'PO', type: 'Text' } },
 ];
@@ -154,16 +177,21 @@ export interface LineRow {
   channel: Channel;
   variation: string;
   leadTimeDays: number | null;
+  cluster: Cluster;
   statusText: string;
 }
 
-export function buildLineRows(lines: PurchaseLine[]): LineRow[] {
+// clusterByPO comes from the matching buildPORows() call for the same line pool, so a line always
+// shows the same Cluster as its parent PO rather than recomputing (and potentially diverging from)
+// the classification.
+export function buildLineRows(lines: PurchaseLine[], clusterByPO: Map<string, Cluster>): LineRow[] {
   return lines.map((line) => ({
     line,
     category: categorizeSKU(line.sku),
     channel: getChannel(line.destination),
     variation: skuVariationOf(line.sku),
     leadTimeDays: computeLeadTime(line).productionLT,
+    cluster: clusterByPO.get(line.po) ?? 'On Track',
     statusText: rawStatusText(line),
   }));
 }
@@ -203,6 +231,8 @@ export const LINE_COLUMNS: ColumnDef<LineRow>[] = [
     dict: { label: 'Qty Confirmed', description: 'Confirmed quantity for this line.', source: 'Confirmed Quantity', level: 'PO Line', type: 'Number' } },
   { id: 'leadTime', label: 'Lead Time (days)', group: 'Calculated', defaultVisible: false, align: 'right', getValue: (r) => r.leadTimeDays,
     dict: { label: 'Lead Time (days)', description: 'Production lead time: Order Date → Actual Shipping Date. Only available once a line has shipped. Same calculation used by the Lead Time section.', source: 'Calculated — leadTimeUtils.ts computeLeadTime().productionLT', level: 'PO Line', type: 'Calculated' } },
+  { id: 'cluster', label: 'Cluster', group: 'Status', defaultVisible: true, getValue: (r) => r.cluster,
+    dict: { label: 'Cluster', description: "Inherited from this line's parent PO — see the PO-level Cluster column for the classification rule.", source: 'Calculated — rawDataColumns.ts clusterFor()', level: 'PO Line', type: 'Calculated' } },
   { id: 'status', label: 'Status', group: 'Status', defaultVisible: true, getValue: (r) => r.statusText,
     dict: { label: 'Status', description: 'Raw status text from the BC export (Confirmed Status if present, else Status). Not a normalized/derived state.', source: 'Status / Confirmed Status', level: 'PO Line', type: 'Text' } },
 ];

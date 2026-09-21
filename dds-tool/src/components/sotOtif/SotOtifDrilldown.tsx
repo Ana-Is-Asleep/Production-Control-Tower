@@ -44,7 +44,7 @@ export function SotOtifDrilldown() {
 
   const initial = useMemo(() => parseSotOtifParams(searchParams), []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const { filters, setFilters, weekRangeLines, weeksInRange, allSuppliers, curWeek, curYear } =
+  const { filters, setFilters, filteredLines, weekRangeLines, weeksInRange, allSuppliers, curWeek, curYear } =
     useFilters(allLines, initial.filters);
 
   const [selectedWeek, setSelectedWeek] = useState<WeekInRange | null>(
@@ -60,7 +60,7 @@ export function SotOtifDrilldown() {
   const [actionsOpen, setActionsOpen] = useState(false);
 
   const today = useMemo(() => new Date(), []);
-  const kpis = useKPIs(weekRangeLines, weeksInRange, isChinaSupplier);
+  const kpis = useKPIs(weekRangeLines, filteredLines, weeksInRange, isChinaSupplier);
 
   // keep the URL in sync so the view is shareable and survives a refresh (the uploaded data
   // itself does not persist across a hard reload — only the filter/selection state does)

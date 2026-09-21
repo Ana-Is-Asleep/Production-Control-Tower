@@ -10,8 +10,8 @@ import { currentISOWeek, shiftISOWeek, getISOWeek, getISOWeekYear, formatDateSho
 import { getChannel } from '../../lib/channelUtils';
 import { categorizeSKU } from '../../lib/skuUtils';
 import {
-  PO_COLUMNS, LINE_COLUMNS, DATE_FIELDS, buildPORows, buildLineRows, rawStatusText, statusTint,
-  type PORow, type LineRow, type ColumnDef, type DateFieldId,
+  PO_COLUMNS, LINE_COLUMNS, DATE_FIELDS, CLUSTERS, buildPORows, buildLineRows, rawStatusText, statusTint,
+  type PORow, type LineRow, type ColumnDef, type DateFieldId, type Cluster,
 } from '../../lib/rawDataColumns';
 import { detailSheet } from '../../lib/reportBuilders';
 import { downloadWorkbook } from '../../lib/xlsxWriter';
@@ -37,8 +37,9 @@ interface Scope {
   warehouses: string[];
   skuSearch: string;
   statuses: string[];
+  clusters: string[];
 }
-const DEFAULT_SCOPE: Scope = { suppliers: [], channels: [], categories: [], warehouses: [], skuSearch: '', statuses: [] };
+const DEFAULT_SCOPE: Scope = { suppliers: [], channels: [], categories: [], warehouses: [], skuSearch: '', statuses: [], clusters: [] };
 
 function sortValue(v: unknown): string | number {
   if (v instanceof Date) return v.getTime();
@@ -109,16 +110,21 @@ export function RawDataPage() {
   }, [basePool, scope, dateFieldDef, weekKeySet]);
 
   const poRows = useMemo(() => buildPORows(scoped, isChinaSupplier, today), [scoped, isChinaSupplier, today]);
-  const lineRows = useMemo(() => buildLineRows(scoped), [scoped]);
+  const clusterByPO = useMemo(() => new Map(poRows.map((r) => [r.rollup.po, r.cluster] as [string, Cluster])), [poRows]);
+  const lineRows = useMemo(() => buildLineRows(scoped, clusterByPO), [scoped, clusterByPO]);
 
-  const poRowsFiltered = useMemo(
-    () => (poSearch.trim() ? poRows.filter((r) => r.rollup.po.toLowerCase().includes(poSearch.trim().toLowerCase())) : poRows),
-    [poRows, poSearch]
-  );
-  const lineRowsFiltered = useMemo(
-    () => (poSearch.trim() ? lineRows.filter((r) => r.line.po.toLowerCase().includes(poSearch.trim().toLowerCase())) : lineRows),
-    [lineRows, poSearch]
-  );
+  const poRowsFiltered = useMemo(() => {
+    let result = poRows;
+    if (scope.clusters.length) result = result.filter((r) => scope.clusters.includes(r.cluster));
+    if (poSearch.trim()) result = result.filter((r) => r.rollup.po.toLowerCase().includes(poSearch.trim().toLowerCase()));
+    return result;
+  }, [poRows, scope.clusters, poSearch]);
+  const lineRowsFiltered = useMemo(() => {
+    let result = lineRows;
+    if (scope.clusters.length) result = result.filter((r) => scope.clusters.includes(r.cluster));
+    if (poSearch.trim()) result = result.filter((r) => r.line.po.toLowerCase().includes(poSearch.trim().toLowerCase()));
+    return result;
+  }, [lineRows, scope.clusters, poSearch]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- PO/Line column defs are only ever rendered against their own matching row array below, this just lets one render path serve both
   const activeColumns: ColumnDef<any>[] = level === 'po'
@@ -208,7 +214,7 @@ export function RawDataPage() {
               row reads as one organized filter bar instead of some fields floating unlabeled next
               to others that have captions. */}
           <div className="bg-white rounded-lg border border-[#e9e3df] p-4 space-y-3">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               <div>
                 <label className="text-[10px] font-semibold uppercase tracking-wide text-[#9c9794] block mb-1">Supplier</label>
                 <VendorDropdown allSuppliers={[...new Set(basePool.map((l) => l.supplier))].sort()} selected={scope.suppliers} onChange={(s) => setScope((c) => ({ ...c, suppliers: s }))} />
@@ -223,6 +229,7 @@ export function RawDataPage() {
               </div>
               <MultiCheckDropdown label="Warehouse" emptyLabel="All warehouses" options={availableWarehouses} selected={scope.warehouses} onChange={(s) => setScope((c) => ({ ...c, warehouses: s }))} />
               <MultiCheckDropdown label="Status" emptyLabel="All statuses" options={availableStatuses} selected={scope.statuses} onChange={(s) => setScope((c) => ({ ...c, statuses: s }))} />
+              <MultiCheckDropdown label="Cluster" emptyLabel="All clusters" options={CLUSTERS} selected={scope.clusters} onChange={(s) => setScope((c) => ({ ...c, clusters: s }))} />
             </div>
             <div>
               <label className="text-[10px] font-semibold uppercase tracking-wide text-[#9c9794] block mb-1">SKU</label>

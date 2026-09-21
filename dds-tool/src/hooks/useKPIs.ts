@@ -1,12 +1,13 @@
 'use client';
 
 import { useMemo } from 'react';
-import { getISOWeek, getISOWeekYear } from '../lib/dateUtils';
+import { getISOWeek, getISOWeekYear, shiftISOWeek } from '../lib/dateUtils';
 import {
   computeSOTLine, computeOTIFLine, computeLineResult,
   aggregateByPOHeader, SOT_TARGET, OTIF_TARGET,
   type IsChinaSupplier,
 } from '../lib/kpiFormulas';
+import { rollupByPO } from '../lib/poAggregation';
 import type { WeekInRange } from './useFilters';
 import type { PurchaseLine } from '../types';
 
@@ -20,6 +21,7 @@ export interface TopGraphPoint {
   totalPOs: number;
   shippedPOs: number;
   backlogPOs: number;
+  pastAccumulatedBacklog: number;
   sotPastPct: number | null;
   sotFuturePct: number | null;
   otifPastPct: number | null;
@@ -39,12 +41,20 @@ export interface DeepDiveRow {
 }
 
 // The Top Graph: PGRD-week bars (PO volume, shipped vs backlog) + SOT/OTIF % lines, driven by
-// the global weekRange filter rather than a fixed 10-week window.
-export function useKPIs(lines: PurchaseLine[], weeksInRange: WeekInRange[], isChinaSupplier: IsChinaSupplier) {
+// the global weekRange filter rather than a fixed 10-week window. `fullPoolLines` is the same
+// supplier/category/channel scope as `lines` but NOT limited to the displayed week range — needed
+// so a past week's "accumulated backlog carried forward" can reach back to POs requested before
+// the visible window even starts, rather than under-counting at the window's edge.
+export function useKPIs(lines: PurchaseLine[], fullPoolLines: PurchaseLine[], weeksInRange: WeekInRange[], isChinaSupplier: IsChinaSupplier) {
   const today = useMemo(() => new Date(), []);
 
+  // One row per PO (PGRD/ASD resolved across its lines) across the full, non-week-limited pool —
+  // already floored at 2026 PGRD upstream by useFilters, so "start counting from 2026" falls out
+  // for free rather than needing its own cutoff here.
+  const poRollups = useMemo(() => rollupByPO(fullPoolLines, isChinaSupplier, today), [fullPoolLines, isChinaSupplier, today]);
+
   const topGraph = useMemo((): TopGraphPoint[] => {
-    return weeksInRange.map(({ offset, week, year, isCurrent, isFuture, label }) => {
+    return weeksInRange.map(({ offset, week, year, isCurrent, isFuture, label, weekStart }) => {
       const weekLines = lines.filter(l => l.pgrd && getISOWeek(l.pgrd) === week && getISOWeekYear(l.pgrd) === year);
       const totalPOs = new Set(weekLines.map(l => l.po)).size;
 
@@ -58,6 +68,17 @@ export function useKPIs(lines: PurchaseLine[], weeksInRange: WeekInRange[], isCh
       });
       const shippedPOs = shippedPOSet.size;
 
+      // Backlog carried forward from EVERY earlier PGRD week (not just this one) that's still
+      // unshipped as of this week's end — only meaningful for completed weeks; a current/future
+      // week hasn't "completed" yet, so there's nothing to have accumulated into by its end.
+      let pastAccumulatedBacklog = 0;
+      if (!isFuture && !isCurrent) {
+        const weekEnd = shiftISOWeek(week, year, 1).weekStart; // exclusive — start of the following week
+        pastAccumulatedBacklog = poRollups.filter((r) =>
+          r.pgrd && r.pgrd < weekStart && (!r.asd || r.asd >= weekEnd)
+        ).length;
+      }
+
       const sotPct = aggregateByPOHeader(weekLines, (l) => computeSOTLine(l, isChinaSupplier(l.vendorCode), today));
       const otifPct = aggregateByPOHeader(weekLines, (l) => computeOTIFLine(l, isChinaSupplier(l.vendorCode)).otif);
 
@@ -67,6 +88,7 @@ export function useKPIs(lines: PurchaseLine[], weeksInRange: WeekInRange[], isCh
         totalPOs,
         shippedPOs,
         backlogPOs: totalPOs - shippedPOs,
+        pastAccumulatedBacklog,
         // isCurrent week appears on both series so the solid/dashed line segments connect visually
         sotPastPct: !isFuture || isCurrent ? sotPct : null,
         sotFuturePct: isFuture || isCurrent ? sotPct : null,
@@ -74,7 +96,7 @@ export function useKPIs(lines: PurchaseLine[], weeksInRange: WeekInRange[], isCh
         otifFuturePct: isFuture || isCurrent ? otifPct : null,
       };
     });
-  }, [lines, weeksInRange, isChinaSupplier, today]);
+  }, [lines, poRollups, weeksInRange, isChinaSupplier, today]);
 
   // per-PO deep-dive rows for the whole active week range (Top Graph slide-over)
   const deepDiveRows = useMemo((): DeepDiveRow[] => {
