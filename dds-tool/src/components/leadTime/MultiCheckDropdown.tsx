@@ -32,14 +32,14 @@ export function MultiCheckDropdown({ label, emptyLabel, options, selected, onCha
   const buttonLabel = selected.length === 0 ? emptyLabel : selected.length <= 2 ? selected.join(', ') : `${selected.length} selected`;
 
   return (
-    <div ref={ref} className="flex flex-col gap-1.5 relative">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-[#9c9794]">{label}</span>
+    <div ref={ref} className="flex flex-col gap-1 relative">
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-[#9c9794]">{label}</span>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="text-sm font-medium text-[#403833] bg-white border border-[#e9e3df] rounded-lg px-3 py-2 min-w-[220px] cursor-pointer text-left flex justify-between items-center gap-2 hover:border-[#403833] transition-colors"
+        className="filter-pill flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border font-medium border-[#e9e3df] text-[#58524e] bg-white cursor-pointer text-left justify-between hover:border-[#403833] transition-colors"
       >
-        <span className="truncate">{buttonLabel}</span>
-        <span className="text-[#9c9794] text-[10px] shrink-0">▾</span>
+        <span className="truncate max-w-[180px]">{buttonLabel}</span>
+        <span className="opacity-50 text-[10px] shrink-0">▾</span>
       </button>
       {open && (
         <div className="absolute z-30 top-full mt-1 left-0 w-72 bg-white border border-[#e9e3df] rounded-lg p-2.5" style={{ boxShadow: 'var(--shadow-card-hover)' }}>

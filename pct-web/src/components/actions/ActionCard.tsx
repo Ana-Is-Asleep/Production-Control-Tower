@@ -49,8 +49,10 @@ export function ActionCard({ action, onSave, startInEdit = false, onDiscard, all
   };
 
   const isClosing = draft.status === 'closed';
-  const resolutionReasonMissing = isClosing && !draft.resolutionReason?.trim();
   const rootCauseRequired = needsRootCause(action);
+  // R002 (missed SOT) flags close on the root cause alone — the 5 Whys resolution reason is only
+  // required for everything else (Ana: the root cause selection already is the "why" for these).
+  const resolutionReasonMissing = isClosing && !rootCauseRequired && !draft.resolutionReason?.trim();
   const rootCauseIncomplete = isClosing && rootCauseRequired && rootCauseMissing(draft);
 
   const handleSave = () => {
@@ -210,7 +212,7 @@ export function ActionCard({ action, onSave, startInEdit = false, onDiscard, all
         </select>
       </div>
 
-      {isClosing && (
+      {isClosing && !rootCauseRequired && (
         <div>
           <div className="bg-[#fff7ed] border border-brand/30 rounded px-2.5 py-2 text-[10px] text-[#7b7571] leading-relaxed mb-1.5">
             <p className="font-semibold text-[#403833] mb-1">Before closing — capture the root cause (5 Whys):</p>

@@ -79,7 +79,7 @@ export function BacklogSection({ lines, drillDownHref }: BacklogSectionProps) {
         ))}
       </div>
       {clearance.length > 0 && <p className="text-[9px] text-[#b5aaa5] mt-1 mb-0 shrink-0">X-axis: ESD week</p>}
-      <div className="flex-1 min-h-0 mt-0.5" style={{ minHeight: 40 }}>
+      <div className="flex-1 min-h-0 mt-0.5" style={{ minHeight: 70 }}>
         {clearance.length === 0 ? (
           <div className="h-full flex items-center">
             <p className="text-[11px] text-[#b5aaa5]">No ESD-booked backlog to project a clearance date for.</p>

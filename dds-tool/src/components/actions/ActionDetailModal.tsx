@@ -37,8 +37,10 @@ export function ActionDetailModal({ action, onSave, onClose }: ActionDetailModal
   };
 
   const isClosing = draft.status === 'closed';
-  const resolutionReasonMissing = isClosing && !draft.resolutionReason?.trim() && !action.resolutionReason?.trim();
   const rootCauseRequired = needsRootCause(action);
+  // R002 (missed SOT) flags close on the root cause alone — the 5 Whys resolution reason is only
+  // required for everything else (Ana: the root cause selection already is the "why" for these).
+  const resolutionReasonMissing = isClosing && !rootCauseRequired && !draft.resolutionReason?.trim() && !action.resolutionReason?.trim();
   const rootCauseIncomplete = isClosing && rootCauseRequired && rootCauseMissing(draft);
   const today = new Date();
 
@@ -150,7 +152,7 @@ export function ActionDetailModal({ action, onSave, onClose }: ActionDetailModal
             </select>
           </div>
 
-          {isClosing && (
+          {isClosing && !rootCauseRequired && (
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9c9794] mb-1">Resolution Reason</p>
               <textarea
