@@ -49,7 +49,7 @@ export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWee
   };
 
   return (
-    <div className="bg-white border-b border-[#e9e3df] px-5 py-2.5 shrink-0">
+    <div className="bg-white border-b border-[#e9e3df] px-5 py-2 shrink-0">
       <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
         <div className="min-w-0 flex items-center gap-2.5">
           <div>
@@ -96,12 +96,12 @@ export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWee
         </div>
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap mt-2 justify-end">
+      <div className="flex items-center gap-1.5 flex-wrap mt-1.5 justify-end">
         {CHANNELS.map((c) => (
           <button
             key={c}
             onClick={() => toggleChannel(c)}
-            className={`filter-pill text-xs px-3 py-1 rounded-full border font-medium whitespace-nowrap ${filters.channels.includes(c) ? 'bg-[#403833] text-white border-[#403833]' : 'border-[#e9e3df] text-[#58524e] hover:border-[#403833]'}`}
+            className={`filter-pill text-xs px-2.5 py-0.5 rounded-full border font-medium whitespace-nowrap ${filters.channels.includes(c) ? 'bg-[#403833] text-white border-[#403833]' : 'border-[#e9e3df] text-[#58524e] hover:border-[#403833]'}`}
           >
             {c}
           </button>
@@ -113,7 +113,7 @@ export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWee
               <button
                 key={c}
                 onClick={() => toggleCategory(c)}
-                className={`filter-pill text-xs px-3 py-1 rounded-full border font-medium whitespace-nowrap ${filters.categories.includes(c) ? 'text-white border-transparent' : 'border-[#e9e3df] text-[#58524e] hover:border-[#403833]'}`}
+                className={`filter-pill text-xs px-2.5 py-0.5 rounded-full border font-medium whitespace-nowrap ${filters.categories.includes(c) ? 'text-white border-transparent' : 'border-[#e9e3df] text-[#58524e] hover:border-[#403833]'}`}
                 style={filters.categories.includes(c) ? { background: CATEGORY_COLORS[c] } : {}}
               >
                 {c}

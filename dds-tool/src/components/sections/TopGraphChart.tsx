@@ -18,7 +18,7 @@ interface TopGraphChartProps {
 export function TopGraphChart({ points, onWeekClick }: TopGraphChartProps) {
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mb-2 shrink-0">
+      <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 mb-1 shrink-0">
         <MiniLegend
           items={[
             { label: 'POs Requested – Shipped', color: BAR_SHIPPED, type: 'bar' },

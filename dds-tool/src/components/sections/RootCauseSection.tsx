@@ -115,7 +115,7 @@ export function RootCauseSection({ lines, weeksInRange, drillDownHref }: RootCau
   return (
     <Link
       href={drillDownHref}
-      className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full overflow-hidden"
+      className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-3 py-2.5 cursor-pointer flex flex-col h-full overflow-hidden"
       style={{ boxShadow: 'var(--shadow-card)' }}
     >
       <CardHeader
@@ -128,7 +128,7 @@ export function RootCauseSection({ lines, weeksInRange, drillDownHref }: RootCau
           <p className="text-xs text-[#b5aaa5]">No flagged loss reasons in range</p>
         </div>
       ) : (
-        <div className="flex-1 min-h-0 mt-3 flex flex-col">
+        <div className="flex-1 min-h-0 mt-1 flex flex-col">
           <MiniLegend
             className="mb-0.5 shrink-0"
             items={[
@@ -136,8 +136,8 @@ export function RootCauseSection({ lines, weeksInRange, drillDownHref }: RootCau
               ...(hasOther ? [{ label: 'Other', color: COLOR.muted, type: 'bar' as const }] : []),
             ]}
           />
-          <p className="text-[9px] text-[#b5aaa5] mb-1 shrink-0">X-axis: PGRD week</p>
-          <div className="flex-1 min-h-0">
+          <p className="text-[9px] text-[#b5aaa5] mb-0.5 shrink-0">X-axis: PGRD week</p>
+          <div className="flex-1 min-h-0" style={{ minHeight: 50 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="2 4" stroke={COLOR.border} vertical={false} />

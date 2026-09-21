@@ -61,7 +61,7 @@ export function BacklogSection({ lines, drillDownHref }: BacklogSectionProps) {
   return (
     <Link
       href={drillDownHref}
-      className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full overflow-hidden"
+      className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-3 py-2.5 cursor-pointer flex flex-col h-full overflow-hidden"
       style={{ boxShadow: 'var(--shadow-card)' }}
     >
       <CardHeader
@@ -69,17 +69,17 @@ export function BacklogSection({ lines, drillDownHref }: BacklogSectionProps) {
         infoText="POs past their planned goods-ready date with no confirmed shipment"
         subtitle="POs pending confirmation"
       />
-      <div className="grid grid-cols-3 gap-2 shrink-0 mt-3">
+      <div className="grid grid-cols-3 gap-1.5 shrink-0 mt-1.5">
         {([
           { label: 'Recent', tint: recentCount > 0 ? 'warn' : 'neutral', color: 'text-[#403833]', value: recentCount },
           { label: 'Critical', tint: accumulatedCount > 0 ? 'fail' : 'neutral', color: 'text-[#403833]', value: accumulatedCount },
           { label: 'Expected', tint: 'neutral', color: 'text-[#403833]', value: expectedCount },
         ] as const).map((c) => (
-          <KpiBox key={c.label} label={c.label} value={c.value} valueClassName={`text-xl ${c.color}`} tint={c.tint} />
+          <KpiBox key={c.label} label={c.label} value={c.value} valueClassName={`text-lg ${c.color}`} tint={c.tint} />
         ))}
       </div>
-      {clearance.length > 0 && <p className="text-[9px] text-[#b5aaa5] mt-2 mb-0 shrink-0">X-axis: ESD week</p>}
-      <div className="flex-1 min-h-0 mt-1">
+      {clearance.length > 0 && <p className="text-[9px] text-[#b5aaa5] mt-1 mb-0 shrink-0">X-axis: ESD week</p>}
+      <div className="flex-1 min-h-0 mt-0.5" style={{ minHeight: 40 }}>
         {clearance.length === 0 ? (
           <div className="h-full flex items-center">
             <p className="text-[11px] text-[#b5aaa5]">No ESD-booked backlog to project a clearance date for.</p>

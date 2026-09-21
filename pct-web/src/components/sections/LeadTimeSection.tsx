@@ -21,7 +21,7 @@ export function LeadTimeSection({ lines, drillDownHref }: LeadTimeSectionProps) 
   return (
     <Link
       to={drillDownHref}
-      className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full overflow-hidden"
+      className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-3 py-2.5 cursor-pointer flex flex-col h-full overflow-hidden"
       style={{ boxShadow: 'var(--shadow-card)' }}
     >
       <CardHeader
@@ -34,7 +34,7 @@ export function LeadTimeSection({ lines, drillDownHref }: LeadTimeSectionProps) 
           <p className="text-xs text-[#b5aaa5]">No shipped POs in range</p>
         </div>
       ) : (
-        <div className="flex-1 min-h-0 mt-3 flex flex-col">
+        <div className="flex-1 min-h-0 mt-1 flex flex-col">
           <MiniLegend
             className="mb-0.5 shrink-0"
             items={[
@@ -43,8 +43,8 @@ export function LeadTimeSection({ lines, drillDownHref }: LeadTimeSectionProps) 
               { label: 'Avg LT', color: COLOR.navy, type: 'line' },
             ]}
           />
-          <p className="text-[9px] text-[#b5aaa5] mb-1 shrink-0">X-axis: ASD (ship date) week</p>
-          <div className="flex-1 min-h-0">
+          <p className="text-[9px] text-[#b5aaa5] mb-0.5 shrink-0">X-axis: ASD (ship date) week</p>
+          <div className="flex-1 min-h-0" style={{ minHeight: 50 }}>
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={weeklyLTTarget} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                 <XAxis dataKey="weekLabel" tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} interval={0} />

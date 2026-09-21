@@ -24,10 +24,10 @@ interface KpiBoxProps {
 // shared across the SOT/OTIF, Backlog, and Invoices cards so the pattern stays identical.
 export function KpiBox({ label, value, valueClassName = 'text-[#403833]', tint = 'neutral', sub, className = '' }: KpiBoxProps) {
   return (
-    <div className={`rounded-lg border border-[#e9e3df] px-3 py-2.5 ${TINT_BG[tint]} ${className}`}>
-      <p className="text-[10px] uppercase tracking-widest text-[#9c9794] truncate">{label}</p>
-      <p className={`kpi-number font-extrabold leading-none mt-1 ${valueClassName}`}>{value}</p>
-      {sub && <div className="mt-1">{sub}</div>}
+    <div className={`rounded-lg border border-[#e9e3df] px-2 py-1.5 ${TINT_BG[tint]} ${className}`}>
+      <p className="text-[9px] uppercase tracking-widest text-[#9c9794] truncate">{label}</p>
+      <p className={`kpi-number font-extrabold leading-none mt-0.5 ${valueClassName}`}>{value}</p>
+      {sub && <div className="mt-0.5">{sub}</div>}
     </div>
   );
 }

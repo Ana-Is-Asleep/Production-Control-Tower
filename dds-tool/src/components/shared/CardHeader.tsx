@@ -15,14 +15,14 @@ export function CardHeader({ title, subtitle, total, drillDownLabel = 'Drill dow
   return (
     <div className="shrink-0">
       <div className="flex items-start justify-between">
-        <p className="text-sm font-bold text-[#403833]">{title}</p>
-        <p className="text-[10px] text-brand font-semibold shrink-0">{drillDownLabel}</p>
+        <p className="text-xs font-bold text-[#403833]">{title}</p>
+        <p className="text-[9px] text-brand font-semibold shrink-0">{drillDownLabel}</p>
       </div>
       {(subtitle || total !== undefined) && (
-        <div className="flex items-center justify-between mt-1">
-          {subtitle ? <p className="text-[11px] text-[#7b7571]">{subtitle}</p> : <span />}
+        <div className="flex items-center justify-between mt-0.5">
+          {subtitle ? <p className="text-[10px] text-[#7b7571] truncate">{subtitle}</p> : <span />}
           {total !== undefined && (
-            <p className="text-xs text-[#7b7571] font-medium shrink-0">Total <span className="text-sm font-bold text-[#403833]">{total}</span></p>
+            <p className="text-[10px] text-[#7b7571] font-medium shrink-0">Total <span className="text-xs font-bold text-[#403833]">{total}</span></p>
           )}
         </div>
       )}

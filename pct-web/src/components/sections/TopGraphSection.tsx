@@ -27,7 +27,7 @@ export function TopGraphSection({ points, sotTarget, otifTarget, drillDownHref }
   return (
     <Link
       to={drillDownHref}
-      className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full overflow-hidden"
+      className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-4 py-3 cursor-pointer flex flex-col h-full overflow-hidden"
       style={{ boxShadow: 'var(--shadow-card)' }}
     >
       <CardHeader
@@ -35,24 +35,24 @@ export function TopGraphSection({ points, sotTarget, otifTarget, drillDownHref }
         infoText="Shipped On Time and On Time In Full performance vs. the 90% target"
         subtitle={latestPast ? `Evolution vs. 90% target · evaluated week ${latestPast.weekLabel}` : 'Evolution vs. 90% target'}
       />
-      <div className="flex-1 min-h-0 flex items-stretch gap-5 mt-3">
-        <div className="flex flex-col justify-center gap-3 shrink-0 w-[150px]">
+      <div className="flex-1 min-h-0 flex items-stretch gap-3 mt-2">
+        <div className="flex flex-col justify-center gap-2 shrink-0 w-[110px]">
           <KpiBox
-            label={`SOT · ${sotTarget}% target`}
+            label={`SOT · ${sotTarget}%`}
             value={pctLabel(currentSOT)}
-            valueClassName={`text-3xl ${currentSOT === null ? 'text-[#c8c0bb]' : currentSOT >= sotTarget ? 'text-pass' : 'text-fail'}`}
+            valueClassName={`text-xl ${currentSOT === null ? 'text-[#c8c0bb]' : currentSOT >= sotTarget ? 'text-pass' : 'text-fail'}`}
             tint={currentSOT === null ? 'neutral' : currentSOT >= sotTarget ? 'pass' : 'fail'}
-            sub={latestPast && <span className="text-[10px] text-[#9c9794]">{latestPast.weekLabel}</span>}
+            sub={latestPast && <span className="text-[9px] text-[#9c9794]">{latestPast.weekLabel}</span>}
           />
           <KpiBox
-            label={`OTIF · ${otifTarget}% target`}
+            label={`OTIF · ${otifTarget}%`}
             value={pctLabel(currentOTIF)}
-            valueClassName={`text-3xl ${currentOTIF === null ? 'text-[#c8c0bb]' : currentOTIF >= otifTarget ? 'text-pass' : 'text-fail'}`}
+            valueClassName={`text-xl ${currentOTIF === null ? 'text-[#c8c0bb]' : currentOTIF >= otifTarget ? 'text-pass' : 'text-fail'}`}
             tint={currentOTIF === null ? 'neutral' : currentOTIF >= otifTarget ? 'pass' : 'fail'}
-            sub={latestPast && <span className="text-[10px] text-[#9c9794]">{latestPast.weekLabel}</span>}
+            sub={latestPast && <span className="text-[9px] text-[#9c9794]">{latestPast.weekLabel}</span>}
           />
         </div>
-        <div className="flex-1 min-h-0 min-w-0">
+        <div className="flex-1 min-h-0 min-w-0" style={{ minHeight: 100 }}>
           <TopGraphChart points={points} />
         </div>
       </div>

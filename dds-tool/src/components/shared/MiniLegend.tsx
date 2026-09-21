@@ -12,19 +12,19 @@ export interface MiniLegendItem {
 // these cards need this instead to be self-explanatory without hovering.
 export function MiniLegend({ items, className }: { items: MiniLegendItem[]; className?: string }) {
   return (
-    <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 ${className ?? ''}`}>
+    <div className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 ${className ?? ''}`}>
       {items.map((it) => (
-        <span key={it.label} className="flex items-center gap-1.5 text-[10px] text-[#7b7571] font-medium whitespace-nowrap">
+        <span key={it.label} className="flex items-center gap-1 text-[9px] text-[#7b7571] font-medium whitespace-nowrap">
           {it.type === 'line' || it.type === 'dashed-line' ? (
-            <svg width="14" height="8" className="shrink-0" aria-hidden>
+            <svg width="12" height="7" className="shrink-0" aria-hidden>
               <line
-                x1="0" y1="4" x2="14" y2="4"
+                x1="0" y1="3.5" x2="12" y2="3.5"
                 stroke={it.color} strokeWidth={2}
                 strokeDasharray={it.type === 'dashed-line' ? '3 2' : undefined}
               />
             </svg>
           ) : (
-            <span className="inline-block w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: it.color }} />
+            <span className="inline-block w-2 h-2 rounded-sm shrink-0" style={{ background: it.color }} />
           )}
           {it.label}
         </span>

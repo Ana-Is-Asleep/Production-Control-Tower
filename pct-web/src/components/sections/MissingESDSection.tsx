@@ -58,7 +58,7 @@ export function MissingESDSection({ lines, drillDownHref }: MissingESDSectionPro
   return (
     <Link
       to={drillDownHref}
-      className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-5 py-4 cursor-pointer flex flex-col h-full overflow-hidden"
+      className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-3 py-2.5 cursor-pointer flex flex-col h-full overflow-hidden"
       style={{ boxShadow: 'var(--shadow-card)' }}
     >
       <CardHeader
@@ -67,8 +67,8 @@ export function MissingESDSection({ lines, drillDownHref }: MissingESDSectionPro
         subtitle="Open POs without ESD"
         total={totalMissing}
       />
-      <p className="text-[9px] text-[#b5aaa5] mt-1 shrink-0">X-axis: EGRD week</p>
-      <div className="flex-1 min-h-0 mt-1">
+      <p className="text-[9px] text-[#b5aaa5] mt-0.5 shrink-0">X-axis: EGRD week</p>
+      <div className="flex-1 min-h-0 mt-0.5" style={{ minHeight: 50 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={rows} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="2 4" stroke={COLOR.border} vertical={false} />

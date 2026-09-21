@@ -49,7 +49,7 @@ export function InvoicesSection({ invoices, supplierFilter, drillDownHref }: Inv
   return (
     <Link
       href={drillDownHref}
-      className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-4 cursor-pointer h-full flex flex-col overflow-hidden"
+      className="kpi-card bg-white rounded-lg border border-[#e9e3df] p-3 cursor-pointer h-full flex flex-col overflow-hidden"
       style={{ boxShadow: 'var(--shadow-card)' }}
     >
       <CardHeader title="Invoices" infoText="P2W invoice status by approval and payment stage" />
@@ -58,24 +58,24 @@ export function InvoicesSection({ invoices, supplierFilter, drillDownHref }: Inv
           <p className="text-xs text-[#b5aaa5]">Upload invoice file to see data</p>
         </div>
       ) : (
-        <div className="flex-1 min-h-0 mt-3 flex flex-col">
-          <div className="grid grid-cols-4 gap-3 w-full shrink-0">
+        <div className="flex-1 min-h-0 mt-1.5 flex flex-col">
+          <div className="grid grid-cols-4 gap-2 w-full shrink-0">
             {CARDS.map((c) => (
               <KpiBox
                 key={c.id}
                 label={c.label}
                 value={c.count}
-                valueClassName={`text-2xl ${c.color}`}
+                valueClassName={`text-lg ${c.color}`}
                 tint={c.tint}
-                sub={showAmount ? <p className="text-[10px] text-[#7b7571] truncate">{formatAmountsByCurrency(c.rows)}</p> : undefined}
+                sub={showAmount ? <p className="text-[9px] text-[#7b7571] truncate">{formatAmountsByCurrency(c.rows)}</p> : undefined}
               />
             ))}
           </div>
-          <div className="flex-1 min-h-0 mt-4 flex flex-col">
-            <p className="text-[10px] uppercase tracking-widest text-[#9c9794] mb-1 shrink-0">Total Pending — by due week</p>
-            <p className="text-[9px] text-[#b5aaa5] mb-1 shrink-0 normal-case tracking-normal">X-axis: Effective Due Date week</p>
+          <div className="flex-1 min-h-0 mt-1.5 flex flex-col">
+            <p className="text-[10px] uppercase tracking-widest text-[#9c9794] mb-0.5 shrink-0">Total Pending — by due week</p>
+            <p className="text-[9px] text-[#b5aaa5] mb-0.5 shrink-0 normal-case tracking-normal">X-axis: Effective Due Date week</p>
             {weeklyPending.length > 0 ? (
-              <div className="flex-1 min-h-0">
+              <div className="flex-1 min-h-0" style={{ minHeight: 40 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={weeklyPending} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="2 4" stroke={COLOR.border} vertical={false} />
