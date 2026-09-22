@@ -55,14 +55,14 @@ export function DetailHeader({
 
   return (
     <header className="bg-white border-b border-[#e9e3df] px-5 py-2 grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 shrink-0">
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center gap-3 min-w-0 overflow-hidden">
         <Link to="/" className="flex items-center gap-1.5 text-sm font-semibold text-[#403833] hover:text-brand transition-colors shrink-0">
           <span>←</span> Overview
         </Link>
-        <span className="text-[#e9e3df]">|</span>
+        <span className="text-[#e9e3df] shrink-0">|</span>
         <span className="text-[#403833] text-sm font-semibold shrink-0 whitespace-nowrap">{title}</span>
-        <span className="text-[#e9e3df]">|</span>
-        <span className="text-xs text-[#7b7571] truncate">Filtered by: {formatFilterSummary(filters)}</span>
+        <span className="text-[#e9e3df] shrink-0">|</span>
+        <span className="text-xs text-[#7b7571] truncate min-w-0">Filtered by: {formatFilterSummary(filters)}</span>
       </div>
 
       <div className="flex justify-center">{centerContent}</div>
