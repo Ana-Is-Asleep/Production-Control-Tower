@@ -16,10 +16,10 @@ interface DetailHeaderProps {
   filters: ActiveFilters;
   rightActions?: ReactNode;
   centerContent?: ReactNode; // e.g. the orange Actions badge — placed in its own grid column so it reads as "top middle" without ever overlapping the left/right content when the window is narrow
-  // When provided (together with allSuppliers/curWeek/curYear), the header renders the same live,
-  // editable filter controls as the Dashboard's PageHeader instead of the read-only "Filtered by:
-  // ..." summary — Ana: detail pages should let you adjust filters without bouncing back to the
-  // Overview first. Pages that don't pass these keep the old read-only summary unchanged.
+  // When provided (together with allSuppliers/curWeek/curYear), the header also renders the same
+  // live, editable filter controls as the Dashboard's PageHeader, alongside (not instead of) the
+  // read-only "Filtered by: ..." summary — Ana: detail pages should let you adjust filters without
+  // bouncing back to the Overview first. Pages that don't pass these just show the summary alone.
   onChange?: (f: ActiveFilters) => void;
   allSuppliers?: string[];
   curWeek?: number;
@@ -31,9 +31,10 @@ interface DetailHeaderProps {
 const CHANNELS: Channel[] = ['Offline', 'Online'];
 
 // Standardized detail-page header (per Ana's "make them all match Root Cause Detail" request) —
-// a single compact line: back link, page title, and either a read-only filter summary or (when
-// wired up) the full live filter row. Left/center columns size to their own content instead of an
-// equal 1fr share — with both flanking columns at 1fr, the filters column was capped to match the
+// a single compact line: back link, page title, and the read-only "Filtered by: ..." summary,
+// always shown regardless of whether live filter controls are also wired up (Ana: wants both, not
+// one replacing the other). Left/center columns size to their own content instead of an equal 1fr
+// share — with both flanking columns at 1fr, the filters column was capped to match the
 // much-narrower left column's width and got starved into wrapping, even with room to spare on the
 // title side. Filters get every leftover pixel instead.
 export function DetailHeader({
@@ -53,19 +54,15 @@ export function DetailHeader({
   };
 
   return (
-    <header className="bg-white border-b border-[#e9e3df] px-5 py-2 grid grid-cols-[auto_auto_1fr] items-center gap-3 shrink-0">
+    <header className="bg-white border-b border-[#e9e3df] px-5 py-2 grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 shrink-0">
       <div className="flex items-center gap-3 min-w-0">
         <Link to="/" className="flex items-center gap-1.5 text-sm font-semibold text-[#403833] hover:text-brand transition-colors shrink-0">
           <span>←</span> Overview
         </Link>
         <span className="text-[#e9e3df]">|</span>
         <span className="text-[#403833] text-sm font-semibold shrink-0 whitespace-nowrap">{title}</span>
-        {!live && (
-          <>
-            <span className="text-[#e9e3df]">|</span>
-            <span className="text-xs text-[#7b7571] truncate">Filtered by: {formatFilterSummary(filters)}</span>
-          </>
-        )}
+        <span className="text-[#e9e3df]">|</span>
+        <span className="text-xs text-[#7b7571] truncate">Filtered by: {formatFilterSummary(filters)}</span>
       </div>
 
       <div className="flex justify-center">{centerContent}</div>
