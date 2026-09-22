@@ -90,8 +90,7 @@ export function Dashboard() {
         {hasData && (
           <div className="page-enter flex-1 min-h-0 flex overflow-hidden">
             <div
-              className="flex-1 min-w-0 flex flex-col overflow-hidden transition-[padding] duration-150"
-              style={actionsDrawerOpen ? { paddingRight: 416 } : undefined}
+              className="flex-1 min-w-0 flex flex-col overflow-hidden"
             >
               <PageHeader
                 filters={filters}
@@ -100,7 +99,6 @@ export function Dashboard() {
                 curWeek={curWeek}
                 curYear={curYear}
                 showCurrentWeek
-                compact={actionsDrawerOpen}
                 centerContent={
                   <ActionsBadgeDrawer
                     actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers} filters={filters}
@@ -110,7 +108,7 @@ export function Dashboard() {
                 }
               />
               <div className="p-1.5 flex-1 min-h-0 flex flex-col gap-1.5 w-full overflow-y-auto">
-                <div style={{ flex: '3 1 140px' }} className="min-h-0">
+                <div style={{ flex: '3.5 1 150px' }} className="min-h-0">
                   <TopGraphSection
                     points={kpis.topGraph}
                     sotTarget={kpis.sotTarget}

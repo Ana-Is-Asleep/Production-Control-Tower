@@ -63,7 +63,7 @@ export function InvoicesDrilldown() {
   const [drill, setDrill] = useState<DrillSelection | null>(null);
   const [showAllSuppliers, setShowAllSuppliers] = useState(false);
   const [dataQualityOpen, setDataQualityOpen] = useState(false);
-  const [actionsOpen, setActionsOpen] = useState(false);
+  const [, setActionsOpen] = useState(false);
 
   const channel: InvoiceChannel = filters.channels.length === 1 ? filters.channels[0] : 'All';
 
@@ -109,7 +109,7 @@ export function InvoicesDrilldown() {
   return (
     <div className="min-h-screen w-full bg-[#f5f2ee] flex">
       <Sidebar />
-      <div className="flex-1 min-w-0 flex flex-col transition-[padding] duration-150" style={{ paddingRight: actionsOpen ? 416 : undefined }}>
+      <div className="flex-1 min-w-0 flex flex-col">
         <DetailHeader
           title="Invoicing Detail"
           filters={filters}

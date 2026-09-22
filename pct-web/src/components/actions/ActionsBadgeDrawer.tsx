@@ -58,7 +58,7 @@ export function ActionsBadgeDrawer({
 
       {open && mounted && createPortal(
         <div
-          className="fixed inset-y-0 right-0 z-50 w-[400px] max-w-full bg-white flex flex-col"
+          className="fixed inset-y-0 right-0 z-50 w-[340px] max-w-full bg-white flex flex-col"
           style={{ boxShadow: 'var(--shadow-slide)' }}
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-[#e9e3df] shrink-0">

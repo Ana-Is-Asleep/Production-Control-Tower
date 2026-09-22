@@ -74,7 +74,7 @@ export function LeadTimeDrilldown() {
   const [skuQuery, setSkuQuery] = useState('');
   const [drill, setDrill] = useState<DrillSelection | null>(null);
   const [weekRange, setWeekRange] = useState(initial.weekRange);
-  const [actionsOpen, setActionsOpen] = useState(false);
+  const [, setActionsOpen] = useState(false);
   const [chartViewData, setChartViewData] = useState(false);
 
   const isModeB = filters.suppliers.length === 1;
@@ -167,7 +167,7 @@ export function LeadTimeDrilldown() {
   return (
     <div className="min-h-screen w-full bg-[#f5f2ee] flex">
       <Sidebar />
-      <div className="flex-1 min-w-0 flex flex-col transition-[padding] duration-150" style={{ paddingRight: actionsOpen ? 416 : undefined }}>
+      <div className="flex-1 min-w-0 flex flex-col">
         <DetailHeader
           title="Lead Time Detail"
           filters={filters}

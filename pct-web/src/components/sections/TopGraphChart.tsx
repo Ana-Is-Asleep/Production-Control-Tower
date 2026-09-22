@@ -66,7 +66,7 @@ export function TopGraphChart({ points, onWeekClick, legendPosition = 'top' }: T
     return (
       <div className="flex h-full gap-2">
         <div className="flex-1 min-h-0 min-w-0">{chart}</div>
-        <div className="w-[128px] shrink-0 flex flex-col justify-center gap-2 border-l border-[#f4f1ef] pl-2">
+        <div className="w-[128px] shrink-0 flex flex-col justify-start pt-2 gap-2 border-l border-[#f4f1ef] pl-2">
           <MiniLegend items={legendItems} vertical />
           <div className="text-[9px] text-[#b5aaa5] leading-snug">
             <p className="italic">(dashed = projected)</p>

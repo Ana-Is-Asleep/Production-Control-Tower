@@ -28,10 +28,6 @@ interface PageHeaderProps {
   showWeekRange?: boolean; // false for pages that are current-state only (e.g. Missing ESD) — no snapshot/history selector
   showCategory?: boolean; // false where no reliable category concept exists on the underlying data (e.g. Invoices)
   showCurrentWeek?: boolean; // the actual calendar week today falls in — deliberately separate from curWeek/curYear above (the KPIs' last-completed-week anchor), so people don't have to hunt for "what week is it" (Ana's request)
-  // true while the Actions drawer is open, narrowing the content column by 416px — forces the
-  // channel/category pills onto their own second line as a deliberate group instead of letting
-  // flex-wrap break mid-group and strand a single pill alone on line 2.
-  compact?: boolean;
 }
 
 const CHANNELS: Channel[] = ['Offline', 'Online'];
@@ -41,7 +37,7 @@ const CHANNELS: Channel[] = ['Offline', 'Online'];
 // logic as before (WeekRangeStepper, VendorDropdown, and the channel/category toggle functions
 // are untouched), just recomposed into one header block with the dropdown affordances layered on
 // top of the existing pill toggles.
-export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWeek, curYear, rightActions, centerContent, showWeekRange = true, showCategory = true, showCurrentWeek = false, compact = false }: PageHeaderProps) {
+export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWeek, curYear, rightActions, centerContent, showWeekRange = true, showCategory = true, showCurrentWeek = false }: PageHeaderProps) {
   const { week: todayWeek, year: todayYear } = currentISOWeek();
   const toggleChannel = (c: Channel) => {
     const next = filters.channels.includes(c) ? filters.channels.filter((x) => x !== c) : [...filters.channels, c];
@@ -102,11 +98,7 @@ export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWee
             </>
           )}
 
-          {compact ? (
-            <span className="basis-full h-0" aria-hidden="true" />
-          ) : (
-            <span className="w-px h-5 bg-[#e9e3df] mx-1" />
-          )}
+          <span className="w-px h-5 bg-[#e9e3df] mx-1" />
 
           {CHANNELS.map((c) => (
             <button

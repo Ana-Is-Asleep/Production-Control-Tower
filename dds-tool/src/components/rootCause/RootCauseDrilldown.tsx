@@ -44,7 +44,7 @@ export function RootCauseDrilldown() {
 
   const [mode, setMode] = useState<RootCauseMode>(initial.mode);
   const [tableFilter, setTableFilter] = useState<TableFilter | null>(null);
-  const [actionsOpen, setActionsOpen] = useState(false);
+  const [, setActionsOpen] = useState(false);
 
   useEffect(() => {
     const params = buildRootCauseParams(filters, mode);
@@ -137,7 +137,7 @@ export function RootCauseDrilldown() {
   }
 
   return (
-    <div className="h-screen w-full bg-[#f5f2ee] flex flex-col overflow-hidden transition-[padding] duration-150" style={{ paddingRight: actionsOpen ? 416 : undefined }}>
+    <div className="h-screen w-full bg-[#f5f2ee] flex flex-col overflow-hidden">
       <header className="bg-white border-b border-[#e9e3df] px-5 py-2.5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 shrink-0">
         <div className="flex items-center gap-3 min-w-0">
           <Link href="/" className="flex items-center gap-1.5 text-sm font-semibold text-[#403833] hover:text-brand transition-colors shrink-0">

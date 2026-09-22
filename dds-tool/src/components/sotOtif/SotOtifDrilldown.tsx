@@ -56,7 +56,7 @@ export function SotOtifDrilldown() {
   const [scorecardModalOpen, setScorecardModalOpen] = useState(false);
   const [scorecardSearch, setScorecardSearch] = useState('');
   const [chartExpanded, setChartExpanded] = useState(false);
-  const [actionsOpen, setActionsOpen] = useState(false);
+  const [, setActionsOpen] = useState(false);
 
   const today = useMemo(() => new Date(), []);
   const kpis = useKPIs(weekRangeLines, filteredLines, weeksInRange, isChinaSupplier);
@@ -288,7 +288,7 @@ export function SotOtifDrilldown() {
   return (
     <div className={isModeB ? 'min-h-screen w-full bg-[#f5f2ee] flex' : 'h-screen w-full bg-[#f5f2ee] flex overflow-hidden'}>
       <Sidebar />
-      <div className={`${isModeB ? 'flex-1 min-w-0 flex flex-col' : 'flex-1 min-w-0 flex flex-col overflow-hidden'} transition-[padding] duration-150`} style={{ paddingRight: actionsOpen ? 416 : undefined }}>
+      <div className={isModeB ? 'flex-1 min-w-0 flex flex-col' : 'flex-1 min-w-0 flex flex-col overflow-hidden'}>
         <DetailHeader
           title={isModeB ? 'SOT / OTIF Detail' : 'SOT / OTIF Performance'}
           filters={filters}
@@ -315,7 +315,7 @@ export function SotOtifDrilldown() {
               ever selected via the Performance by Week table below or the Mode B week strip,
               never by clicking the bars directly. */}
           <div className="shrink-0 flex px-4 pt-2 gap-3" style={{ height: 230 }}>
-            <div className="grid grid-rows-2 gap-2 shrink-0 w-[180px]">
+            <div className="grid grid-rows-2 gap-2 shrink-0 w-[140px]">
               <KpiBox
                 className="h-full flex flex-col justify-center"
                 label={`SOT · ${kpis.sotTarget}% target`}

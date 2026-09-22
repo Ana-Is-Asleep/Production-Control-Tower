@@ -71,7 +71,7 @@ export function BacklogDrilldown() {
 
   const [selectedSku, setSelectedSku] = useState<string | null>(null);
   const [showEsdPassedOnly, setShowEsdPassedOnly] = useState(false);
-  const [actionsOpen, setActionsOpen] = useState(false);
+  const [, setActionsOpen] = useState(false);
   // clear the SKU/ESD-passed table filters when the supplier changes (or Mode B is left) so a
   // stale filter from a previous supplier can't silently carry over
   useEffect(() => {
@@ -103,7 +103,7 @@ export function BacklogDrilldown() {
   return (
     <div className="min-h-screen w-full bg-[#f5f2ee] flex">
       <Sidebar />
-      <div className="flex-1 min-w-0 flex flex-col transition-[padding] duration-150" style={{ paddingRight: actionsOpen ? 416 : undefined }}>
+      <div className="flex-1 min-w-0 flex flex-col">
         <DetailHeader
           title={isModeB ? 'Backlog Detail — Supplier Detail' : 'Backlog Detail'}
           filters={filters}
