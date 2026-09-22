@@ -13,7 +13,6 @@ import { DetailHeader } from '../shell/DetailHeader';
 import { GlobalActionsBadge } from '../actions/GlobalActionsBadge';
 import { KpiBox } from '../shared/KpiBox';
 import { TopGraphChart } from '../sections/TopGraphChart';
-import { SupplierInfoCard } from './SupplierInfoCard';
 import { SupplierWeekSummary } from './SupplierWeekSummary';
 import { ScorecardMatrix } from './ScorecardMatrix';
 import { SupplierHeatmap } from '../rootCause/SupplierHeatmap';
@@ -439,21 +438,11 @@ export function SotOtifDrilldown() {
         </>
       ) : (
         <div className="flex flex-col gap-3 px-4 py-3">
-          {/* Evolution chart, with the supplier's identity/scope and a compact SOT/OTIF summary
-              alongside it instead of below in their own row. Chart is display-only (no
-              onWeekClick) — the week strip beneath it is the only way to pick a week. */}
+          {/* Evolution chart, with a compact SOT/OTIF summary alongside it instead of below in its
+              own row. Chart is display-only (no onWeekClick) — the week strip beneath it is the
+              only way to pick a week. */}
           <div className="flex gap-3 shrink-0 items-stretch">
-            <div className="flex flex-col gap-3 shrink-0 w-[190px]">
-              <SupplierInfoCard
-                supplier={selectedSupplier ?? ''}
-                categories={filters.categories}
-                channels={filters.channels}
-                period={{
-                  weekLabelStart: weeksInRange[0]?.label ?? '',
-                  weekLabelEnd: weeksInRange[weeksInRange.length - 1]?.label ?? '',
-                  weekCount: weeksInRange.length,
-                }}
-              />
+            <div className="w-[190px] shrink-0">
               <SupplierWeekSummary
                 weekLabel={modeBWeekLabel}
                 isAverage={!selectedWeek}
