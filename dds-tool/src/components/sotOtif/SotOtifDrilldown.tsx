@@ -314,7 +314,7 @@ export function SotOtifDrilldown() {
               at 100% zoom. The chart itself is display-only (no onWeekClick) — a week is only
               ever selected via the Performance by Week table below or the Mode B week strip,
               never by clicking the bars directly. */}
-          <div className="shrink-0 flex px-4 pt-2 gap-3" style={{ height: 200 }}>
+          <div className="shrink-0 flex px-4 pt-2 gap-3" style={{ height: 230 }}>
             <div className="grid grid-rows-2 gap-2 shrink-0 w-[180px]">
               <KpiBox
                 className="h-full flex flex-col justify-center"
