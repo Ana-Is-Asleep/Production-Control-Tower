@@ -383,7 +383,6 @@ export function SotOtifDrilldown() {
                       selectedWeek={selectedWeek}
                       onSupplierClick={handleSupplierRowClick}
                       showAll={false}
-                      rootCauseRows={rootCauseRows}
                     />
                   </div>
                 </div>
@@ -516,7 +515,6 @@ export function SotOtifDrilldown() {
               selectedWeek={selectedWeek}
               onSupplierClick={handleSupplierRowClick}
               showAll
-              rootCauseRows={rootCauseRows}
             />
           </div>
         </LargeModal>
