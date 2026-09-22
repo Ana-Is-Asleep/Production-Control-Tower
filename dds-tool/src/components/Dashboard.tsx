@@ -100,6 +100,7 @@ export function Dashboard() {
                 curWeek={curWeek}
                 curYear={curYear}
                 showCurrentWeek
+                compact={actionsDrawerOpen}
                 centerContent={
                   <ActionsBadgeDrawer
                     actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers} filters={filters}

@@ -9,10 +9,12 @@ export interface MiniLegendItem {
 
 // Compact, wrapping legend for the small overview cards — Recharts' built-in <Legend> either
 // takes too much vertical space or can't distinguish solid vs dashed lines, so screenshots of
-// these cards need this instead to be self-explanatory without hovering.
-export function MiniLegend({ items, className }: { items: MiniLegendItem[]; className?: string }) {
+// these cards need this instead to be self-explanatory without hovering. `vertical` stacks items
+// in a column instead of wrapping them horizontally — used when the legend sits beside the chart
+// rather than above it.
+export function MiniLegend({ items, className, vertical = false }: { items: MiniLegendItem[]; className?: string; vertical?: boolean }) {
   return (
-    <div className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 ${className ?? ''}`}>
+    <div className={`flex ${vertical ? 'flex-col items-start gap-y-1.5' : 'flex-wrap items-center gap-x-2 gap-y-0.5'} ${className ?? ''}`}>
       {items.map((it) => (
         <span key={it.label} className="flex items-center gap-1 text-[9px] text-[#7b7571] font-medium whitespace-nowrap">
           {it.type === 'line' || it.type === 'dashed-line' ? (
