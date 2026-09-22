@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ActionItem } from '../types/actions';
 import { loadActions, saveActions } from '../lib/actionsStorage';
-import { runRulesEngine } from '../lib/rulesEngine';
+import { runRulesEngine, pruneStaleR002Flags } from '../lib/rulesEngine';
 import { SUPPLIER_SCM_MAP } from '../lib/supplierScmMapping';
 import type { IsChinaSupplier } from '../lib/kpiFormulas';
 import type { PurchaseLine } from '../types';
@@ -59,9 +59,10 @@ export function useActions() {
   // called once per upload
   const runRules = useCallback((lines: PurchaseLine[], isChinaSupplier: IsChinaSupplier) => {
     setActions((prev) => {
-      const newFlags = runRulesEngine(lines, prev, isChinaSupplier);
-      if (newFlags.length === 0) return prev;
-      const next = [...prev, ...newFlags];
+      const pruned = pruneStaleR002Flags(lines, prev, isChinaSupplier, new Date());
+      const newFlags = runRulesEngine(lines, pruned, isChinaSupplier);
+      if (newFlags.length === 0 && pruned === prev) return prev;
+      const next = newFlags.length > 0 ? [...pruned, ...newFlags] : pruned;
       saveActions(next);
       return next;
     });

@@ -19,7 +19,7 @@ export interface LineResult {
 
 // SOT (Shipped On Time), per line:
 // — on-time if the relevant ship date is on/before the threshold week.
-// — past PGRD week: compare ASD. future PGRD week: compare ESD (no ESD yet ⇒ undetermined).
+// — past PGRD week: compare ASD. current/future PGRD week: compare ESD (no ESD yet ⇒ undetermined).
 //   Real exports mislabel both ASD-lookalike columns "Actual Shipping Date" — bcParser.ts maps
 //   the first occurrence to line.esd (confirmed with the team) and the second to line.asd.
 // — China suppliers: threshold is PGRD - 1 week instead of PGRD (for both ASD and ESD comparisons).
@@ -28,7 +28,10 @@ export function computeSOTLine(line: PurchaseLine, isChina: boolean, today: Date
   if (!line.pgrd) return null;
   const pgrdW = weekOf(line.pgrd);
   const thresholdW = isChina ? addWeeks(pgrdW, -1) : pgrdW;
-  const isFutureWeek = pgrdW > weekOf(today);
+  // >= not > — the PGRD week itself is still open (it runs through Sunday, the PGRD date), so a PO
+  // whose PGRD falls in the CURRENT week hasn't "closed" yet and must not be hard-failed just for
+  // lacking an ASD mid-week. Only a week strictly before today's is actually closed.
+  const isFutureWeek = pgrdW >= weekOf(today);
 
   if (isFutureWeek) {
     if (!line.esd) return null; // not yet booked — undetermined, doesn't count either way
@@ -54,7 +57,7 @@ export function computeLineResult(line: PurchaseLine, isChinaSupplier: IsChinaSu
   const isChina = isChinaSupplier(line.vendorCode);
   const sot = computeSOTLine(line, isChina, today);
   const { ot, inFull, otif } = computeOTIFLine(line, isChina);
-  const isFutureWeek = !!line.pgrd && weekOf(line.pgrd) > weekOf(today);
+  const isFutureWeek = !!line.pgrd && weekOf(line.pgrd) >= weekOf(today);
   return { line, isChina, isFutureWeek, sot, ot, inFull, otif };
 }
 

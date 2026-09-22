@@ -84,6 +84,29 @@ function evaluateR002(lines: PurchaseLine[], existingActions: ActionItem[], isCh
   return newFlags;
 }
 
+// One-time correction for a boundary bug in computeSOTLine (fixed 2026-09-22): a PO whose PGRD
+// fell in the CURRENT, still-open week was wrongly hard-failed for lacking an ASD, so some R002
+// flags were created for POs that were never actually a definite SOT miss. Removes any *open*
+// R002 flag whose PO no longer evaluates to a miss under the corrected formula — never touches an
+// already-closed flag (a human already acted on it) or one that's still a genuine miss. Runs
+// automatically on every upload, since PO data itself isn't persisted across sessions.
+export function pruneStaleR002Flags(lines: PurchaseLine[], existingActions: ActionItem[], isChinaSupplier: IsChinaSupplier, today: Date): ActionItem[] {
+  const openR002 = existingActions.filter((a) => a.type === 'flag' && a.ruleKey === 'R002' && a.status !== 'closed' && a.poReference);
+  if (openR002.length === 0) return existingActions;
+
+  const sotByPO = new Map(rollupByPO(lines, isChinaSupplier, today).map((r) => [r.po, r.sot]));
+  const staleIds = new Set(
+    openR002
+      .filter((a) => {
+        const sot = sotByPO.get(a.poReference!);
+        return sot !== undefined && sot !== false; // undefined = PO not in this dataset, leave alone
+      })
+      .map((a) => a.id)
+  );
+  if (staleIds.size === 0) return existingActions;
+  return existingActions.filter((a) => !staleIds.has(a.id));
+}
+
 // Runs every rule against the freshly uploaded lines and returns only the NEW flags to append —
 // existing flags (open or closed) are never touched, per rule R001's "never auto-closed" contract.
 export function runRulesEngine(lines: PurchaseLine[], existingActions: ActionItem[], isChinaSupplier: IsChinaSupplier): ActionItem[] {
