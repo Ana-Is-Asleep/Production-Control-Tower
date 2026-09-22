@@ -27,7 +27,11 @@ export function InvoiceInsights({ kpis, supplierExposure, contextLabel }: Invoic
       });
     }
 
-    if (!subject && supplierExposure.length > 0 && kpis.overdueP2w.length > 0) {
+    // "X represents Y% of overdue invoices" is a trivial/tautological statement whenever only one
+    // supplier is actually in scope — whether that's because a single supplier is explicitly
+    // filtered (subject truthy) or other active filters just happen to leave one supplier with any
+    // exposure at all. Requires at least two suppliers in view for the comparison to mean anything.
+    if (!subject && supplierExposure.length > 1 && kpis.overdueP2w.length > 0) {
       const top = supplierExposure[0];
       const totalOverdue = supplierExposure.reduce((s, r) => s + r.overdueCount, 0);
       if (top.overdueCount > 0 && totalOverdue > 0) {

@@ -69,7 +69,7 @@ function LineDetail({ rollup }: { rollup: PORollup }) {
   const visible = showAll ? rollup.lines : rollup.lines.slice(0, 5);
 
   return (
-    <div className="bg-[#f9f7f6] px-4 py-2 border-t border-[#e9e3df]">
+    <div className="bg-[#f9f7f6] px-4 py-2 border-t border-[#e9e3df] overflow-x-auto">
       <table className="w-full text-[11px]">
         <thead>
           <tr className="text-[#9c9794]">
@@ -164,6 +164,7 @@ export function POList({ rollups, today, weekLabel }: POListProps) {
         />
       </div>
 
+      <div className="overflow-x-auto">
       <table className="w-full text-xs">
         <thead>
           <tr className="bg-[#403833] text-white">
@@ -228,6 +229,7 @@ export function POList({ rollups, today, weekLabel }: POListProps) {
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

@@ -27,7 +27,10 @@ export function TopGraphSection({ points, sotTarget, otifTarget, drillDownHref }
   return (
     <Link
       href={drillDownHref}
-      className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-4 py-3 cursor-pointer flex flex-col h-full overflow-hidden"
+      // no overflow-hidden here — it was clipping the chart's hover tooltip whenever it needed to
+      // render near this compact card's edge, which happens far more often than on the full-width
+      // drill-down chart
+      className="kpi-card bg-white rounded-lg border border-[#e9e3df] px-4 py-3 cursor-pointer flex flex-col h-full"
       style={{ boxShadow: 'var(--shadow-card)' }}
     >
       <CardHeader

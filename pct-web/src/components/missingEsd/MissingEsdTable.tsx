@@ -135,6 +135,7 @@ export function MissingEsdTable({ rows, tab, curWeek, curYear, selectedBucketKey
         </button>
       </div>
 
+      <div className="overflow-x-auto">
       <table className="w-full text-xs">
         <thead>
           <tr className="bg-[#403833] text-white">
@@ -174,6 +175,7 @@ export function MissingEsdTable({ rows, tab, curWeek, curYear, selectedBucketKey
           })}
         </tbody>
       </table>
+      </div>
 
       <div className="flex items-center justify-between px-3 py-2.5 border-t border-[#e9e3df] text-xs text-[#7b7571]">
         <span>Showing {filtered.length === 0 ? 0 : (safePage - 1) * ROWS_PER_PAGE + 1} to {Math.min(safePage * ROWS_PER_PAGE, filtered.length)} of {filtered.length} POs</span>

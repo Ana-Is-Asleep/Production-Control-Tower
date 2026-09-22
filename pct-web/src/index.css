@@ -35,15 +35,17 @@ body {
   to   { opacity: 1; transform: scale(1)    translateY(0);   }
 }
 
+/* No transform here on purpose — translate/scale on hover shifts the card's own boundary, and
+   with cards packed tightly against their neighbors (e.g. the SOT/OTIF card sitting right above
+   the Root Cause/Missing ESD/Backlog row), a cursor sitting near that boundary flickers in and out
+   of the hover zone as the card moves under it. box-shadow alone gives the same "lift" feedback
+   without ever changing the element's geometry, so hover state can't destabilize itself. */
 .kpi-card {
-  transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: box-shadow 0.16s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
-  will-change: transform;
 }
 
-.kpi-card:hover  { transform: translateY(-3px) scale(1.012); box-shadow: var(--shadow-card-hover); }
-.kpi-card:active { transform: scale(0.986); transition-duration: 0.08s; }
+.kpi-card:hover { box-shadow: var(--shadow-card-hover); }
 
 .filter-pill { transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease; }
 
