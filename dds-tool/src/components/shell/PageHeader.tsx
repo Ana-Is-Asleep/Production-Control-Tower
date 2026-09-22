@@ -50,7 +50,7 @@ export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWee
 
   return (
     <div className="bg-white border-b border-[#e9e3df] px-5 py-2 shrink-0">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
+      <div className="grid grid-cols-[minmax(auto,1fr)_auto_minmax(auto,1fr)] items-center gap-3">
         <div className="min-w-0 flex items-center gap-2.5">
           <div>
             <h1 className="text-base font-bold text-[#403833] tracking-tight">Production Control Tower</h1>

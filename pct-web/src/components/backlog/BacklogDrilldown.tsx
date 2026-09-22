@@ -8,7 +8,7 @@ import { useFilters } from '../../hooks/useFilters';
 import { currentISOWeek } from '../../lib/dateUtils';
 import { parseBacklogParams, buildBacklogParams } from '../../lib/backlogParams';
 import {
-  computeBacklogRows, computeExpectedRows, computeAgeBands,
+  computeBacklogRows, computeExpectedRows, computeAgeBands, computeClearanceForecast,
   computeExpectedByPgrdWeek, findOutliers, computeSupplierBacklogSummary, computeBacklogBySKU, anchorWeek,
 } from '../../lib/backlogAggregation';
 import { Sidebar } from '../shell/Sidebar';
@@ -16,6 +16,7 @@ import { DetailHeader } from '../shell/DetailHeader';
 import { GlobalActionsBadge } from '../actions/GlobalActionsBadge';
 import { SupplierInfoCard } from '../sotOtif/SupplierInfoCard';
 import { BacklogTopCards } from './BacklogTopCards';
+import { BacklogClearanceForecast } from './BacklogClearanceForecast';
 import { BacklogKeyInsights } from './BacklogKeyInsights';
 import { BacklogSupplierInsights } from './BacklogSupplierInsights';
 import { BacklogAgeBreakdown } from './BacklogAgeBreakdown';
@@ -46,8 +47,8 @@ export function BacklogDrilldown() {
   }, [filters, location.pathname]);
 
   const today = useMemo(() => new Date(), []);
-  // the literal current ISO week (not "last completed") — the Expected Future Backlog breakdown
-  // is forward-looking from today, not a lagged scoring anchor
+  // the literal current ISO week (not "last completed") — the clearance forecast and Expected
+  // Future Backlog breakdown are both forward-looking from today, not a lagged scoring anchor
   const { week: curWeek, year: curYear } = useMemo(() => currentISOWeek(), []);
   const { week: lastCompletedWk, year: lastCompletedYr } = useMemo(() => anchorWeek(), []);
 
@@ -59,6 +60,7 @@ export function BacklogDrilldown() {
   const avgAgeDays = useMemo(() => (rows.length ? Math.round(rows.reduce((s, r) => s + r.ageDays, 0) / rows.length) : 0), [rows]);
 
   const ageBands = useMemo(() => computeAgeBands(rows), [rows]);
+  const forecast = useMemo(() => computeClearanceForecast(rows, curWeek, curYear), [rows, curWeek, curYear]);
   const expectedByWeek = useMemo(() => computeExpectedByPgrdWeek(expectedRows, curWeek, curYear), [expectedRows, curWeek, curYear]);
   const outliers = useMemo(() => findOutliers(rows, lastCompletedWk, lastCompletedYr), [rows, lastCompletedWk, lastCompletedYr]);
   const supplierSummary = useMemo(() => computeSupplierBacklogSummary(rows), [rows]);
@@ -148,9 +150,10 @@ export function BacklogDrilldown() {
               />
             </div>
 
-            {outliers.length > 0 && <div className="shrink-0"><BacklogOutlierCallout outliers={outliers} /></div>}
-
-            <div style={{ flex: '2 1 160px' }} className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch min-h-0 overflow-hidden">
+            <div style={{ flex: '3 1 220px' }} className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch min-h-0 overflow-hidden">
+              <div className="lg:col-span-2 min-h-0">
+                <BacklogClearanceForecast points={forecast} />
+              </div>
               <BacklogKeyInsights
                 rows={rows}
                 noEsdCount={noEsdRows.length}
@@ -158,6 +161,11 @@ export function BacklogDrilldown() {
                 expectedCount={expectedRows.length}
                 expectedByWeek={expectedByWeek}
               />
+            </div>
+
+            {outliers.length > 0 && <div className="shrink-0"><BacklogOutlierCallout outliers={outliers} /></div>}
+
+            <div style={{ flex: '2 1 160px' }} className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch min-h-0 overflow-hidden">
               <BacklogSupplierRanking summary={supplierSummary} />
               <BacklogAgeBreakdown bands={ageBands} />
             </div>
@@ -188,9 +196,10 @@ export function BacklogDrilldown() {
               </div>
             </div>
 
-            {outliers.length > 0 && <BacklogOutlierCallout outliers={outliers} />}
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch" style={{ minHeight: 320 }}>
+              <div className="lg:col-span-2">
+                <BacklogClearanceForecast points={forecast} />
+              </div>
               <BacklogSupplierInsights
                 rows={rows}
                 noEsdCount={noEsdRows.length}
@@ -199,6 +208,11 @@ export function BacklogDrilldown() {
                 skus={skuRows}
                 expectedByWeek={expectedByWeek}
               />
+            </div>
+
+            {outliers.length > 0 && <BacklogOutlierCallout outliers={outliers} />}
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
               <BacklogAgeBreakdown bands={ageBands} />
               <BacklogEsdPassedCallout
                 count={rows.filter((r) => r.esdPassedNoAsd).length}

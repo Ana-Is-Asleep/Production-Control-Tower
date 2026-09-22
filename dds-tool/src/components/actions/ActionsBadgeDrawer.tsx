@@ -34,8 +34,7 @@ interface ActionsBadgeDrawerProps {
 // `position: fixed` descendant, which broke the "slide over from the right edge of the viewport"
 // behavior and made the panel render as a small box near the trigger instead. Portaling sidesteps
 // that regardless of what animations/transforms get added to ancestors later. tab/statusFilter
-// are controlled by the parent (shared with ActionsSidePanel) so switching between Badge and Panel
-// modes never resets your place.
+// are controlled by the parent so re-mounting this component never resets your place.
 export function ActionsBadgeDrawer({
   actions, onSave, onAddOpenPoint, filteredPOs, allSuppliers, filters, tab, onTabChange, statusFilter, onStatusFilterChange, open, onOpenChange, bucketFilter,
 }: ActionsBadgeDrawerProps) {

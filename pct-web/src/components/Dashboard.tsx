@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useData } from '../context/DataContext';
 import { Sidebar } from './shell/Sidebar';
 import { PageHeader } from './shell/PageHeader';
-import { PanelRight, Upload as UploadIcon } from 'lucide-react';
 import { useFilters } from '../hooks/useFilters';
 import { useKPIs } from '../hooks/useKPIs';
 import { useVendorMapping } from '../hooks/useVendorMapping';
@@ -17,7 +16,6 @@ import { BacklogSection } from './sections/BacklogSection';
 import { InvoicesSection } from './sections/InvoicesSection';
 import { LeadTimeSection } from './sections/LeadTimeSection';
 import { ActionsBadgeDrawer } from './actions/ActionsBadgeDrawer';
-import { ActionsSidePanel } from './actions/ActionsSidePanel';
 import type { StatusFilter } from './actions/ActionsTabs';
 import { buildSotOtifHref } from '../lib/sotOtifParams';
 import { buildRootCauseHref } from '../lib/rootCauseParams';
@@ -33,13 +31,7 @@ import type { ActionType } from '../types/actions';
 export function Dashboard() {
   const { allLines, setAllLines, invoices, setInvoices, setInvoiceMeta, globalFilters, setGlobalFilters } = useData();
   const [uploadOpen, setUploadOpen] = useState(false);
-  // Switch between the two Actions UI variants — 'badge' (floating badge + slide-in drawer) or
-  // 'panel' (always-visible right panel that shrinks the main content area). Toggled live via
-  // the header button below rather than a code constant, so both are actually reachable in the UI.
-  const [actionsUiMode, setActionsUiMode] = useState<'badge' | 'panel'>('badge');
   const [actionsDrawerOpen, setActionsDrawerOpen] = useState(false);
-  // tab/statusFilter live here (not inside ActionsTabs) so switching between badge and panel mode
-  // keeps the same tab and filter selected instead of resetting each time.
   const [actionsTab, setActionsTab] = useState<ActionType>('flag');
   const [actionsStatusFilter, setActionsStatusFilter] = useState<StatusFilter>('open');
   const { actions, runRules, addAction, updateAction } = useActions();
@@ -99,7 +91,7 @@ export function Dashboard() {
           <div className="page-enter flex-1 min-h-0 flex overflow-hidden">
             <div
               className="flex-1 min-w-0 flex flex-col overflow-hidden transition-[padding] duration-150"
-              style={actionsUiMode === 'badge' && actionsDrawerOpen ? { paddingRight: 416 } : undefined}
+              style={actionsDrawerOpen ? { paddingRight: 416 } : undefined}
             >
               <PageHeader
                 filters={filters}
@@ -109,32 +101,11 @@ export function Dashboard() {
                 curYear={curYear}
                 showCurrentWeek
                 centerContent={
-                  actionsUiMode === 'badge' ? (
-                    <ActionsBadgeDrawer
-                      actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers} filters={filters}
-                      tab={actionsTab} onTabChange={setActionsTab} statusFilter={actionsStatusFilter} onStatusFilterChange={setActionsStatusFilter}
-                      open={actionsDrawerOpen} onOpenChange={setActionsDrawerOpen}
-                    />
-                  ) : undefined
-                }
-                rightActions={
-                  <>
-                    <button
-                      onClick={() => setActionsUiMode((m) => (m === 'badge' ? 'panel' : 'badge'))}
-                      title="Switch Actions UI variant"
-                      className="flex items-center justify-center w-8 h-8 rounded-lg border border-[#e9e3df] text-[#58524e] hover:border-[#403833] hover:text-[#403833]"
-                    >
-                      <PanelRight size={15} />
-                    </button>
-                    <button
-                      onClick={() => setUploadOpen(true)}
-                      title="Upload Business Central export"
-                      className="flex items-center gap-1.5 text-xs font-semibold text-white bg-[#403833] rounded-lg px-2.5 h-8 hover:bg-[#58524e]"
-                    >
-                      <UploadIcon size={13} />
-                      Upload
-                    </button>
-                  </>
+                  <ActionsBadgeDrawer
+                    actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers} filters={filters}
+                    tab={actionsTab} onTabChange={setActionsTab} statusFilter={actionsStatusFilter} onStatusFilterChange={setActionsStatusFilter}
+                    open={actionsDrawerOpen} onOpenChange={setActionsDrawerOpen}
+                  />
                 }
               />
               <div className="p-2 flex-1 min-h-0 flex flex-col gap-2 w-full overflow-y-auto">
@@ -147,7 +118,7 @@ export function Dashboard() {
                   />
                 </div>
                 <div style={{ flex: '3 1 180px', gridTemplateRows: 'minmax(180px, 1fr)' }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 min-h-0">
-                  <RootCauseSection lines={weekRangeLines} weeksInRange={weeksInRange} drillDownHref={buildRootCauseHref(filters)} />
+                  <RootCauseSection lines={filteredLines} drillDownHref={buildRootCauseHref(filters)} />
                   <MissingESDSection lines={filteredLines} drillDownHref={buildMissingEsdHref(filters)} />
                   <BacklogSection lines={filteredLines} drillDownHref={buildBacklogHref(filters)} />
                 </div>
@@ -157,12 +128,6 @@ export function Dashboard() {
                 </div>
               </div>
             </div>
-            {actionsUiMode === 'panel' && (
-              <ActionsSidePanel
-                actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers} filters={filters}
-                tab={actionsTab} onTabChange={setActionsTab} statusFilter={actionsStatusFilter} onStatusFilterChange={setActionsStatusFilter}
-              />
-            )}
           </div>
         )}
 

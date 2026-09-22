@@ -3,7 +3,12 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutGrid, FileBarChart, Database, ListChecks, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutGrid, FileBarChart, Database, ListChecks, ChevronLeft, ChevronRight, Upload as UploadIcon } from 'lucide-react';
+import { useData } from '../../context/DataContext';
+import { UploadPanel } from '../upload/UploadPanel';
+import type { PurchaseLine } from '../../types';
+import type { InvoiceRow } from '../../types/invoice';
+import type { InvoiceParseMeta } from '../../lib/invoiceParser';
 
 interface NavItem {
   key: string;
@@ -30,9 +35,20 @@ const COLLAPSE_STORAGE_KEY = 'pct_sidebar_collapsed';
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { setAllLines, setInvoices, setInvoiceMeta } = useData();
+  const [uploadOpen, setUploadOpen] = useState(false);
   // Every page mounts its own <Sidebar/>, so plain local state reset to collapsed=false on every
   // navigation ("doesn't stay collapsed") — persisting to localStorage makes the choice stick.
   const [collapsed, setCollapsed] = useState(false);
+
+  // Lives here (not the Dashboard header) so it's reachable from every page, and so the header's
+  // own row of controls stays short enough to never wrap/overflow (Ana: "everything in the
+  // headers should fit in the top").
+  const handleLoad = (lines: PurchaseLine[], inv?: InvoiceRow[], invMeta?: InvoiceParseMeta) => {
+    setAllLines(lines);
+    if (inv) setInvoices(inv);
+    if (invMeta) setInvoiceMeta(invMeta);
+  };
 
   useEffect(() => {
     setCollapsed(window.localStorage.getItem(COLLAPSE_STORAGE_KEY) === '1');
@@ -47,6 +63,7 @@ export function Sidebar() {
   };
 
   return (
+    <>
     <aside className={`${collapsed ? 'w-[56px]' : 'w-[164px]'} shrink-0 h-screen sticky top-0 bg-white border-r border-[#e9e3df] flex flex-col transition-[width] duration-150`}>
       <div className="px-3 pt-3 pb-2">
         {collapsed ? (
@@ -54,6 +71,16 @@ export function Sidebar() {
         ) : (
           <img src="/emma-logo.svg" alt="emma" className="h-5 w-auto" />
         )}
+      </div>
+      <div className="px-2 pb-2">
+        <button
+          onClick={() => setUploadOpen(true)}
+          title="Upload Business Central export"
+          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[13px] font-semibold text-white bg-[#403833] hover:bg-[#58524e] transition-colors"
+        >
+          <UploadIcon size={16} className="shrink-0" />
+          {!collapsed && 'Upload'}
+        </button>
       </div>
       <nav className="flex-1 min-h-0 px-2 space-y-0.5">
         {NAV_ITEMS.map((item) => {
@@ -98,5 +125,7 @@ export function Sidebar() {
         </button>
       </div>
     </aside>
+    <UploadPanel open={uploadOpen} onClose={() => setUploadOpen(false)} onLoad={handleLoad} />
+    </>
   );
 }

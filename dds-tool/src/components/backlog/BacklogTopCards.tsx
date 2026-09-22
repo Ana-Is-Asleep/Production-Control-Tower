@@ -1,6 +1,5 @@
 'use client';
 
-import { Info } from 'lucide-react';
 import type { BacklogPORow, ExpectedByWeek } from '../../lib/backlogAggregation';
 
 interface BacklogTopCardsProps {
@@ -39,7 +38,7 @@ export function BacklogTopCards({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[2fr_2fr_1fr_1fr] gap-3">
       <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
-        <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-1 flex items-center gap-1">Current Backlog <Info size={12} /></p>
+        <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-1">Current Backlog</p>
         <p className="text-3xl font-extrabold leading-none text-[#403833]">{total} <span className="text-sm font-semibold text-[#9c9794]">POs</span></p>
         <p className="text-[11px] text-[#9c9794] mt-1 mb-3">PGRD has passed and PO not yet shipped</p>
         <table className="w-full text-xs border-collapse">
@@ -70,7 +69,7 @@ export function BacklogTopCards({
       </div>
 
       <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
-        <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-1 flex items-center gap-1">Expected Future Backlog <Info size={12} /></p>
+        <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-1">Expected Future Backlog</p>
         <p className="text-3xl font-extrabold leading-none text-[#403833]">{expectedCount} <span className="text-sm font-semibold text-[#9c9794]">POs</span></p>
         <p className="text-[11px] text-[#9c9794] mt-1 mb-3">Not backlog yet</p>
         <p className="text-[10px] text-[#9c9794] mb-1.5">Expected to enter backlog (based on PGRD week)</p>

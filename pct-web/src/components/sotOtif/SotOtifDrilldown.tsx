@@ -263,7 +263,7 @@ export function SotOtifDrilldown() {
 
       {/* Top section — persistent chart + KPI cards, same for every view. Shorter when a supplier
           is selected to leave room for the supplier-specific row appended below the main content. */}
-      <div className="shrink-0 flex flex-col overflow-hidden" style={{ height: isModeB ? '26vh' : '38vh' }}>
+      <div className="shrink-0 flex flex-col overflow-hidden" style={{ height: isModeB ? '30vh' : '42vh' }}>
         <div className="flex-1 min-h-0 px-4 pt-3 flex gap-3">
           <div className="flex flex-col gap-2 shrink-0 w-[180px]">
             <KpiBox
@@ -319,7 +319,7 @@ export function SotOtifDrilldown() {
           remaining viewport height via flex-grow so the page as a whole never scrolls. */}
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         <div className="p-4 flex flex-col min-h-0" style={{ flex: isModeB ? '1 1 0' : '1 1 auto' }}>
-          <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_1.3fr_1fr] gap-4 items-stretch">
+          <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_1.3fr_1fr] gap-4 items-stretch" style={{ gridTemplateRows: 'minmax(0, 1fr)' }}>
             <div className="bg-white rounded-lg border border-[#e9e3df] p-4 flex flex-col min-h-0" style={{ boxShadow: 'var(--shadow-card)' }}>
               <div className="flex items-center justify-between mb-3 shrink-0">
                 <p className="text-sm font-bold text-[#403833]">Performance by Week</p>
@@ -401,7 +401,7 @@ export function SotOtifDrilldown() {
             />
 
             <div className="flex-1 min-h-0 flex flex-col gap-3">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch shrink-0" style={{ maxHeight: '160px' }}>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch shrink-0 overflow-y-auto" style={{ maxHeight: '160px' }}>
                 <LatenessProfile rollups={supplierWeekRollups} weekLabel={selectedWeek?.label ?? null} />
                 <PerformanceConsistency stats={consistencyStats} periodLabel={periodLabel} />
                 <SupplierKeyInsights

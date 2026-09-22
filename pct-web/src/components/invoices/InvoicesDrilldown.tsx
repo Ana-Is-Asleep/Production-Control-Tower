@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { Download, MoreVertical, Info } from 'lucide-react';
+import { Download, MoreVertical } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { useFilters, DEFAULT_FILTERS } from '../../hooks/useFilters';
 import { parseInvoicesParams, buildInvoicesParams } from '../../lib/invoicesParams';
@@ -132,8 +132,7 @@ export function InvoicesDrilldown() {
         />
 
         <div className="p-4 flex flex-col gap-4">
-          <div className="flex items-center gap-1.5 text-[11px] text-[#9c9794]">
-            <Info size={12} />
+          <div className="text-[11px] text-[#9c9794]">
             Effective Due Date considers the SCF-adjusted payment terms where applicable — not the raw Due Date.
           </div>
 
