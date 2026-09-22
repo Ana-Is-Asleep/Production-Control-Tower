@@ -108,8 +108,8 @@ export function Dashboard() {
                   />
                 }
               />
-              <div className="p-2 flex-1 min-h-0 flex flex-col gap-2 w-full overflow-y-auto">
-                <div style={{ flex: '4 1 170px' }} className="min-h-0">
+              <div className="p-1.5 flex-1 min-h-0 flex flex-col gap-1.5 w-full overflow-y-auto">
+                <div style={{ flex: '3 1 140px' }} className="min-h-0">
                   <TopGraphSection
                     points={kpis.topGraph}
                     sotTarget={kpis.sotTarget}
@@ -117,12 +117,12 @@ export function Dashboard() {
                     drillDownHref={buildSotOtifHref(filters)}
                   />
                 </div>
-                <div style={{ flex: '3 1 180px', gridTemplateRows: 'minmax(180px, 1fr)' }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 min-h-0">
+                <div style={{ flex: '4 1 150px', gridTemplateRows: 'minmax(150px, 1fr)' }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 min-h-0">
                   <RootCauseSection lines={filteredLines} drillDownHref={buildRootCauseHref(filters)} />
                   <MissingESDSection lines={filteredLines} drillDownHref={buildMissingEsdHref(filters)} />
                   <BacklogSection lines={filteredLines} drillDownHref={buildBacklogHref(filters)} />
                 </div>
-                <div style={{ flex: '2 1 120px', gridTemplateRows: 'minmax(100px, 1fr)' }} className="grid grid-cols-1 sm:grid-cols-2 gap-2 min-h-0">
+                <div style={{ flex: '2 1 115px', gridTemplateRows: 'minmax(115px, 1fr)' }} className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 min-h-0">
                   <InvoicesSection invoices={invoices} supplierFilter={filters.suppliers} drillDownHref={buildInvoicesHref(filters.suppliers)} />
                   <LeadTimeSection lines={weekRangeLines} drillDownHref={buildLeadTimeHref(filters)} />
                 </div>

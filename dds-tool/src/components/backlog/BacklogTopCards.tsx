@@ -10,7 +10,6 @@ interface BacklogTopCardsProps {
   expectedCount: number;
   expectedByWeek: ExpectedByWeek[];
   avgAgeDays: number;
-  expectedClearanceCount: number;
 }
 
 function pct(count: number, total: number): number {
@@ -21,7 +20,7 @@ function pct(count: number, total: number): number {
 // combined into one number — Current Backlog's 210 is the dominant figure, with Recent/
 // Accumulated/No ESD shown as its composition (not as three separate equal-weight KPI cards).
 export function BacklogTopCards({
-  rows, recentCount, accumulatedCount, noEsdCount, expectedCount, expectedByWeek, avgAgeDays, expectedClearanceCount,
+  rows, recentCount, accumulatedCount, noEsdCount, expectedCount, expectedByWeek, avgAgeDays,
 }: BacklogTopCardsProps) {
   const total = rows.length;
 
@@ -36,7 +35,7 @@ export function BacklogTopCards({
   const criticalEsdPast = criticalRows.filter((r) => r.esdPassedNoAsd).length;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[2fr_2fr_1fr_1fr] gap-3">
+    <div className="grid grid-cols-1 lg:grid-cols-[2fr_2fr_1fr] gap-3">
       <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
         <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-1">Current Backlog</p>
         <p className="text-3xl font-extrabold leading-none text-[#403833]">{total} <span className="text-sm font-semibold text-[#9c9794]">POs</span></p>
@@ -92,13 +91,6 @@ export function BacklogTopCards({
         <p className="text-3xl font-extrabold leading-none text-[#403833]">{avgAgeDays}d</p>
         <p className="text-[11px] text-[#9c9794] mt-2">Average age of current backlog POs</p>
         <p className="text-[10px] text-[#c8c0bb] mt-auto pt-2">Calculated from today to PGRD</p>
-      </div>
-
-      <div className="bg-white rounded-lg border border-[#e9e3df] p-4 flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
-        <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-1">Expected Clearance</p>
-        <p className="text-3xl font-extrabold leading-none text-[#403833]">{expectedClearanceCount} <span className="text-sm font-semibold text-[#9c9794]">POs</span></p>
-        <p className="text-[11px] text-[#9c9794] mt-2">Have a known expected clearance date</p>
-        <p className="text-[10px] text-[#c8c0bb] mt-auto pt-2">Based on ESD</p>
       </div>
     </div>
   );

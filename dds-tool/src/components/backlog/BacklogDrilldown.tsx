@@ -147,7 +147,6 @@ export function BacklogDrilldown() {
                 expectedCount={expectedRows.length}
                 expectedByWeek={expectedByWeek}
                 avgAgeDays={avgAgeDays}
-                expectedClearanceCount={rows.length - noEsdRows.length}
               />
             </div>
 
@@ -192,7 +191,6 @@ export function BacklogDrilldown() {
                   expectedCount={expectedRows.length}
                   expectedByWeek={expectedByWeek}
                   avgAgeDays={avgAgeDays}
-                  expectedClearanceCount={rows.length - noEsdRows.length}
                 />
               </div>
             </div>

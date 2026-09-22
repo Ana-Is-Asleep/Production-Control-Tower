@@ -75,7 +75,7 @@ export function InvoicesSection({ invoices, supplierFilter, drillDownHref }: Inv
             <p className="text-[10px] uppercase tracking-widest text-[#9c9794] mb-0.5 shrink-0">Total Pending — by due week</p>
             <p className="text-[9px] text-[#b5aaa5] mb-0.5 shrink-0 normal-case tracking-normal">X-axis: Effective Due Date week</p>
             {weeklyPending.length > 0 ? (
-              <div className="flex-1 min-h-0" style={{ minHeight: 40 }}>
+              <div className="flex-1 min-h-0" style={{ minHeight: 30 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={weeklyPending} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="2 4" stroke={COLOR.border} vertical={false} />

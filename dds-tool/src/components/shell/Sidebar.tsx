@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutGrid, FileBarChart, Database, ListChecks, ChevronLeft, ChevronRight, Upload as UploadIcon } from 'lucide-react';
+import { LayoutGrid, Database, ListChecks, ChevronLeft, ChevronRight, Upload as UploadIcon } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { UploadPanel } from '../upload/UploadPanel';
 import type { PurchaseLine } from '../../types';
@@ -17,11 +17,12 @@ interface NavItem {
   href: string | null; // null = not a real page yet
 }
 
-// Dashboard, Reports, Raw Data and Actions are all real routes; which one is highlighted is
-// driven by the current path, not a hardcoded flag, so this stays correct as more routes are added.
+// Dashboard, Raw Data and Actions are all real routes; which one is highlighted is driven by the
+// current path, not a hardcoded flag, so this stays correct as more routes are added.
+// Reports is hidden for now (Ana: not ready) — the route/page itself is untouched, just not
+// linked from here, so re-adding it later is a one-line change.
 const NAV_ITEMS: NavItem[] = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutGrid, href: '/' },
-  { key: 'reports', label: 'Reports', icon: FileBarChart, href: '/reports' },
   { key: 'raw-data', label: 'Raw data', icon: Database, href: '/raw-data' },
   { key: 'actions', label: 'Actions', icon: ListChecks, href: '/actions' },
 ];
@@ -65,9 +66,9 @@ export function Sidebar() {
   return (
     <>
     <aside className={`${collapsed ? 'w-[56px]' : 'w-[164px]'} shrink-0 h-screen sticky top-0 bg-white border-r border-[#e9e3df] flex flex-col transition-[width] duration-150`}>
-      <div className="px-3 pt-3 pb-2">
+      <div className={`pt-3 pb-2 ${collapsed ? 'flex justify-center px-2' : 'px-3'}`}>
         {collapsed ? (
-          <div className="w-5 h-5 rounded bg-brand" />
+          <img src="/emma-symbol.png" alt="emma" className="h-6 w-6 object-contain" />
         ) : (
           <img src="/emma-logo.svg" alt="emma" className="h-5 w-auto" />
         )}

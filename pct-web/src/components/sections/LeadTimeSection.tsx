@@ -44,7 +44,7 @@ export function LeadTimeSection({ lines, drillDownHref }: LeadTimeSectionProps) 
             ]}
           />
           <p className="text-[9px] text-[#b5aaa5] mb-0.5 shrink-0">X-axis: ASD (ship date) week</p>
-          <div className="flex-1 min-h-0" style={{ minHeight: 50 }}>
+          <div className="flex-1 min-h-0" style={{ minHeight: 40 }}>
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={weeklyLTTarget} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                 <XAxis dataKey="weekLabel" tick={{ fill: COLOR.muted, fontSize: 9 }} axisLine={false} tickLine={false} interval={0} />
