@@ -14,7 +14,7 @@ import { GlobalActionsBadge } from '../actions/GlobalActionsBadge';
 import { KpiBox } from '../shared/KpiBox';
 import { TopGraphChart } from '../sections/TopGraphChart';
 import { SupplierInfoCard } from './SupplierInfoCard';
-import { SupplierKpiStrip } from './SupplierKpiStrip';
+import { SupplierWeekSummary } from './SupplierWeekSummary';
 import { ScorecardMatrix } from './ScorecardMatrix';
 import { SupplierHeatmap } from '../rootCause/SupplierHeatmap';
 import { KeyInsightsPanel } from './KeyInsightsPanel';
@@ -24,7 +24,7 @@ import { LatenessProfile } from './LatenessProfile';
 import { WeekStrip } from './WeekStrip';
 import { POList } from './POList';
 import { rollupByPO, computeConsistencyStats } from '../../lib/poAggregation';
-import { aggregateSOTRate, aggregateOTIFRate, aggregateByQty, computeSOTLine, computeOTIFLine } from '../../lib/kpiFormulas';
+import { aggregateSOTRate, aggregateOTIFRate } from '../../lib/kpiFormulas';
 import { getISOWeek, getISOWeekYear } from '../../lib/dateUtils';
 import { parseSotOtifParams, buildSotOtifParams } from '../../lib/sotOtifParams';
 import { useReasonClassification } from '../../hooks/useReasonClassification';
@@ -127,7 +127,6 @@ export function SotOtifDrilldown() {
     if (!lastCompleted) return scopeLines;
     return weekRangeLines.filter((l) => l.pgrd && getISOWeek(l.pgrd) === lastCompleted.week && getISOWeekYear(l.pgrd) === lastCompleted.year);
   }, [selectedWeek, scopeLines, weekRangeLines, weeksInRange]);
-  const kpiWeekLabel = selectedWeek?.label ?? weeksInRange.find((w) => w.isCurrent)?.label ?? null;
 
   // Every upcoming (not-yet-completed) week's projected SOT/OTIF, in order — same ESD-based
   // projection already driving the chart's dashed "projected" line (useKPIs.ts). Surfaced two
@@ -146,16 +145,6 @@ export function SotOtifDrilldown() {
   const lateCount = scopeRollups.filter((r) => r.sot === false).length;
   const otifOnCount = scopeRollups.filter((r) => r.otif === true).length;
   const otifOffCount = scopeRollups.filter((r) => r.otif === false).length;
-  // Same per-line classification as onTimeCount/otifOnCount above, just weighted by requested
-  // quantity instead of PO count — feeds the "by Qty" half of the Mode B KPI deep dive.
-  const sotQty = useMemo(
-    () => aggregateByQty(kpiLines, (l) => computeSOTLine(l, isChinaSupplier(l.vendorCode), today)),
-    [kpiLines, isChinaSupplier, today]
-  );
-  const otifQty = useMemo(
-    () => aggregateByQty(kpiLines, (l) => computeOTIFLine(l, isChinaSupplier(l.vendorCode)).otif),
-    [kpiLines, isChinaSupplier]
-  );
   // Matches the PO List table's per-PO SOT/OTIF status (majority vote across a PO's lines, same
   // as rollupByPO) instead of aggregateSOTRate/aggregateOTIFRate's per-PO fractional average — the
   // two disagreed whenever a PO's lines split (e.g. 8/9 lines OTIF still counts as "OTIF" in the
@@ -177,6 +166,26 @@ export function SotOtifDrilldown() {
       .filter((d): d is number => d !== null && d > 0);
     return delays.length ? Math.round((delays.reduce((s, d) => s + d, 0) / delays.length) * 10) / 10 : null;
   }, [scopeRollups]);
+
+  // Mode B's compact SOT/OTIF summary next to the chart — unlike the shared kpiLines (which falls
+  // back to the last completed week so the KPI panels read "how did we do", not "how did we do
+  // averaged across everything in view"), this falls back to the FULL range instead, since the
+  // summary card explicitly labels itself as a range average rather than quietly narrowing to one
+  // week the label never mentions.
+  const modeBSummaryLines = selectedWeek ? scopeLines : weekRangeLines;
+  const modeBSummaryRollups = useMemo(
+    () => rollupByPO(modeBSummaryLines, isChinaSupplier, today),
+    [modeBSummaryLines, isChinaSupplier, today]
+  );
+  const modeBOnTime = modeBSummaryRollups.filter((r) => r.sot === true).length;
+  const modeBLate = modeBSummaryRollups.filter((r) => r.sot === false).length;
+  const modeBOtifOn = modeBSummaryRollups.filter((r) => r.otif === true).length;
+  const modeBOtifOff = modeBSummaryRollups.filter((r) => r.otif === false).length;
+  const modeBSOT = modeBOnTime + modeBLate > 0 ? Math.round((modeBOnTime / (modeBOnTime + modeBLate)) * 100) : null;
+  const modeBOTIF = modeBOtifOn + modeBOtifOff > 0 ? Math.round((modeBOtifOn / (modeBOtifOn + modeBOtifOff)) * 100) : null;
+  const modeBWeekLabel = selectedWeek
+    ? selectedWeek.label
+    : (weeksInRange.length ? `${weeksInRange[0].label}–${weeksInRange[weeksInRange.length - 1].label}` : '—');
 
   // Mode A: PO-level root-cause classification — same AI-backed pipeline the Root Cause Detail
   // page uses (useReasonClassification + computePORootCauseRows), reused here rather than
@@ -418,21 +427,34 @@ export function SotOtifDrilldown() {
         </>
       ) : (
         <div className="flex flex-col gap-3 px-4 py-3">
-          {/* Evolution chart, with the supplier's identity/scope alongside it instead of the plain
-              SOT/OTIF % pair — those detailed numbers now live in the KPI deep dive below. Chart
-              is display-only (no onWeekClick) — the week strip beneath it is the only way to pick
-              a week. */}
-          <div className="flex gap-3 shrink-0" style={{ height: 220 }}>
-            <SupplierInfoCard
-              supplier={selectedSupplier ?? ''}
-              categories={filters.categories}
-              channels={filters.channels}
-              period={{
-                weekLabelStart: weeksInRange[0]?.label ?? '',
-                weekLabelEnd: weeksInRange[weeksInRange.length - 1]?.label ?? '',
-                weekCount: weeksInRange.length,
-              }}
-            />
+          {/* Evolution chart, with the supplier's identity/scope and a compact SOT/OTIF summary
+              alongside it instead of below in their own row. Chart is display-only (no
+              onWeekClick) — the week strip beneath it is the only way to pick a week. */}
+          <div className="flex gap-3 shrink-0 items-stretch">
+            <div className="flex flex-col gap-3 shrink-0 w-[190px]">
+              <SupplierInfoCard
+                supplier={selectedSupplier ?? ''}
+                categories={filters.categories}
+                channels={filters.channels}
+                period={{
+                  weekLabelStart: weeksInRange[0]?.label ?? '',
+                  weekLabelEnd: weeksInRange[weeksInRange.length - 1]?.label ?? '',
+                  weekCount: weeksInRange.length,
+                }}
+              />
+              <SupplierWeekSummary
+                weekLabel={modeBWeekLabel}
+                isAverage={!selectedWeek}
+                sotPct={modeBSOT}
+                sotTarget={kpis.sotTarget}
+                sotOnCount={modeBOnTime}
+                sotTotalCount={modeBOnTime + modeBLate}
+                otifPct={modeBOTIF}
+                otifTarget={kpis.otifTarget}
+                otifOnCount={modeBOtifOn}
+                otifTotalCount={modeBOtifOn + modeBOtifOff}
+              />
+            </div>
             <div className="flex-1 min-h-0 min-w-0 bg-white rounded-lg border border-[#e9e3df] p-3 flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
               <div className="flex items-center justify-between shrink-0 mb-2">
                 <p className="text-sm font-bold text-[#403833]">SOT &amp; OTIF Evolution</p>
@@ -468,19 +490,6 @@ export function SotOtifDrilldown() {
               </button>
             </div>
           )}
-
-          {/* Selected-week KPI deep dive — PO-level and quantity-level SOT/OTIF side by side. */}
-          <SupplierKpiStrip
-            weekLabel={kpiWeekLabel}
-            sotTarget={kpis.sotTarget}
-            otifTarget={kpis.otifTarget}
-            onTimeCount={onTimeCount}
-            lateCount={lateCount}
-            otifOnCount={otifOnCount}
-            otifOffCount={otifOffCount}
-            sotQty={sotQty}
-            otifQty={otifQty}
-          />
 
           {/* Analysis row: Performance Consistency, Lateness Profile, Key Insights — in that order. */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch shrink-0" style={{ minHeight: 220 }}>
