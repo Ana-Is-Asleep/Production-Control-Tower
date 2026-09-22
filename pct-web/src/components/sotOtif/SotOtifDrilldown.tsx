@@ -131,6 +131,11 @@ export function SotOtifDrilldown() {
   // nothing is selected) the last completed week, matching kpiLines' own fallback exactly. Shown
   // under the Mode A SOT/OTIF target cards so the % is never left unlabeled as to which week it's for.
   const kpiWeekLabel = selectedWeek?.label ?? weeksInRange.find((w) => w.isCurrent)?.label ?? null;
+  // Mode A default: the Scorecard/heatmap/week strip all treat "nothing explicitly selected" as
+  // the last completed week, not the full multi-week range — same default the KPI target cards
+  // and Key Insights already use. The real `selectedWeek` (not this) still gates the "Clear — view
+  // full period" banner, since that's only meaningful once the user has actively picked a week.
+  const effectiveWeek = selectedWeek ?? weeksInRange.find((w) => w.isCurrent) ?? null;
 
   // Every upcoming (not-yet-completed) week's projected SOT/OTIF, in order — same ESD-based
   // projection already driving the chart's dashed "projected" line (useKPIs.ts). Surfaced two
@@ -195,14 +200,15 @@ export function SotOtifDrilldown() {
   // page uses (useReasonClassification + computePORootCauseRows), reused here rather than
   // re-deriving categories a second way. Classification itself is fetched for every reason in the
   // full range up front (linesWithReasons stays on weekRangeLines) so toggling between weeks never
-  // re-fetches; only the rows fed into the heatmap/Key Insights are narrowed to scopeLines — the
-  // selected week's POs, or the full range when nothing is selected — so the heatmap reacts to the
-  // same week selection as the Scorecard and Key Insights.
+  // re-fetches; only the rows fed into the heatmap/Key Insights are narrowed to kpiLines — the
+  // selected week's POs, or the LAST COMPLETED week (not the full range) when nothing is selected
+  // — same default as the KPI target cards, so the heatmap reacts to the same week selection as
+  // the Scorecard and Key Insights and never silently shows a different period by default.
   const linesWithReasons = useMemo(() => weekRangeLines.filter((l) => isSubstantiveReason(l.lossReasonCode)), [weekRangeLines]);
   const { classifications } = useReasonClassification(linesWithReasons.map((l) => l.lossReasonCode));
   const rootCauseRows = useMemo(
-    () => computePORootCauseRows(scopeLines, classifications, weeksInRange),
-    [scopeLines, classifications, weeksInRange]
+    () => computePORootCauseRows(kpiLines, classifications, weeksInRange),
+    [kpiLines, classifications, weeksInRange]
   );
   // Same Supplier x Root Cause heatmap the Root Cause Detail page uses — reused verbatim in place
   // of the old Performance by Week table (Ana: wants the same root-cause view here too).
@@ -367,7 +373,7 @@ export function SotOtifDrilldown() {
               weeksInRange={weeksInRange}
               isChinaSupplier={isChinaSupplier}
               today={today}
-              selectedWeek={selectedWeek}
+              selectedWeek={effectiveWeek}
               onSelectWeek={handleSelectWeek}
             />
           </div>
@@ -412,7 +418,7 @@ export function SotOtifDrilldown() {
                       weeksInRange={weeksInRange}
                       isChinaSupplier={isChinaSupplier}
                       today={today}
-                      selectedWeek={selectedWeek}
+                      selectedWeek={effectiveWeek}
                       onSupplierClick={handleSupplierRowClick}
                       showAll={false}
                     />
@@ -544,7 +550,7 @@ export function SotOtifDrilldown() {
               weeksInRange={weeksInRange}
               isChinaSupplier={isChinaSupplier}
               today={today}
-              selectedWeek={selectedWeek}
+              selectedWeek={effectiveWeek}
               onSupplierClick={handleSupplierRowClick}
               showAll
             />
