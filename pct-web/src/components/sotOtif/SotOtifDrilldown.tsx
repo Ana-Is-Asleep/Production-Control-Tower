@@ -178,15 +178,18 @@ export function SotOtifDrilldown() {
     return delays.length ? Math.round((delays.reduce((s, d) => s + d, 0) / delays.length) * 10) / 10 : null;
   }, [scopeRollups]);
 
-  // Mode A: PO-level root-cause classification for the full range in view — same AI-backed
-  // pipeline the Root Cause Detail page uses (useReasonClassification + computePORootCauseRows),
-  // reused here rather than re-deriving categories a second way. Feeds the Supplier Scorecard's
-  // Main Root Cause(s) column and the Key Insights "most common cause" bullet below.
+  // Mode A: PO-level root-cause classification — same AI-backed pipeline the Root Cause Detail
+  // page uses (useReasonClassification + computePORootCauseRows), reused here rather than
+  // re-deriving categories a second way. Classification itself is fetched for every reason in the
+  // full range up front (linesWithReasons stays on weekRangeLines) so toggling between weeks never
+  // re-fetches; only the rows fed into the heatmap/Key Insights are narrowed to scopeLines — the
+  // selected week's POs, or the full range when nothing is selected — so the heatmap reacts to the
+  // same week selection as the Scorecard and Key Insights.
   const linesWithReasons = useMemo(() => weekRangeLines.filter((l) => isSubstantiveReason(l.lossReasonCode)), [weekRangeLines]);
   const { classifications } = useReasonClassification(linesWithReasons.map((l) => l.lossReasonCode));
   const rootCauseRows = useMemo(
-    () => computePORootCauseRows(weekRangeLines, classifications, weeksInRange),
-    [weekRangeLines, classifications, weeksInRange]
+    () => computePORootCauseRows(scopeLines, classifications, weeksInRange),
+    [scopeLines, classifications, weeksInRange]
   );
   // Same Supplier x Root Cause heatmap the Root Cause Detail page uses — reused verbatim in place
   // of the old Performance by Week table (Ana: wants the same root-cause view here too).
