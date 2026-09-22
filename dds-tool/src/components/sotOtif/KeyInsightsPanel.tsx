@@ -104,12 +104,12 @@ export function KeyInsightsPanel({ rollups, avgDelayDays, weekLabel, projection,
   const toneColor: Record<string, string> = { fail: 'text-fail', warn: 'text-warn', pass: 'text-pass', neutral: 'text-[#7b7571]' };
 
   return (
-    <div className="bg-white rounded-lg border border-[#e9e3df] p-4 h-full flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
-      <p className="text-sm font-bold text-[#403833] mb-3">Key Insights</p>
+    <div className="bg-white rounded-lg border border-[#e9e3df] p-3 h-full flex flex-col overflow-y-auto" style={{ boxShadow: 'var(--shadow-card)' }}>
+      <p className="text-sm font-bold text-[#403833] mb-2 shrink-0">Key Insights</p>
       {insights.length === 0 ? (
         <p className="text-xs text-[#9c9794]">No POs in scope to summarize.</p>
       ) : (
-        <div className="space-y-2.5 flex-1">
+        <div className="space-y-2 flex-1">
           {insights.map((item, i) => {
             const Icon = item.icon;
             return (

@@ -306,23 +306,25 @@ export function SotOtifDrilldown() {
               at 100% zoom. The chart itself is display-only (no onWeekClick) — a week is only
               ever selected via the Performance by Week table below or the Mode B week strip,
               never by clicking the bars directly. */}
-          <div className="shrink-0 flex px-4 pt-3 gap-3" style={{ height: 260 }}>
-            <div className="flex flex-col gap-2 shrink-0 w-[180px]">
+          <div className="shrink-0 flex px-4 pt-2 gap-3" style={{ height: 200 }}>
+            <div className="grid grid-rows-2 gap-2 shrink-0 w-[180px]">
               <KpiBox
+                className="h-full flex flex-col justify-center"
                 label={`SOT · ${kpis.sotTarget}% target`}
                 value={pctLabel(scopeSOT)}
                 valueClassName={`text-2xl ${scopeSOT === null ? 'text-[#c8c0bb]' : scopeSOT >= kpis.sotTarget ? 'text-pass' : 'text-fail'}`}
                 tint={scopeSOT === null ? 'neutral' : scopeSOT >= kpis.sotTarget ? 'pass' : 'fail'}
               />
               <KpiBox
+                className="h-full flex flex-col justify-center"
                 label={`OTIF · ${kpis.otifTarget}% target`}
                 value={pctLabel(scopeOTIF)}
                 valueClassName={`text-2xl ${scopeOTIF === null ? 'text-[#c8c0bb]' : scopeOTIF >= kpis.otifTarget ? 'text-pass' : 'text-fail'}`}
                 tint={scopeOTIF === null ? 'neutral' : scopeOTIF >= kpis.otifTarget ? 'pass' : 'fail'}
               />
             </div>
-            <div className="flex-1 min-h-0 min-w-0 bg-white rounded-lg border border-[#e9e3df] p-3 flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
-              <div className="flex items-center justify-between shrink-0 mb-2">
+            <div className="flex-1 min-h-0 min-w-0 bg-white rounded-lg border border-[#e9e3df] p-2.5 flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <div className="flex items-center justify-between shrink-0 mb-1.5">
                 <p className="text-sm font-bold text-[#403833]">SOT &amp; OTIF Evolution</p>
                 <div className="flex items-center gap-2 text-[#9c9794]">
                   <span className="text-[11px] font-medium px-2 py-1 rounded-md border border-[#e9e3df]">Weekly</span>
@@ -338,7 +340,7 @@ export function SotOtifDrilldown() {
           </div>
 
           {selectedWeek && (
-            <div className="px-4 py-1.5 mt-3 bg-[#fff7ed] border-y border-brand flex items-center gap-2 shrink-0">
+            <div className="px-4 py-1 mt-2 bg-[#fff7ed] border-y border-brand flex items-center gap-2 shrink-0">
               <span className="text-xs font-semibold text-brand">{selectedWeek.label} selected</span>
               <button onClick={handleDeselectWeek} className="text-xs text-[#9c9794] hover:text-brand underline">
                 Clear — view full period
@@ -350,10 +352,10 @@ export function SotOtifDrilldown() {
               remaining viewport height so the page never scrolls. Scorecard gets the most width
               (it now carries the Main Root Cause(s) column too), Key Insights the least. */}
           <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-            <div className="p-4 flex flex-col min-h-0 flex-1">
-              <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[35fr_43fr_22fr] gap-4 items-stretch" style={{ gridTemplateRows: 'minmax(0, 1fr)' }}>
-                <div className="bg-white rounded-lg border border-[#e9e3df] p-4 flex flex-col min-h-0" style={{ boxShadow: 'var(--shadow-card)' }}>
-                  <div className="flex items-center justify-between mb-3 shrink-0">
+            <div className="p-3 flex flex-col min-h-0 flex-1">
+              <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[35fr_43fr_22fr] gap-3 items-stretch" style={{ gridTemplateRows: 'minmax(0, 1fr)' }}>
+                <div className="bg-white rounded-lg border border-[#e9e3df] p-3 flex flex-col min-h-0" style={{ boxShadow: 'var(--shadow-card)' }}>
+                  <div className="flex items-center justify-between mb-2 shrink-0">
                     <p className="text-sm font-bold text-[#403833]">Performance by Week</p>
                     <button onClick={() => setPerfWeekModalOpen(true)} className="text-xs text-brand font-semibold hover:underline">View data</button>
                   </div>
@@ -361,8 +363,8 @@ export function SotOtifDrilldown() {
                     <PerformanceByWeekTable lines={weekRangeLines} weeksInRange={weeksInRange} isChinaSupplier={isChinaSupplier} today={today} onWeekClick={handleChartWeekClick} topGraph={kpis.topGraph} />
                   </div>
                 </div>
-                <div className="bg-white rounded-lg border border-[#e9e3df] p-4 flex flex-col min-h-0" style={{ boxShadow: 'var(--shadow-card)' }}>
-                  <div className="flex items-center justify-between mb-3 shrink-0">
+                <div className="bg-white rounded-lg border border-[#e9e3df] p-3 flex flex-col min-h-0" style={{ boxShadow: 'var(--shadow-card)' }}>
+                  <div className="flex items-center justify-between mb-2 shrink-0">
                     <p className="text-sm font-bold text-[#403833]">Supplier Scorecard <span className="text-[11px] font-medium text-[#9c9794]">(Top {Math.min(10, allSuppliers.length)} by volume)</span></p>
                     {allSuppliers.length > 10 && (
                       <button onClick={() => setScorecardModalOpen(true)} className="text-xs text-brand font-semibold hover:underline shrink-0">
