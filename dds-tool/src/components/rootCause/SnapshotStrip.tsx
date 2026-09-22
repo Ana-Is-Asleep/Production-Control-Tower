@@ -1,24 +1,24 @@
 'use client';
 
-import { REASON_CATEGORY_LABELS, type ReasonCategory } from '../../lib/reasonClassification';
-import { CATEGORY_PALETTE } from './categoryPalette';
+import { ROOT_CAUSE_REASON_LABELS, type RootCauseReason } from '../../types/actions';
+import { ROOT_CAUSE_REASON_PALETTE } from './categoryPalette';
 import type { WeekInRange } from '../../hooks/useFilters';
-import type { PORootCauseRow } from '../../lib/rootCauseAggregation';
+import type { RootCauseSubmissionRow } from '../../lib/rootCauseSubmissions';
 
 interface SnapshotStripProps {
-  rows: PORootCauseRow[]; // full inherited-range rows, for context around the snapshot week
+  rows: RootCauseSubmissionRow[]; // full inherited-range rows, for context around the snapshot week
   contextWeeks: WeekInRange[]; // last ~4-6 weeks including the snapshot week
   highlightedWeek: string; // whichever week is actively selected (defaults to snapshotWeek, but
   // tracks the last-clicked tile — previously this stayed pinned to snapshotWeek even after
   // clicking a different week, making earlier weeks look unclickable even though the table filter
   // underneath it was in fact updating.
   onSelectWeek: (week: string) => void;
-  onSelectWeekCategory: (week: string, category: ReasonCategory) => void;
+  onSelectWeekCategory: (week: string, category: RootCauseReason) => void;
 }
 
 // Snapshot mode's main visual — a small context strip instead of the full trend chart, with the
 // snapshot (last completed) week visually emphasized against its recent neighbors. The whole tile
-// is clickable (filters the table to that week, all categories) — the thin colored segments
+// is clickable (filters the table to that week, all reasons) — the thin colored segments
 // underneath are a *finer* drill-in on top of that, not the only way to interact with a week.
 export function SnapshotStrip({ rows, contextWeeks, highlightedWeek, onSelectWeek, onSelectWeekCategory }: SnapshotStripProps) {
   const maxCount = Math.max(
@@ -31,10 +31,10 @@ export function SnapshotStrip({ rows, contextWeeks, highlightedWeek, onSelectWee
       {contextWeeks.map((w) => {
         const weekRows = rows.filter((r) => r.week?.label === w.label);
         const isSnapshot = w.label === highlightedWeek;
-        const byCategory = new Map<ReasonCategory, number>();
+        const byCategory = new Map<RootCauseReason, number>();
         for (const r of weekRows) {
-          if (!r.finalCategory) continue;
-          byCategory.set(r.finalCategory, (byCategory.get(r.finalCategory) ?? 0) + 1);
+          if (!r.reason) continue;
+          byCategory.set(r.reason, (byCategory.get(r.reason) ?? 0) + 1);
         }
         const stack = [...byCategory.entries()].sort((a, b) => b[1] - a[1]);
 
@@ -52,9 +52,9 @@ export function SnapshotStrip({ rows, contextWeeks, highlightedWeek, onSelectWee
                 <span
                   key={cat}
                   role="button"
-                  title={`${REASON_CATEGORY_LABELS[cat]}: ${count}`}
+                  title={`${ROOT_CAUSE_REASON_LABELS[cat]}: ${count}`}
                   onClick={(e) => { e.stopPropagation(); onSelectWeekCategory(w.label, cat); }}
-                  style={{ width: `${(count / maxCount) * 100}%`, background: CATEGORY_PALETTE[cat] }}
+                  style={{ width: `${(count / maxCount) * 100}%`, background: ROOT_CAUSE_REASON_PALETTE[cat] }}
                   className="h-full"
                 />
               ))}

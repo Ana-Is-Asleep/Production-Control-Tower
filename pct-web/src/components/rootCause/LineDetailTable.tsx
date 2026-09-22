@@ -1,21 +1,16 @@
 'use client';
 
-import { Fragment, useState } from 'react';
 import { formatDateShort } from '../../lib/dateUtils';
-import { REASON_CATEGORY_LABELS } from '../../lib/reasonClassification';
-import type { LineDetailRow } from '../../lib/rootCauseAggregation';
+import { ROOT_CAUSE_REASON_LABELS } from '../../types/actions';
+import type { RootCauseSubmissionRow } from '../../lib/rootCauseSubmissions';
 
 interface LineDetailTableProps {
-  rows: LineDetailRow[];
+  rows: RootCauseSubmissionRow[];
 }
 
-const TRUNCATE_AT = 60;
-
-// Primary panel for the single-supplier deep-dive — real line-level grain (this app's actual data
-// shape), one row per PO line. The raw supplier free-text reason is truncated by default and
-// expands per row on click, since it's the field most likely to run long.
+// Primary panel for the single-supplier deep-dive — one row per flagged (missed-SOT) PO, showing
+// the SCM-submitted root cause and status instead of the old AI-classified free-text reason.
 export function LineDetailTable({ rows }: LineDetailTableProps) {
-  const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const sorted = [...rows].sort((a, b) => (b.week?.offset ?? 0) - (a.week?.offset ?? 0));
 
   return (
@@ -24,51 +19,37 @@ export function LineDetailTable({ rows }: LineDetailTableProps) {
         <thead>
           <tr className="bg-[#403833] text-white">
             <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">PO</th>
-            <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">Line</th>
             <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">Week</th>
-            <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">Category</th>
             <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">Ship Date</th>
             <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">Qty</th>
-            <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">AI Root Cause</th>
-            <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">Supplier Reason</th>
+            <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">Root Cause</th>
+            <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">Status</th>
+            <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">Detail</th>
           </tr>
         </thead>
         <tbody>
           {sorted.length === 0 && (
-            <tr><td colSpan={8} className="text-center py-6 text-[#9c9794]">No lines match the current selection</td></tr>
+            <tr><td colSpan={7} className="text-center py-6 text-[#9c9794]">No flagged POs match the current selection</td></tr>
           )}
-          {sorted.map((r) => {
-            const key = `${r.po}-${r.line}`;
-            const isLong = r.rawReason.length > TRUNCATE_AT;
-            const isExpanded = expandedKey === key;
-            return (
-              <Fragment key={key}>
-                <tr className="border-b border-[#e9e3df] hover:bg-[#f9f7f6] transition-colors">
-                  <td className="px-3 py-2 font-semibold text-[#403833] whitespace-nowrap">{r.po}</td>
-                  <td className="px-3 py-2 text-center text-[#58524e]">{r.line}</td>
-                  <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{r.week?.label ?? '—'}</td>
-                  <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{r.skuCategory}</td>
-                  <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{formatDateShort(r.shipDate)}</td>
-                  <td className="px-3 py-2 text-center text-[#58524e]">{r.qty}</td>
-                  <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{r.aiCategory ? REASON_CATEGORY_LABELS[r.aiCategory] : '—'}</td>
-                  <td className="px-3 py-2 text-[#58524e]">
-                    {isLong && !isExpanded ? (
-                      <button onClick={() => setExpandedKey(key)} className="text-left hover:text-brand">
-                        {r.rawReason.slice(0, TRUNCATE_AT)}… <span className="text-brand font-semibold">more</span>
-                      </button>
-                    ) : (
-                      <span>
-                        {r.rawReason}
-                        {isLong && (
-                          <button onClick={() => setExpandedKey(null)} className="text-brand font-semibold ml-1">less</button>
-                        )}
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              </Fragment>
-            );
-          })}
+          {sorted.map((r) => (
+            <tr key={r.po} className="border-b border-[#e9e3df] hover:bg-[#f9f7f6] transition-colors">
+              <td className="px-3 py-2 font-semibold text-[#403833] whitespace-nowrap">{r.po}</td>
+              <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{r.week?.label ?? '—'}</td>
+              <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{formatDateShort(r.shipDate)}</td>
+              <td className="px-3 py-2 text-center text-[#58524e]">{r.qty}</td>
+              <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{r.reason ? ROOT_CAUSE_REASON_LABELS[r.reason] : '—'}</td>
+              <td className="px-3 py-2 whitespace-nowrap">
+                {r.reason ? (
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-pass">Submitted</span>
+                ) : (
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-fail">Pending</span>
+                )}
+              </td>
+              <td className="px-3 py-2 text-[#58524e]">
+                {r.missingComponent ? `Missing: ${r.missingComponent}` : r.coverPoNumber ? `Cover PO: ${r.coverPoNumber}` : '—'}
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>

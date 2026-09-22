@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { Download, MoreVertical } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { useFilters, WEEK_RANGE_MIN, WEEK_RANGE_MAX } from '../../hooks/useFilters';
 import { SKU_CATEGORIES, categorizeSKU, type SKUCategory } from '../../lib/skuUtils';
@@ -176,25 +176,6 @@ export function LeadTimeDrilldown() {
           curWeek={curWeek}
           curYear={curYear}
           centerContent={<GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} bucketFilter="lead_time" onOpenChange={setActionsOpen} />}
-          rightActions={
-            <>
-              <button
-                title="Export (coming soon)"
-                disabled
-                className="flex items-center gap-1.5 text-xs font-semibold text-[#7b7571] border border-[#e9e3df] rounded-lg px-2.5 h-8 opacity-60 cursor-not-allowed"
-              >
-                <Download size={13} />
-                Export
-              </button>
-              <button
-                title="More options (coming soon)"
-                disabled
-                className="flex items-center justify-center w-8 h-8 rounded-lg border border-[#e9e3df] text-[#7b7571] opacity-60 cursor-not-allowed"
-              >
-                <MoreVertical size={15} />
-              </button>
-            </>
-          }
         />
 
         {/* Header stays full width above — only this content area reserves space for the Actions

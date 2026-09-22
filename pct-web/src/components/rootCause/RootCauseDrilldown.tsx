@@ -4,19 +4,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useData } from '../../context/DataContext';
 import { useFilters } from '../../hooks/useFilters';
-import { useReasonClassification } from '../../hooks/useReasonClassification';
-import { isSubstantiveReason, type ReasonCategory } from '../../lib/reasonClassification';
-import { getISOWeek, getISOWeekYear } from '../../lib/dateUtils';
+import { useActions } from '../../hooks/useActions';
+import { computeTrendDirection } from '../../lib/rootCauseAggregation';
 import {
-  computePORootCauseRows, computeLineDetailRows, computeRootCauseKPIs,
-  rankCategories, buildSupplierCategoryMatrix, computeTrendDirection,
-  type PORootCauseRow,
-} from '../../lib/rootCauseAggregation';
+  computeRootCauseSubmissionRows, computeSubmissionKPIs,
+  rankReasons, buildSupplierReasonMatrix,
+  type RootCauseSubmissionRow,
+} from '../../lib/rootCauseSubmissions';
 import { Sidebar } from '../shell/Sidebar';
 import { DetailHeader } from '../shell/DetailHeader';
 import { GlobalActionsBadge } from '../actions/GlobalActionsBadge';
+import { ROOT_CAUSE_REASON_LABELS, type RootCauseReason } from '../../types/actions';
 import { parseRootCauseParams, buildRootCauseParams, type RootCauseMode } from '../../lib/rootCauseParams';
-import { RootCauseActionQueue } from './RootCauseActionQueue';
 import { KPIStrip } from './KPIStrip';
 import { TrendChart } from './TrendChart';
 import { SnapshotStrip } from './SnapshotStrip';
@@ -27,7 +26,7 @@ import { LineDetailTable } from './LineDetailTable';
 
 interface TableFilter {
   week?: string;
-  category?: ReasonCategory;
+  category?: RootCauseReason;
   supplier?: string;
 }
 
@@ -40,6 +39,7 @@ export function RootCauseDrilldown() {
   const initial = useMemo(() => parseRootCauseParams(searchParams), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { filters, setFilters, weekRangeLines, weeksInRange, allSuppliers, curWeek, curYear } = useFilters(allLines, initial.filters);
+  const { actions } = useActions();
 
   const [mode, setMode] = useState<RootCauseMode>(initial.mode);
   const [tableFilter, setTableFilter] = useState<TableFilter | null>(null);
@@ -51,40 +51,25 @@ export function RootCauseDrilldown() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, mode, location.pathname]);
 
-  const linesWithReasons = useMemo(() => weekRangeLines.filter((l) => isSubstantiveReason(l.lossReasonCode)), [weekRangeLines]);
-  const { classifications } = useReasonClassification(linesWithReasons.map((l) => l.lossReasonCode));
-
-  const allRangeRows = useMemo(
-    () => computePORootCauseRows(weekRangeLines, classifications, weeksInRange),
-    [weekRangeLines, classifications, weeksInRange]
-  );
-  const allRangeLineRows = useMemo(
-    () => computeLineDetailRows(weekRangeLines, classifications, weeksInRange),
-    [weekRangeLines, classifications, weeksInRange]
+  const filteredPOs = useMemo(() => new Set(weekRangeLines.map((l) => l.po)), [weekRangeLines]);
+  const allRangeRows: RootCauseSubmissionRow[] = useMemo(
+    () => computeRootCauseSubmissionRows(actions, weekRangeLines, weeksInRange, filteredPOs),
+    [actions, weekRangeLines, weeksInRange, filteredPOs]
   );
 
   const isSingleSupplier = filters.suppliers.length === 1;
   const snapshotWeek = weeksInRange.find((w) => w.isCurrent) ?? weeksInRange[weeksInRange.length - 1];
   const actualWeeks = weeksInRange.filter((w) => !w.isFuture);
 
-  // scope rows/lines for the current mode
-  const scopeRows: PORootCauseRow[] = useMemo(() => {
+  // scope rows for the current mode — one row per flagged (missed-SOT) PO, used for both the
+  // charts and the tables below (the SCM answer is at PO grain, so there's no separate line-level
+  // row type the way the old AI-classified pipeline needed)
+  const scopeRows: RootCauseSubmissionRow[] = useMemo(() => {
     if (mode === 'trend') return allRangeRows;
     return allRangeRows.filter((r) => r.week?.label === snapshotWeek?.label);
   }, [mode, allRangeRows, snapshotWeek]);
 
-  const scopeLineRows = useMemo(() => {
-    if (mode === 'trend') return allRangeLineRows;
-    return allRangeLineRows.filter((r) => r.week?.label === snapshotWeek?.label);
-  }, [mode, allRangeLineRows, snapshotWeek]);
-
-  const scopeLines = useMemo(() => {
-    if (mode === 'trend') return weekRangeLines;
-    if (!snapshotWeek) return [];
-    return weekRangeLines.filter((l) => l.pgrd && getISOWeek(l.pgrd) === snapshotWeek.week && getISOWeekYear(l.pgrd) === snapshotWeek.year);
-  }, [mode, weekRangeLines, snapshotWeek]);
-
-  const kpis = useMemo(() => computeRootCauseKPIs(scopeRows, mode === 'trend' ? weekRangeLines : scopeLines), [scopeRows, mode, weekRangeLines, scopeLines]);
+  const kpis = useMemo(() => computeSubmissionKPIs(scopeRows), [scopeRows]);
 
   // trend arrow: Snapshot compares the snapshot week to the week right before it; Trend compares
   // the first half of the inherited range to the second half
@@ -109,19 +94,19 @@ export function RootCauseDrilldown() {
     };
   }, [mode, snapshotWeek, weeksInRange, allRangeRows, actualWeeks]);
 
-  const categoryOrder = useMemo(() => rankCategories(scopeRows).map((r) => r.category), [scopeRows]);
-  const paretoRanking = useMemo(() => rankCategories(scopeRows), [scopeRows]);
-  const heatmapMatrix = useMemo(() => buildSupplierCategoryMatrix(scopeRows), [scopeRows]);
+  const categoryOrder = useMemo(() => rankReasons(scopeRows).map((r) => r.category), [scopeRows]);
+  const paretoRanking = useMemo(() => rankReasons(scopeRows), [scopeRows]);
+  const heatmapMatrix = useMemo(() => buildSupplierReasonMatrix(scopeRows), [scopeRows]);
 
   // client-side filter applied to the table when a chart segment / pareto bar / heatmap cell is clicked
   const filteredLineRows = useMemo(() => {
-    if (!tableFilter) return scopeLineRows;
-    return scopeLineRows.filter((r) =>
+    if (!tableFilter) return scopeRows;
+    return scopeRows.filter((r) =>
       (!tableFilter.week || r.week?.label === tableFilter.week) &&
-      (!tableFilter.category || r.aiCategory === tableFilter.category) &&
+      (!tableFilter.category || r.reason === tableFilter.category) &&
       (!tableFilter.supplier || r.supplier === tableFilter.supplier)
     );
-  }, [scopeLineRows, tableFilter]);
+  }, [scopeRows, tableFilter]);
 
   if (allLines.length === 0) {
     return (
@@ -170,13 +155,11 @@ export function RootCauseDrilldown() {
       {/* Header stays full width above — only this content area reserves space for the Actions
           drawer (which starts below the header, not overlapping it). */}
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 transition-[padding] duration-150" style={{ paddingRight: actionsOpen ? 340 : undefined }}>
-        <RootCauseActionQueue lines={weekRangeLines} filteredPOs={new Set(weekRangeLines.map((l) => l.po))} />
-
         <KPIStrip kpis={kpis} trend={trendDirection} trendCaption={trendCaption} />
 
         <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
           <p className="text-[11px] uppercase tracking-widest text-[#9c9794]">
-            {mode === 'trend' ? 'Loss Reasons by Week' : `Recent Weeks — ${(tableFilter?.week ?? snapshotWeek?.label) ?? ''} highlighted`}
+            {mode === 'trend' ? 'Root Causes by Week' : `Recent Weeks — ${(tableFilter?.week ?? snapshotWeek?.label) ?? ''} highlighted`}
           </p>
           <p className="text-[10px] text-[#b5aaa5] mb-3 normal-case tracking-normal">X-axis: PGRD week</p>
           {mode === 'trend' ? (
@@ -201,7 +184,7 @@ export function RootCauseDrilldown() {
           <>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
               <ParetoRanking ranking={paretoRanking} onSelectCategory={(category) => setTableFilter({ category })} title="Root Cause Pareto" />
-              <SupplierHeatmap matrix={heatmapMatrix} onSelectCell={(supplier, category) => setTableFilter({ supplier, category })} />
+              <SupplierHeatmap matrix={heatmapMatrix} labels={ROOT_CAUSE_REASON_LABELS} onSelectCell={(supplier, category) => setTableFilter({ supplier, category })} />
             </div>
             {tableFilter && (
               <button onClick={() => setTableFilter(null)} className="text-xs text-brand hover:underline">

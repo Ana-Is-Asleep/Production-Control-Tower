@@ -26,9 +26,9 @@ import { rollupByPO, computeConsistencyStats } from '../../lib/poAggregation';
 import { aggregateSOTRate, aggregateOTIFRate } from '../../lib/kpiFormulas';
 import { getISOWeek, getISOWeekYear } from '../../lib/dateUtils';
 import { parseSotOtifParams, buildSotOtifParams } from '../../lib/sotOtifParams';
-import { useReasonClassification } from '../../hooks/useReasonClassification';
-import { computePORootCauseRows, buildSupplierCategoryMatrix } from '../../lib/rootCauseAggregation';
-import { isSubstantiveReason, type ReasonCategory } from '../../lib/reasonClassification';
+import { useActions } from '../../hooks/useActions';
+import { computeRootCauseSubmissionRows, buildSupplierReasonMatrix } from '../../lib/rootCauseSubmissions';
+import { ROOT_CAUSE_REASON_LABELS, type RootCauseReason } from '../../types/actions';
 
 function pctLabel(v: number | null) {
   return v === null ? '—' : `${v}%`;
@@ -40,6 +40,7 @@ export function SotOtifDrilldown() {
   const searchParams = useSearchParams();
   const { allLines } = useData();
   const { isChinaSupplier } = useVendorMapping();
+  const { actions } = useActions();
 
   const initial = useMemo(() => parseSotOtifParams(searchParams), []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -195,37 +196,34 @@ export function SotOtifDrilldown() {
     ? selectedWeek.label
     : (weeksInRange.length ? `${weeksInRange[0].label}–${weeksInRange[weeksInRange.length - 1].label}` : '—');
 
-  // Mode A: PO-level root-cause classification — same AI-backed pipeline the Root Cause Detail
-  // page uses (useReasonClassification + computePORootCauseRows), reused here rather than
-  // re-deriving categories a second way. Classification itself is fetched for every reason in the
-  // full range up front (linesWithReasons stays on weekRangeLines) so toggling between weeks never
-  // re-fetches; only the rows fed into the heatmap/Key Insights are narrowed to kpiLines — the
-  // selected week's POs, or the LAST COMPLETED week (not the full range) when nothing is selected
-  // — same default as the KPI target cards, so the heatmap reacts to the same week selection as
-  // the Scorecard and Key Insights and never silently shows a different period by default.
-  const linesWithReasons = useMemo(() => weekRangeLines.filter((l) => isSubstantiveReason(l.lossReasonCode)), [weekRangeLines]);
-  const { classifications } = useReasonClassification(linesWithReasons.map((l) => l.lossReasonCode));
-  const rootCauseRows = useMemo(
-    () => computePORootCauseRows(kpiLines, classifications, weeksInRange),
-    [kpiLines, classifications, weeksInRange]
+  // Mode A: PO-level root cause — same SCM-submitted pipeline the Root Cause Detail page and the
+  // Dashboard's Root Cause card use (computeRootCauseSubmissionRows, driven by rootCauseReason on
+  // R002 flags), reused here so this heatmap never disagrees with those. Rows are narrowed to
+  // kpiLines — the selected week's POs, or the LAST COMPLETED week (not the full range) when
+  // nothing is selected — same default as the KPI target cards, so the heatmap reacts to the same
+  // week selection as the Scorecard and Key Insights and never silently shows a different period.
+  const kpiPOs = useMemo(() => new Set(kpiLines.map((l) => l.po)), [kpiLines]);
+  const submissionRows = useMemo(
+    () => computeRootCauseSubmissionRows(actions, kpiLines, weeksInRange, kpiPOs),
+    [actions, kpiLines, weeksInRange, kpiPOs]
   );
   // Same Supplier x Root Cause heatmap the Root Cause Detail page uses — reused verbatim in place
   // of the old Performance by Week table (Ana: wants the same root-cause view here too).
-  const heatmapMatrix = useMemo(() => buildSupplierCategoryMatrix(rootCauseRows), [rootCauseRows]);
+  const heatmapMatrix = useMemo(() => buildSupplierReasonMatrix(submissionRows), [submissionRows]);
   const topRootCause = useMemo(() => {
-    const categoryByPO = new Map<string, ReasonCategory>();
-    rootCauseRows.forEach((r) => { if (r.finalCategory) categoryByPO.set(r.po, r.finalCategory); });
+    const reasonByPO = new Map<string, RootCauseReason>();
+    submissionRows.forEach((r) => { if (r.reason) reasonByPO.set(r.po, r.reason); });
     const late = scopeRollups.filter((r) => r.sot === false);
     if (late.length === 0) return null;
-    const counts = new Map<ReasonCategory, number>();
+    const counts = new Map<RootCauseReason, number>();
     late.forEach((r) => {
-      const category = categoryByPO.get(r.po);
-      if (category) counts.set(category, (counts.get(category) ?? 0) + 1);
+      const reason = reasonByPO.get(r.po);
+      if (reason) counts.set(reason, (counts.get(reason) ?? 0) + 1);
     });
     if (counts.size === 0) return null;
     const [category, count] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
     return { category, count, share: Math.round((count / late.length) * 100) };
-  }, [rootCauseRows, scopeRollups]);
+  }, [submissionRows, scopeRollups]);
 
   // Mode B: per-week SOT/OTIF/volume for this supplier across the selected historical range,
   // completed weeks only (a projected week isn't a real outcome yet) — feeds Performance
@@ -389,7 +387,7 @@ export function SotOtifDrilldown() {
                   entirely instead of just scrolling the Scorecard's own table horizontally. */}
               <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,35fr)_minmax(0,43fr)_minmax(0,22fr)] gap-3 items-stretch" style={{ gridTemplateRows: 'minmax(0, 1fr)' }}>
                 <div className="min-h-0 min-w-0 overflow-y-auto">
-                  <SupplierHeatmap matrix={heatmapMatrix} onSelectCell={(supplier) => handleSupplierRowClick(supplier)} />
+                  <SupplierHeatmap matrix={heatmapMatrix} labels={ROOT_CAUSE_REASON_LABELS} onSelectCell={(supplier) => handleSupplierRowClick(supplier)} />
                 </div>
                 <div className="bg-white rounded-lg border border-[#e9e3df] p-3 flex flex-col min-h-0 min-w-0" style={{ boxShadow: 'var(--shadow-card)' }}>
                   <div className="flex items-center justify-between mb-2 shrink-0">

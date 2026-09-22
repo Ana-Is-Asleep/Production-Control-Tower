@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutGrid, Database, ListChecks, ChevronLeft, ChevronRight, Upload as UploadIcon } from 'lucide-react';
+import { LayoutGrid, Database, ListTodo, ListChecks, ChevronLeft, ChevronRight, Upload as UploadIcon } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { UploadPanel } from '../upload/UploadPanel';
 import type { PurchaseLine } from '../../types';
@@ -23,8 +23,9 @@ interface NavItem {
 // linked from here, so re-adding it later is a one-line change.
 const NAV_ITEMS: NavItem[] = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutGrid, href: '/' },
+  { key: 'my-actions', label: 'My Actions', icon: ListTodo, href: '/my-actions' },
+  { key: 'actions', label: 'All Actions', icon: ListChecks, href: '/actions' },
   { key: 'raw-data', label: 'Raw data', icon: Database, href: '/raw-data' },
-  { key: 'actions', label: 'Actions', icon: ListChecks, href: '/actions' },
 ];
 
 const EXCLUSIVE_ROUTES = NAV_ITEMS.filter((i) => i.key !== 'dashboard').map((i) => i.href!);

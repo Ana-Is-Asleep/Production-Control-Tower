@@ -1,13 +1,12 @@
 'use client';
 
-import { REASON_CATEGORY_LABELS } from '../../lib/reasonClassification';
-import { CATEGORY_PALETTE } from './categoryPalette';
-import type { CategoryRanking } from '../../lib/rootCauseAggregation';
-import type { ReasonCategory } from '../../lib/reasonClassification';
+import { ROOT_CAUSE_REASON_LABELS, type RootCauseReason } from '../../types/actions';
+import { ROOT_CAUSE_REASON_PALETTE } from './categoryPalette';
+import type { ReasonRanking } from '../../lib/rootCauseSubmissions';
 
 interface ParetoRankingProps {
-  ranking: CategoryRanking[];
-  onSelectCategory: (category: ReasonCategory) => void;
+  ranking: ReasonRanking[];
+  onSelectCategory: (category: RootCauseReason) => void;
   title?: string;
 }
 
@@ -21,19 +20,19 @@ export function ParetoRanking({ ranking, onSelectCategory, title = 'Root Cause R
     <div className="bg-white rounded-lg border border-[#e9e3df] p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
       <p className="text-[11px] uppercase tracking-widest text-[#9c9794] mb-3">{title}</p>
       {ranking.length === 0 ? (
-        <p className="text-xs text-[#9c9794] py-6 text-center">No flagged POs in scope</p>
+        <p className="text-xs text-[#9c9794] py-6 text-center">No submitted root causes in scope</p>
       ) : (
         <div className="space-y-3">
           {ranking.map((r) => (
             <button key={r.category} onClick={() => onSelectCategory(r.category)} className="w-full text-left">
               <div className="flex items-baseline justify-between gap-2 mb-1">
-                <span className="text-xs font-semibold text-[#403833] truncate">{REASON_CATEGORY_LABELS[r.category]}</span>
+                <span className="text-xs font-semibold text-[#403833] truncate">{ROOT_CAUSE_REASON_LABELS[r.category]}</span>
                 <span className="text-xs font-semibold text-[#58524e] shrink-0">{r.count} POs · {r.pct}%</span>
               </div>
               <div className="h-3 bg-[#f5f2ee] rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all"
-                  style={{ width: `${Math.max((r.pct / Math.max(maxPct, 1)) * 100, 3)}%`, background: CATEGORY_PALETTE[r.category] }}
+                  style={{ width: `${Math.max((r.pct / Math.max(maxPct, 1)) * 100, 3)}%`, background: ROOT_CAUSE_REASON_PALETTE[r.category] }}
                 />
               </div>
             </button>

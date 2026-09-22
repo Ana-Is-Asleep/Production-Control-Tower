@@ -1,17 +1,17 @@
 'use client';
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { REASON_CATEGORY_LABELS, type ReasonCategory } from '../../lib/reasonClassification';
+import { ROOT_CAUSE_REASON_LABELS, type RootCauseReason } from '../../types/actions';
 import { COLOR } from '../../lib/statusColors';
-import { CATEGORY_PALETTE } from './categoryPalette';
+import { ROOT_CAUSE_REASON_PALETTE } from './categoryPalette';
 import type { WeekInRange } from '../../hooks/useFilters';
-import type { PORootCauseRow } from '../../lib/rootCauseAggregation';
+import type { RootCauseSubmissionRow } from '../../lib/rootCauseSubmissions';
 
 interface TrendChartProps {
-  rows: PORootCauseRow[];
+  rows: RootCauseSubmissionRow[];
   weeksInRange: WeekInRange[];
-  categoryOrder: ReasonCategory[];
-  onBarClick: (week: string, category: ReasonCategory) => void;
+  categoryOrder: RootCauseReason[];
+  onBarClick: (week: string, category: RootCauseReason) => void;
 }
 
 interface TooltipPayloadEntry {
@@ -30,20 +30,21 @@ function NonZeroTooltip({ active, payload, label }: { active?: boolean; payload?
       {present.map((p) => (
         <p key={p.dataKey} style={{ color: '#f9f7f6', margin: 0 }}>
           <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 4, background: p.color, marginRight: 6 }} />
-          {REASON_CATEGORY_LABELS[p.dataKey as ReasonCategory] ?? String(p.dataKey)}: {p.value} POs
+          {ROOT_CAUSE_REASON_LABELS[p.dataKey as RootCauseReason] ?? String(p.dataKey)}: {p.value} POs
         </p>
       ))}
     </div>
   );
 }
 
-// Trend mode's main visual — the full stacked-by-week bar chart, scaled up from the compact
-// dashboard card version. Clicking a segment filters the table below (handled by the caller).
+// Trend mode's main visual — the full stacked-by-week bar chart of SCM-submitted root causes.
+// Only submitted rows are stacked here (pending POs surface as their own KPI card above); clicking
+// a segment filters the table below (handled by the caller).
 export function TrendChart({ rows, weeksInRange, categoryOrder, onBarClick }: TrendChartProps) {
   const chartData = weeksInRange.map((week) => {
     const row: Record<string, number | string> = { weekLabel: week.label };
     categoryOrder.forEach((cat) => {
-      row[cat] = rows.filter((r) => r.week?.label === week.label && r.finalCategory === cat).length;
+      row[cat] = rows.filter((r) => r.week?.label === week.label && r.reason === cat).length;
     });
     return row;
   });
@@ -58,14 +59,14 @@ export function TrendChart({ rows, weeksInRange, categoryOrder, onBarClick }: Tr
           <Tooltip content={<NonZeroTooltip />} />
           <Legend
             verticalAlign="top" align="right" iconSize={8}
-            formatter={(v) => <span style={{ color: COLOR.muted, fontSize: 11 }}>{REASON_CATEGORY_LABELS[v as ReasonCategory] ?? String(v)}</span>}
+            formatter={(v) => <span style={{ color: COLOR.muted, fontSize: 11 }}>{ROOT_CAUSE_REASON_LABELS[v as RootCauseReason] ?? String(v)}</span>}
           />
           {categoryOrder.map((cat) => (
             <Bar
               key={cat}
               dataKey={cat}
               stackId="reasons"
-              fill={CATEGORY_PALETTE[cat]}
+              fill={ROOT_CAUSE_REASON_PALETTE[cat]}
               fillOpacity={0.85}
               onClick={(data: unknown) => {
                 const week = (data as { payload?: { weekLabel?: string } } | undefined)?.payload?.weekLabel;

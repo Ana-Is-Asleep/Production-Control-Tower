@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { Dashboard } from './components/Dashboard';
 import { ActionsPage } from './components/actions/ActionsPage';
+import { MyActionsPage } from './components/actions/MyActionsPage';
 import { BacklogDrilldown } from './components/backlog/BacklogDrilldown';
 import { InvoicesDrilldown } from './components/invoices/InvoicesDrilldown';
 import { LeadTimeDrilldown } from './components/leadTime/LeadTimeDrilldown';
@@ -15,6 +16,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Dashboard />} />
       <Route path="/actions" element={<ActionsPage />} />
+      <Route path="/my-actions" element={<MyActionsPage />} />
       <Route path="/backlog" element={<BacklogDrilldown />} />
       <Route path="/invoices" element={<InvoicesDrilldown />} />
       <Route path="/lead-time" element={<LeadTimeDrilldown />} />

@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { AlertTriangle, CheckCircle2, Clock, Info } from 'lucide-react';
 import type { PORollup } from '../../lib/poAggregation';
-import { REASON_CATEGORY_LABELS, type ReasonCategory } from '../../lib/reasonClassification';
+import { ROOT_CAUSE_REASON_LABELS, type RootCauseReason } from '../../types/actions';
 
 export interface NextWeekProjection {
   weekLabel: string;
@@ -12,7 +12,7 @@ export interface NextWeekProjection {
 }
 
 export interface TopRootCause {
-  category: ReasonCategory;
+  category: RootCauseReason;
   count: number;
   share: number; // 0-100, share of late (missed-SOT) POs in scope this category accounts for
 }
@@ -27,9 +27,8 @@ interface KeyInsightsPanelProps {
   projection?: NextWeekProjection | null;
   sotTarget?: number;
   otifTarget?: number;
-  // Most common classified root cause among this scope's missed-SOT POs — same PO-level
-  // classification the Supplier Scorecard's Main Root Cause(s) column uses, just rolled up
-  // across every supplier in view instead of one at a time.
+  // Most common SCM-submitted root cause among this scope's missed-SOT POs, rolled up across
+  // every supplier in view — same data source as the Supplier x Root Cause heatmap on this page.
   topRootCause?: TopRootCause | null;
 }
 
@@ -69,7 +68,7 @@ export function KeyInsightsPanel({ rollups, avgDelayDays, weekLabel, projection,
       items.push({
         icon: Info,
         tone: 'neutral',
-        text: `Most common cause of missed SOT: ${REASON_CATEGORY_LABELS[topRootCause.category]} (${topRootCause.share}% of late POs).`,
+        text: `Most common cause of missed SOT: ${ROOT_CAUSE_REASON_LABELS[topRootCause.category]} (${topRootCause.share}% of late POs).`,
       });
     }
 

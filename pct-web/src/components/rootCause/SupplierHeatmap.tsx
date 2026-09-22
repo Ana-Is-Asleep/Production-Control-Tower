@@ -1,11 +1,16 @@
 'use client';
 
-import { REASON_CATEGORY_LABELS, type ReasonCategory } from '../../lib/reasonClassification';
-import type { SupplierCategoryMatrix } from '../../lib/rootCauseAggregation';
+interface GenericMatrix<C extends string> {
+  suppliers: string[];
+  categories: C[];
+  cellCount: (supplier: string, category: C) => number;
+  maxCell: number;
+}
 
-interface SupplierHeatmapProps {
-  matrix: SupplierCategoryMatrix;
-  onSelectCell: (supplier: string, category: ReasonCategory) => void;
+interface SupplierHeatmapProps<C extends string> {
+  matrix: GenericMatrix<C>;
+  labels: Record<C, string>;
+  onSelectCell: (supplier: string, category: C) => void;
 }
 
 // Cell intensity scales with count relative to the matrix max — a simple sequential heat scale
@@ -18,7 +23,10 @@ function cellStyle(count: number, maxCell: number) {
   return { background: `rgba(255, 137, 0, ${alpha.toFixed(2)})`, color: intensity > 0.55 ? '#fff' : '#403833' };
 }
 
-export function SupplierHeatmap({ matrix, onSelectCell }: SupplierHeatmapProps) {
+// Generic over the category type so it can be driven either by the AI-classified ReasonCategory
+// (SOT/OTIF's heatmap) or the SCM-submitted RootCauseReason (Root Cause Detail's heatmap) —
+// callers supply their own label map instead of this component importing one directly.
+export function SupplierHeatmap<C extends string>({ matrix, labels, onSelectCell }: SupplierHeatmapProps<C>) {
   if (matrix.suppliers.length === 0 || matrix.categories.length === 0) {
     return (
       <div className="bg-white rounded-lg border border-[#e9e3df] p-3" style={{ boxShadow: 'var(--shadow-card)' }}>
@@ -37,7 +45,7 @@ export function SupplierHeatmap({ matrix, onSelectCell }: SupplierHeatmapProps) 
             <th className="text-left px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#9c9794] whitespace-nowrap">Supplier</th>
             {matrix.categories.map((cat) => (
               <th key={cat} className="px-1 py-1 text-[9px] font-semibold uppercase tracking-wide text-[#9c9794] whitespace-nowrap" style={{ maxWidth: 90 }}>
-                <span className="block truncate" title={REASON_CATEGORY_LABELS[cat]}>{REASON_CATEGORY_LABELS[cat]}</span>
+                <span className="block truncate" title={labels[cat]}>{labels[cat]}</span>
               </th>
             ))}
           </tr>

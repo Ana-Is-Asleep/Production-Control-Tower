@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { useActions } from '../../hooks/useActions';
 import { CardHeader } from '../shared/CardHeader';
 import { ROOT_CAUSE_REASONS, ROOT_CAUSE_REASON_LABELS, type RootCauseReason } from '../../types/actions';
+import { ROOT_CAUSE_REASON_PALETTE } from '../rootCause/categoryPalette';
 import type { PurchaseLine } from '../../types';
 
 interface RootCauseSectionProps {
@@ -12,21 +13,10 @@ interface RootCauseSectionProps {
   drillDownHref: string;
 }
 
-// Fixed hue per reason, in the same declared order as ROOT_CAUSE_REASONS — never cycled/reassigned
-// by rank, so a given reason always reads as the same color everywhere it appears.
-const ROOT_CAUSE_COLORS: Record<RootCauseReason, string> = {
-  capacity_issues: '#eb6834',
-  components_delay: '#2a78d6',
-  covers: '#1baf7a',
-  transport_issues: '#eda100',
-  container_availability: '#4a3aa7',
-  inbound_capacity: '#e87ba4',
-};
-
 // Root Cause is no longer inferred from free-text loss reasons — it's the SCM-submitted answer
-// captured when closing an R002 (missed SOT) flag (see RootCauseActionQueue.tsx). This card shows
-// how many POs are still waiting on that answer and the breakdown of what's been submitted so
-// far, instead of the old AI-classified-reasons-by-week chart.
+// captured when closing an R002 (missed SOT) flag (see the root-cause field in
+// ActionDetailModal.tsx). This card shows how many POs are still waiting on that answer and the
+// breakdown of what's been submitted so far, instead of the old AI-classified-reasons-by-week chart.
 export function RootCauseSection({ lines, drillDownHref }: RootCauseSectionProps) {
   const { actions } = useActions();
   const filteredPOs = useMemo(() => new Set(lines.map((l) => l.po)), [lines]);
@@ -67,7 +57,7 @@ export function RootCauseSection({ lines, drillDownHref }: RootCauseSectionProps
         ) : (
           submittedByReason.map(([reason, count]) => (
             <div key={reason} className="flex items-center gap-1.5 text-[10px] text-[#58524e]">
-              <span className="inline-block w-2 h-2 rounded-sm shrink-0" style={{ background: ROOT_CAUSE_COLORS[reason] }} />
+              <span className="inline-block w-2 h-2 rounded-sm shrink-0" style={{ background: ROOT_CAUSE_REASON_PALETTE[reason] }} />
               <span className="flex-1 truncate">{ROOT_CAUSE_REASON_LABELS[reason]}</span>
               <span className="font-semibold text-[#403833]">{count}</span>
             </div>
