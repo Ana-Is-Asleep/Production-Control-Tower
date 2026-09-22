@@ -353,8 +353,13 @@ export function SotOtifDrilldown() {
               (it now carries the Main Root Cause(s) column too), Key Insights the least. */}
           <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
             <div className="p-3 flex flex-col min-h-0 flex-1">
-              <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[35fr_43fr_22fr] gap-3 items-stretch" style={{ gridTemplateRows: 'minmax(0, 1fr)' }}>
-                <div className="bg-white rounded-lg border border-[#e9e3df] p-3 flex flex-col min-h-0" style={{ boxShadow: 'var(--shadow-card)' }}>
+              {/* minmax(0, Nfr) is required here, not bare Nfr — a bare fr track defaults to
+                  minmax(auto, Nfr), so the Scorecard's wide table (Supplier/POs/SOT/OTIF/Root
+                  Cause/Trend, all whitespace-nowrap) was forcing that column past its 43% share,
+                  pushing the whole row wider than the viewport and shoving Key Insights off-screen
+                  entirely instead of just scrolling the Scorecard's own table horizontally. */}
+              <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,35fr)_minmax(0,43fr)_minmax(0,22fr)] gap-3 items-stretch" style={{ gridTemplateRows: 'minmax(0, 1fr)' }}>
+                <div className="bg-white rounded-lg border border-[#e9e3df] p-3 flex flex-col min-h-0 min-w-0" style={{ boxShadow: 'var(--shadow-card)' }}>
                   <div className="flex items-center justify-between mb-2 shrink-0">
                     <p className="text-sm font-bold text-[#403833]">Performance by Week</p>
                     <button onClick={() => setPerfWeekModalOpen(true)} className="text-xs text-brand font-semibold hover:underline">View data</button>
@@ -363,7 +368,7 @@ export function SotOtifDrilldown() {
                     <PerformanceByWeekTable lines={weekRangeLines} weeksInRange={weeksInRange} isChinaSupplier={isChinaSupplier} today={today} onWeekClick={handleChartWeekClick} topGraph={kpis.topGraph} />
                   </div>
                 </div>
-                <div className="bg-white rounded-lg border border-[#e9e3df] p-3 flex flex-col min-h-0" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <div className="bg-white rounded-lg border border-[#e9e3df] p-3 flex flex-col min-h-0 min-w-0" style={{ boxShadow: 'var(--shadow-card)' }}>
                   <div className="flex items-center justify-between mb-2 shrink-0">
                     <p className="text-sm font-bold text-[#403833]">Supplier Scorecard <span className="text-[11px] font-medium text-[#9c9794]">(Top {Math.min(10, allSuppliers.length)} by volume)</span></p>
                     {allSuppliers.length > 10 && (
