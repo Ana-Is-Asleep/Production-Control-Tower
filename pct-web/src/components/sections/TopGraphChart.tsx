@@ -53,6 +53,7 @@ export function TopGraphChart({ points, onWeekClick, legendPosition = 'top' }: T
         <Line yAxisId="pct" dataKey="otifPastPct" stroke={LINE_OTIF} strokeWidth={2} dot={{ r: 4, fill: LINE_OTIF, stroke: '#fff', strokeWidth: 1.5 }} name="OTIF % (actual)" connectNulls />
         <Line yAxisId="pct" dataKey="otifFuturePct" stroke={LINE_OTIF} strokeWidth={2} strokeDasharray="5 4" dot={{ r: 4, fill: LINE_OTIF, stroke: '#fff', strokeWidth: 1.5 }} name="OTIF % (projected)" connectNulls />
         <Tooltip
+          wrapperStyle={{ zIndex: 50 }}
           contentStyle={{ background: COLOR.navy, border: 'none', borderRadius: 8, fontSize: 11, padding: '6px 10px' }}
           labelStyle={{ color: COLOR.brandSoft, fontWeight: 700 }}
           itemStyle={{ color: '#f9f7f6' }}

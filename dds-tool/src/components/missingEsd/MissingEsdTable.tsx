@@ -1,10 +1,11 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Search, SlidersHorizontal, Download } from 'lucide-react';
+import { Search, Download } from 'lucide-react';
 import { formatDateShort } from '../../lib/dateUtils';
 import { egrdBucketKeyForRow, type MissingEsdRow } from '../../lib/missingEsdAggregation';
 import type { UrgencyFilter } from '../../lib/missingEsdParams';
+import { downloadWorkbook } from '../../lib/xlsxWriter';
 
 interface MissingEsdTableProps {
   rows: MissingEsdRow[];
@@ -79,6 +80,17 @@ export function MissingEsdTable({ rows, tab, curWeek, curYear, selectedBucketKey
     });
   }, [rows, search, selectedBucketKeys, curWeek, curYear]);
 
+  const exportRows = () => {
+    const rows: (string | number)[][] = [['PO Number', 'Supplier', 'Warehouse', 'PGRD', 'EGRD', 'Qty Confirmed', 'Status', 'Days Overdue / Until EGRD']];
+    filtered.forEach((r) => rows.push([
+      r.po, r.supplier, r.warehouse,
+      r.pgrd ? formatDateShort(r.pgrd) : '—',
+      r.egrd ? formatDateShort(r.egrd) : '—',
+      r.qtyConfirmed, statusLabel(r), daysLabel(r),
+    ]));
+    downloadWorkbook('Missing ESD', [{ name: 'Missing ESD', rows }]);
+  };
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));
   const safePage = Math.min(page, totalPages);
   const pageRows = filtered.slice((safePage - 1) * ROWS_PER_PAGE, safePage * ROWS_PER_PAGE);
@@ -118,10 +130,7 @@ export function MissingEsdTable({ rows, tab, curWeek, curYear, selectedBucketKey
             </button>
           );
         })}
-        <button title="More filters (coming soon)" disabled className="flex items-center gap-1.5 text-xs font-semibold text-[#7b7571] border border-[#e9e3df] rounded-lg px-2.5 h-8 opacity-60 cursor-not-allowed">
-          <SlidersHorizontal size={13} /> More filters
-        </button>
-        <button title="Export (coming soon)" disabled className="flex items-center gap-1.5 text-xs font-semibold text-[#7b7571] border border-[#e9e3df] rounded-lg px-2.5 h-8 opacity-60 cursor-not-allowed ml-auto">
+        <button onClick={exportRows} className="flex items-center gap-1.5 text-xs font-semibold text-white bg-brand rounded-lg px-2.5 h-8 hover:bg-brand-soft transition-colors ml-auto">
           <Download size={13} /> Export
         </button>
       </div>

@@ -114,6 +114,11 @@ export function InvoicesDrilldown() {
         <DetailHeader
           title="Invoicing Detail"
           filters={filters}
+          onChange={setFilters}
+          allSuppliers={allSuppliers}
+          curWeek={curWeek}
+          curYear={curYear}
+          showCategory={false}
           centerContent={<GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} bucketFilter="invoicing" onOpenChange={setActionsOpen} />}
           rightActions={
             <>

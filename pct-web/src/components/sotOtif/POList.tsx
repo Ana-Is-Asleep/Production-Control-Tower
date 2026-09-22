@@ -2,6 +2,7 @@
 
 import { Fragment, useMemo, useState } from 'react';
 import { formatDateShort } from '../../lib/dateUtils';
+import { getChannel } from '../../lib/channelUtils';
 import type { PORollup } from '../../lib/poAggregation';
 
 type POFilter = 'not_sot' | 'sot' | 'not_otif' | 'otif' | 'awaiting_confirmation';
@@ -73,7 +74,11 @@ function LineDetail({ rollup }: { rollup: PORollup }) {
         <thead>
           <tr className="text-[#9c9794]">
             <th className="text-left font-semibold uppercase tracking-wide pb-1">SKU</th>
-            <th className="text-right font-semibold uppercase tracking-wide pb-1">Qty ordered</th>
+            <th className="text-left font-semibold uppercase tracking-wide pb-1 pl-3">PGRD</th>
+            <th className="text-left font-semibold uppercase tracking-wide pb-1 pl-3">EGRD</th>
+            <th className="text-left font-semibold uppercase tracking-wide pb-1 pl-3">ESD</th>
+            <th className="text-left font-semibold uppercase tracking-wide pb-1 pl-3">ASD</th>
+            <th className="text-right font-semibold uppercase tracking-wide pb-1 pl-3">Qty ordered</th>
             <th className="text-right font-semibold uppercase tracking-wide pb-1">Qty confirmed</th>
             <th className="text-left font-semibold uppercase tracking-wide pb-1 pl-3">Status</th>
           </tr>
@@ -82,7 +87,11 @@ function LineDetail({ rollup }: { rollup: PORollup }) {
           {visible.map((l) => (
             <tr key={l.line} className="border-t border-[#e9e3df]">
               <td className="py-1 text-[#403833]">{l.sku || '—'}</td>
-              <td className="py-1 text-right text-[#58524e]">{l.qty}</td>
+              <td className="py-1 pl-3 text-[#58524e] whitespace-nowrap">{formatDateShort(l.pgrd)}</td>
+              <td className="py-1 pl-3 text-[#58524e] whitespace-nowrap">{formatDateShort(l.egrd)}</td>
+              <td className="py-1 pl-3 text-[#58524e] whitespace-nowrap">{l.esd ? formatDateShort(l.esd) : '—'}</td>
+              <td className="py-1 pl-3 text-[#58524e] whitespace-nowrap">{l.asd ? formatDateShort(l.asd) : '—'}</td>
+              <td className="py-1 pl-3 text-right text-[#58524e]">{l.qty}</td>
               <td className="py-1 text-right text-[#58524e]">{l.cqty}</td>
               <td className="py-1 pl-3 text-[#58524e]">{l.confirmedStatus || l.status || '—'}</td>
             </tr>
@@ -164,6 +173,7 @@ export function POList({ rollups, today, weekLabel }: POListProps) {
             <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">ESD</th>
             <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">ASD</th>
             <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">Destination</th>
+            <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">Channel</th>
             <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">SOT Status</th>
             <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">OTIF Status</th>
             <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">SOT Delay</th>
@@ -173,7 +183,7 @@ export function POList({ rollups, today, weekLabel }: POListProps) {
         </thead>
         <tbody>
           {visible.length === 0 && (
-            <tr><td colSpan={11} className="text-center py-6 text-[#9c9794]">No POs match the current filters</td></tr>
+            <tr><td colSpan={12} className="text-center py-6 text-[#9c9794]">No POs match the current filters</td></tr>
           )}
           {visible.map((r) => {
             const hasLineData = r.lines.some((l) => l.sku);
@@ -195,6 +205,7 @@ export function POList({ rollups, today, weekLabel }: POListProps) {
                   <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{r.esd ? formatDateShort(r.esd) : '—'}</td>
                   <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{r.asd ? formatDateShort(r.asd) : '—'}</td>
                   <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{r.destination}</td>
+                  <td className="px-3 py-2 text-[#58524e] whitespace-nowrap">{getChannel(r.destination)}</td>
                   <td className="px-3 py-2 text-center"><StatusPill ok={r.sot} yesLabel="SOT" noLabel="Not SOT" /></td>
                   <td className="px-3 py-2 text-center"><StatusPill ok={r.otif} yesLabel="OTIF" noLabel="Not OTIF" /></td>
                   <td className="px-3 py-2 text-center text-[#58524e] font-semibold whitespace-nowrap">{dayOffsetLabel(sotDays)}</td>
@@ -209,7 +220,7 @@ export function POList({ rollups, today, weekLabel }: POListProps) {
                 </tr>
                 {isExpanded && hasLineData && (
                   <tr>
-                    <td colSpan={11} className="p-0"><LineDetail rollup={r} /></td>
+                    <td colSpan={12} className="p-0"><LineDetail rollup={r} /></td>
                   </tr>
                 )}
               </Fragment>

@@ -171,6 +171,10 @@ export function LeadTimeDrilldown() {
         <DetailHeader
           title="Lead Time Detail"
           filters={filters}
+          onChange={setFilters}
+          allSuppliers={allSuppliers}
+          curWeek={curWeek}
+          curYear={curYear}
           centerContent={<GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} bucketFilter="lead_time" onOpenChange={setActionsOpen} />}
           rightActions={
             <>

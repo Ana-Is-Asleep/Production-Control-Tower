@@ -105,6 +105,11 @@ export function MissingEsdDrilldown() {
         <DetailHeader
           title="Missing ESD Detail"
           filters={filters}
+          onChange={setFilters}
+          allSuppliers={allSuppliers}
+          curWeek={sotCurWeek}
+          curYear={sotCurYear}
+          showWeekRange={false}
           centerContent={<GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} bucketFilter="missing_esd" onOpenChange={setActionsOpen} />}
           rightActions={
             <button

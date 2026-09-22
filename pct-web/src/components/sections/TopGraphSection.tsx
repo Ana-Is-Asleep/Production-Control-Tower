@@ -55,7 +55,7 @@ export function TopGraphSection({ points, sotTarget, otifTarget, drillDownHref }
           />
         </div>
         <div className="flex-1 min-h-0 min-w-0" style={{ minHeight: 100 }}>
-          <TopGraphChart points={points} legendPosition="right" />
+          <TopGraphChart points={points} />
         </div>
       </div>
     </Link>

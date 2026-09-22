@@ -12,7 +12,8 @@ import {
   rankCategories, buildSupplierCategoryMatrix, computeTrendDirection,
   type PORootCauseRow,
 } from '../../lib/rootCauseAggregation';
-import { formatFilterSummary } from '../../lib/filterSummary';
+import { Sidebar } from '../shell/Sidebar';
+import { DetailHeader } from '../shell/DetailHeader';
 import { GlobalActionsBadge } from '../actions/GlobalActionsBadge';
 import { parseRootCauseParams, buildRootCauseParams, type RootCauseMode } from '../../lib/rootCauseParams';
 import { RootCauseActionQueue } from './RootCauseActionQueue';
@@ -33,13 +34,12 @@ interface TableFilter {
 export function RootCauseDrilldown() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
+  const searchParams = useSearchParams();
   const { allLines } = useData();
 
   const initial = useMemo(() => parseRootCauseParams(searchParams), []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // read-only: this page inherits the dashboard's filters, it never changes them
-  const { filters, weekRangeLines, weeksInRange, allSuppliers } = useFilters(allLines, initial.filters);
+  const { filters, setFilters, weekRangeLines, weeksInRange, allSuppliers, curWeek, curYear } = useFilters(allLines, initial.filters);
 
   const [mode, setMode] = useState<RootCauseMode>(initial.mode);
   const [tableFilter, setTableFilter] = useState<TableFilter | null>(null);
@@ -125,45 +125,47 @@ export function RootCauseDrilldown() {
 
   if (allLines.length === 0) {
     return (
-      <div className="h-screen w-full bg-[#f5f2ee] flex flex-col items-center justify-center gap-4">
-        <p className="text-lg font-semibold text-[#403833]">No data loaded</p>
-        <p className="text-sm text-[#9c9794]">Go back to the overview and upload your Business Central exports.</p>
-        <Link to="/" className="bg-brand text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-brand-soft transition-colors">
-          ← Back to Overview
-        </Link>
+      <div className="h-screen w-full bg-[#f5f2ee] flex overflow-hidden">
+        <Sidebar />
+        <div className="flex-1 min-w-0 flex flex-col items-center justify-center gap-4">
+          <p className="text-lg font-semibold text-[#403833]">No data loaded</p>
+          <p className="text-sm text-[#9c9794]">Go back to the overview and upload your Business Central exports.</p>
+          <Link to="/" className="bg-brand text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-brand-soft transition-colors">
+            ← Back to Overview
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen w-full bg-[#f5f2ee] flex flex-col overflow-hidden">
-      <header className="bg-white border-b border-[#e9e3df] px-5 py-2.5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
-          <Link to="/" className="flex items-center gap-1.5 text-sm font-semibold text-[#403833] hover:text-brand transition-colors shrink-0">
-            <span>←</span> Overview
-          </Link>
-          <span className="text-[#e9e3df]">|</span>
-          <span className="text-[#403833] text-sm font-semibold shrink-0">Root Cause Detail</span>
-          <span className="text-[#e9e3df]">|</span>
-          <span className="text-xs text-[#7b7571] truncate">Filtered by: {formatFilterSummary(filters)}</span>
-        </div>
-        <div className="flex justify-center">
-          <GlobalActionsBadge filteredPOs={new Set(weekRangeLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} bucketFilter="root_cause" onOpenChange={setActionsOpen} />
-        </div>
-        <div className="flex items-center gap-1 justify-end min-w-0">
-          {(['snapshot', 'trend'] as RootCauseMode[]).map((m) => (
-            <button
-              key={m}
-              onClick={() => setMode(m)}
-              className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
-                mode === m ? 'bg-[#403833] text-white border-[#403833]' : 'border-[#e9e3df] text-[#7b7571] hover:border-[#403833]'
-              }`}
-            >
-              {m === 'snapshot' ? 'Last Completed Week (Snapshot)' : 'All Weeks (Trend)'}
-            </button>
-          ))}
-        </div>
-      </header>
+    <div className="h-screen w-full bg-[#f5f2ee] flex overflow-hidden">
+      <Sidebar />
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+        <DetailHeader
+          title="Root Cause Detail"
+          filters={filters}
+          onChange={setFilters}
+          allSuppliers={allSuppliers}
+          curWeek={curWeek}
+          curYear={curYear}
+          centerContent={<GlobalActionsBadge filteredPOs={new Set(weekRangeLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} bucketFilter="root_cause" onOpenChange={setActionsOpen} />}
+          rightActions={
+            <div className="flex items-center gap-1">
+              {(['snapshot', 'trend'] as RootCauseMode[]).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setMode(m)}
+                  className={`text-xs font-semibold px-3 py-1.5 rounded-full border whitespace-nowrap transition-colors ${
+                    mode === m ? 'bg-[#403833] text-white border-[#403833]' : 'border-[#e9e3df] text-[#7b7571] hover:border-[#403833]'
+                  }`}
+                >
+                  {m === 'snapshot' ? 'Last Completed Week (Snapshot)' : 'All Weeks (Trend)'}
+                </button>
+              ))}
+            </div>
+          }
+        />
 
       {/* Header stays full width above — only this content area reserves space for the Actions
           drawer (which starts below the header, not overlapping it). */}
@@ -219,6 +221,7 @@ export function RootCauseDrilldown() {
             <LineDetailTable rows={filteredLineRows} />
           </>
         )}
+      </div>
       </div>
     </div>
   );
