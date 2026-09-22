@@ -359,7 +359,7 @@ export function SotOtifDrilldown() {
                     <button onClick={() => setPerfWeekModalOpen(true)} className="text-xs text-brand font-semibold hover:underline">View data</button>
                   </div>
                   <div className="flex-1 min-h-0 overflow-y-auto">
-                    <PerformanceByWeekTable lines={weekRangeLines} weeksInRange={weeksInRange} isChinaSupplier={isChinaSupplier} today={today} onWeekClick={handleChartWeekClick} />
+                    <PerformanceByWeekTable lines={weekRangeLines} weeksInRange={weeksInRange} isChinaSupplier={isChinaSupplier} today={today} onWeekClick={handleChartWeekClick} topGraph={kpis.topGraph} />
                   </div>
                 </div>
                 <div className="bg-white rounded-lg border border-[#e9e3df] p-4 flex flex-col min-h-0" style={{ boxShadow: 'var(--shadow-card)' }}>
@@ -521,6 +521,7 @@ export function SotOtifDrilldown() {
               isChinaSupplier={isChinaSupplier}
               today={today}
               onWeekClick={(label) => { handleChartWeekClick(label); setPerfWeekModalOpen(false); }}
+              topGraph={kpis.topGraph}
             />
           </div>
         </LargeModal>

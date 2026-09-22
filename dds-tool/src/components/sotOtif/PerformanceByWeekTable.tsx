@@ -5,6 +5,7 @@ import { rollupByPO } from '../../lib/poAggregation';
 import { aggregateSOTRate, aggregateOTIFRate, type IsChinaSupplier } from '../../lib/kpiFormulas';
 import { getISOWeek, getISOWeekYear } from '../../lib/dateUtils';
 import type { WeekInRange } from '../../hooks/useFilters';
+import type { TopGraphPoint } from '../../hooks/useKPIs';
 import type { PurchaseLine } from '../../types';
 
 interface PerformanceByWeekTableProps {
@@ -13,6 +14,10 @@ interface PerformanceByWeekTableProps {
   isChinaSupplier: IsChinaSupplier;
   today: Date;
   onWeekClick?: (weekLabel: string) => void;
+  // Same backlog-carried-forward figures the chart's "Backlog Accumulated" bar segment already
+  // shows, per week — reused here rather than recomputed, so the table can never disagree with
+  // the chart above it.
+  topGraph: TopGraphPoint[];
 }
 
 function cellTint(pct: number | null): string {
@@ -24,16 +29,18 @@ function cellTint(pct: number | null): string {
 
 // Same weeks shown on the chart above, collapsed into a compact SOT%/OTIF%/volume grid — lets you
 // scan every week's numbers at once rather than reading them off the chart one point at a time.
-export function PerformanceByWeekTable({ lines, weeksInRange, isChinaSupplier, today, onWeekClick }: PerformanceByWeekTableProps) {
+export function PerformanceByWeekTable({ lines, weeksInRange, isChinaSupplier, today, onWeekClick, topGraph }: PerformanceByWeekTableProps) {
   const columns = useMemo(() => {
     return weeksInRange.map((week) => {
       const weekLines = lines.filter((l) => l.pgrd && getISOWeek(l.pgrd) === week.week && getISOWeekYear(l.pgrd) === week.year);
       const sot = aggregateSOTRate(weekLines, isChinaSupplier, today);
       const otif = aggregateOTIFRate(weekLines, isChinaSupplier);
       const posInScope = rollupByPO(weekLines, isChinaSupplier, today).length;
-      return { label: week.label, isLatest: week.isCurrent, sot, otif, posInScope };
+      const graphPoint = topGraph.find((p) => p.week === week.week && p.year === week.year);
+      const backlogAccumulated = graphPoint?.pastAccumulatedBacklog ?? null;
+      return { label: week.label, isLatest: week.isCurrent, sot, otif, posInScope, backlogAccumulated };
     });
-  }, [lines, weeksInRange, isChinaSupplier, today]);
+  }, [lines, weeksInRange, isChinaSupplier, today, topGraph]);
 
   return (
     <div>
@@ -76,6 +83,12 @@ export function PerformanceByWeekTable({ lines, weeksInRange, isChinaSupplier, t
               <td className="px-2 py-1.5 font-semibold text-[#403833] whitespace-nowrap sticky left-0 bg-white">POs in Scope</td>
               {columns.map((c) => (
                 <td key={c.label} className="px-1 py-1 text-center text-[#58524e]">{c.posInScope}</td>
+              ))}
+            </tr>
+            <tr className="border-t border-[#f4f1ef]">
+              <td className="px-2 py-1.5 font-semibold text-[#403833] whitespace-nowrap sticky left-0 bg-white">Backlog Accumulated</td>
+              {columns.map((c) => (
+                <td key={c.label} className="px-1 py-1 text-center text-[#58524e]">{c.backlogAccumulated === null ? '—' : c.backlogAccumulated}</td>
               ))}
             </tr>
           </tbody>

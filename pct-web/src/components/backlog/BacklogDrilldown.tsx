@@ -104,6 +104,10 @@ export function BacklogDrilldown() {
         <DetailHeader
           title={isModeB ? 'Backlog Detail — Supplier Detail' : 'Backlog Detail'}
           filters={filters}
+          onChange={setFilters}
+          allSuppliers={allSuppliers}
+          curWeek={sotCurWeek}
+          curYear={sotCurYear}
           centerContent={<GlobalActionsBadge filteredPOs={new Set(filteredLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} bucketFilter="backlog" onOpenChange={setActionsOpen} />}
           rightActions={
             <>
