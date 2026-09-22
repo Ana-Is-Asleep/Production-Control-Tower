@@ -95,13 +95,16 @@ export function BacklogDrilldown() {
     );
   }
 
-  // Mode B (single-supplier deep dive) scrolls naturally as one normal page — Mode A (the
-  // multi-supplier strategic view) stays viewport-locked/compact. Sidebar is sticky so it stays
+  // Both modes scroll naturally as one normal page — Mode A's full PO table (every backlog PO,
+  // unpaginated) has no bounded height of its own, so a viewport-locked "everything scrolls
+  // internally" layout was squeezing the Clearance Forecast/Key Insights/Supplier Ranking/Age
+  // Breakdown rows down to zero height (flex-shrink has nothing stopping it once those rows use
+  // min-h-0) rather than ever letting the page itself grow taller. Sidebar is sticky so it stays
   // pinned in both cases.
   return (
-    <div className={isModeB ? 'min-h-screen w-full bg-[#f5f2ee] flex' : 'h-screen w-full bg-[#f5f2ee] flex overflow-hidden'}>
+    <div className="min-h-screen w-full bg-[#f5f2ee] flex">
       <Sidebar />
-      <div className={`${isModeB ? 'flex-1 min-w-0 flex flex-col' : 'flex-1 min-w-0 flex flex-col overflow-hidden'} transition-[padding] duration-150`} style={{ paddingRight: actionsOpen ? 416 : undefined }}>
+      <div className="flex-1 min-w-0 flex flex-col transition-[padding] duration-150" style={{ paddingRight: actionsOpen ? 416 : undefined }}>
         <DetailHeader
           title={isModeB ? 'Backlog Detail — Supplier Detail' : 'Backlog Detail'}
           filters={filters}
@@ -141,21 +144,19 @@ export function BacklogDrilldown() {
         )}
 
         {!isModeB ? (
-          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 flex flex-col gap-3">
-            <div className="shrink-0">
-              <BacklogTopCards
-                rows={rows}
-                recentCount={recentRows.length}
-                accumulatedCount={accumulatedRows.length}
-                noEsdCount={noEsdRows.length}
-                expectedCount={expectedRows.length}
-                expectedByWeek={expectedByWeek}
-                avgAgeDays={avgAgeDays}
-              />
-            </div>
+          <div className="p-3 flex flex-col gap-3">
+            <BacklogTopCards
+              rows={rows}
+              recentCount={recentRows.length}
+              accumulatedCount={accumulatedRows.length}
+              noEsdCount={noEsdRows.length}
+              expectedCount={expectedRows.length}
+              expectedByWeek={expectedByWeek}
+              avgAgeDays={avgAgeDays}
+            />
 
-            <div style={{ flex: '3 1 220px' }} className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch min-h-0 overflow-hidden">
-              <div className="lg:col-span-2 min-h-0">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch" style={{ minHeight: 260 }}>
+              <div className="lg:col-span-2">
                 <BacklogClearanceForecast points={forecast} />
               </div>
               <BacklogKeyInsights
@@ -167,16 +168,14 @@ export function BacklogDrilldown() {
               />
             </div>
 
-            {outliers.length > 0 && <div className="shrink-0"><BacklogOutlierCallout outliers={outliers} /></div>}
+            {outliers.length > 0 && <BacklogOutlierCallout outliers={outliers} />}
 
-            <div style={{ flex: '2 1 160px' }} className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch min-h-0 overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch" style={{ minHeight: 200 }}>
               <BacklogSupplierRanking summary={supplierSummary} />
               <BacklogAgeBreakdown bands={ageBands} />
             </div>
 
-            <div className="shrink-0">
-              <BacklogFullTable rows={rows} expectedRows={expectedRows} today={today} />
-            </div>
+            <BacklogFullTable rows={rows} expectedRows={expectedRows} today={today} />
           </div>
         ) : (
           <div className="p-3 flex flex-col gap-3">
