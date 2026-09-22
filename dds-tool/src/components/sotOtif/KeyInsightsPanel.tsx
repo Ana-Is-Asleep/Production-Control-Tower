@@ -3,11 +3,18 @@
 import { useMemo } from 'react';
 import { AlertTriangle, CheckCircle2, Clock, Info } from 'lucide-react';
 import type { PORollup } from '../../lib/poAggregation';
+import { REASON_CATEGORY_LABELS, type ReasonCategory } from '../../lib/reasonClassification';
 
 export interface NextWeekProjection {
   weekLabel: string;
   sotPct: number | null;
   otifPct: number | null;
+}
+
+export interface TopRootCause {
+  category: ReasonCategory;
+  count: number;
+  share: number; // 0-100, share of late (missed-SOT) POs in scope this category accounts for
 }
 
 interface KeyInsightsPanelProps {
@@ -20,14 +27,20 @@ interface KeyInsightsPanelProps {
   projection?: NextWeekProjection | null;
   sotTarget?: number;
   otifTarget?: number;
+  // Most common classified root cause among this scope's missed-SOT POs — same PO-level
+  // classification the Supplier Scorecard's Main Root Cause(s) column uses, just rolled up
+  // across every supplier in view instead of one at a time.
+  topRootCause?: TopRootCause | null;
 }
+
+const MAX_INSIGHTS = 5;
 
 // Current-state facts derived from this scope's rollups only — no week-over-week trend claims
 // (holding off on trend calculations everywhere, per an earlier decision), so every bullet here
 // is something directly countable from the POs currently in view. The one exception is the
 // forward-looking projection bullet, which reuses an existing computed projection rather than
 // inventing a new prediction method.
-export function KeyInsightsPanel({ rollups, avgDelayDays, weekLabel, projection, sotTarget, otifTarget }: KeyInsightsPanelProps) {
+export function KeyInsightsPanel({ rollups, avgDelayDays, weekLabel, projection, sotTarget, otifTarget, topRootCause }: KeyInsightsPanelProps) {
   const insights = useMemo(() => {
     const items: { icon: typeof AlertTriangle; tone: 'fail' | 'warn' | 'pass' | 'neutral'; text: string }[] = [];
     const total = rollups.length;
@@ -50,6 +63,14 @@ export function KeyInsightsPanel({ rollups, avgDelayDays, weekLabel, projection,
       if (bySupplierSorted.length > topN.length) {
         items.push({ icon: AlertTriangle, tone: 'warn', text: `Top ${topN.length} suppliers represent ${topNShare}% of late POs.` });
       }
+    }
+
+    if (topRootCause) {
+      items.push({
+        icon: Info,
+        tone: 'neutral',
+        text: `Most common cause of missed SOT: ${REASON_CATEGORY_LABELS[topRootCause.category]} (${topRootCause.share}% of late POs).`,
+      });
     }
 
     if (avgDelayDays !== null) {
@@ -77,8 +98,8 @@ export function KeyInsightsPanel({ rollups, avgDelayDays, weekLabel, projection,
       });
     }
 
-    return items;
-  }, [rollups, avgDelayDays, projection, sotTarget, otifTarget]);
+    return items.slice(0, MAX_INSIGHTS);
+  }, [rollups, avgDelayDays, projection, sotTarget, otifTarget, topRootCause]);
 
   const toneColor: Record<string, string> = { fail: 'text-fail', warn: 'text-warn', pass: 'text-pass', neutral: 'text-[#7b7571]' };
 

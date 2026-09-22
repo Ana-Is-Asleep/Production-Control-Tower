@@ -13,7 +13,6 @@ import { DetailHeader } from '../shell/DetailHeader';
 import { GlobalActionsBadge } from '../actions/GlobalActionsBadge';
 import { KpiBox } from '../shared/KpiBox';
 import { TopGraphChart } from '../sections/TopGraphChart';
-import { KPICardsRow } from './KPICardsRow';
 import { SupplierInfoCard } from './SupplierInfoCard';
 import { SupplierKpiStrip } from './SupplierKpiStrip';
 import { ScorecardMatrix } from './ScorecardMatrix';
@@ -29,6 +28,9 @@ import { aggregateSOTRate, aggregateOTIFRate, aggregateByQty, computeSOTLine, co
 import { getISOWeek, getISOWeekYear } from '../../lib/dateUtils';
 import { parseSotOtifParams, buildSotOtifParams } from '../../lib/sotOtifParams';
 import { downloadWorkbook } from '../../lib/xlsxWriter';
+import { useReasonClassification } from '../../hooks/useReasonClassification';
+import { computePORootCauseRows } from '../../lib/rootCauseAggregation';
+import { isSubstantiveReason, type ReasonCategory } from '../../lib/reasonClassification';
 
 function pctLabel(v: number | null) {
   return v === null ? '—' : `${v}%`;
@@ -178,6 +180,31 @@ export function SotOtifDrilldown() {
     return delays.length ? Math.round((delays.reduce((s, d) => s + d, 0) / delays.length) * 10) / 10 : null;
   }, [scopeRollups]);
 
+  // Mode A: PO-level root-cause classification for the full range in view — same AI-backed
+  // pipeline the Root Cause Detail page uses (useReasonClassification + computePORootCauseRows),
+  // reused here rather than re-deriving categories a second way. Feeds the Supplier Scorecard's
+  // Main Root Cause(s) column and the Key Insights "most common cause" bullet below.
+  const linesWithReasons = useMemo(() => weekRangeLines.filter((l) => isSubstantiveReason(l.lossReasonCode)), [weekRangeLines]);
+  const { classifications } = useReasonClassification(linesWithReasons.map((l) => l.lossReasonCode));
+  const rootCauseRows = useMemo(
+    () => computePORootCauseRows(weekRangeLines, classifications, weeksInRange),
+    [weekRangeLines, classifications, weeksInRange]
+  );
+  const topRootCause = useMemo(() => {
+    const categoryByPO = new Map<string, ReasonCategory>();
+    rootCauseRows.forEach((r) => { if (r.finalCategory) categoryByPO.set(r.po, r.finalCategory); });
+    const late = scopeRollups.filter((r) => r.sot === false);
+    if (late.length === 0) return null;
+    const counts = new Map<ReasonCategory, number>();
+    late.forEach((r) => {
+      const category = categoryByPO.get(r.po);
+      if (category) counts.set(category, (counts.get(category) ?? 0) + 1);
+    });
+    if (counts.size === 0) return null;
+    const [category, count] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+    return { category, count, share: Math.round((count / late.length) * 100) };
+  }, [rootCauseRows, scopeRollups]);
+
   // Mode B: per-week SOT/OTIF/volume for this supplier across the selected historical range,
   // completed weeks only (a projected week isn't a real outcome yet) — feeds Performance
   // Consistency and the supplier-specific Key Insights below.
@@ -274,52 +301,44 @@ export function SotOtifDrilldown() {
 
       {!isModeB ? (
         <>
-          {/* Top section — persistent chart + KPI cards. The chart itself is display-only (no
-              onWeekClick) — a week is only ever selected via the Performance by Week table below
-              or the Mode B week strip, never by clicking the bars directly. */}
-          <div className="shrink-0 flex flex-col overflow-hidden" style={{ height: '42vh' }}>
-            <div className="flex-1 min-h-0 px-4 pt-3 flex gap-3">
-              <div className="flex flex-col gap-2 shrink-0 w-[180px]">
-                <KpiBox
-                  label={`SOT · ${kpis.sotTarget}% target`}
-                  value={pctLabel(scopeSOT)}
-                  valueClassName={`text-2xl ${scopeSOT === null ? 'text-[#c8c0bb]' : scopeSOT >= kpis.sotTarget ? 'text-pass' : 'text-fail'}`}
-                  tint={scopeSOT === null ? 'neutral' : scopeSOT >= kpis.sotTarget ? 'pass' : 'fail'}
-                />
-                <KpiBox
-                  label={`OTIF · ${kpis.otifTarget}% target`}
-                  value={pctLabel(scopeOTIF)}
-                  valueClassName={`text-2xl ${scopeOTIF === null ? 'text-[#c8c0bb]' : scopeOTIF >= kpis.otifTarget ? 'text-pass' : 'text-fail'}`}
-                  tint={scopeOTIF === null ? 'neutral' : scopeOTIF >= kpis.otifTarget ? 'pass' : 'fail'}
-                />
+          {/* Top section — persistent chart + KPI target cards, kept compact so Performance by
+              Week / Supplier Scorecard / Key Insights all fit below on one normal desktop screen
+              at 100% zoom. The chart itself is display-only (no onWeekClick) — a week is only
+              ever selected via the Performance by Week table below or the Mode B week strip,
+              never by clicking the bars directly. */}
+          <div className="shrink-0 flex px-4 pt-3 gap-3" style={{ height: 260 }}>
+            <div className="flex flex-col gap-2 shrink-0 w-[180px]">
+              <KpiBox
+                label={`SOT · ${kpis.sotTarget}% target`}
+                value={pctLabel(scopeSOT)}
+                valueClassName={`text-2xl ${scopeSOT === null ? 'text-[#c8c0bb]' : scopeSOT >= kpis.sotTarget ? 'text-pass' : 'text-fail'}`}
+                tint={scopeSOT === null ? 'neutral' : scopeSOT >= kpis.sotTarget ? 'pass' : 'fail'}
+              />
+              <KpiBox
+                label={`OTIF · ${kpis.otifTarget}% target`}
+                value={pctLabel(scopeOTIF)}
+                valueClassName={`text-2xl ${scopeOTIF === null ? 'text-[#c8c0bb]' : scopeOTIF >= kpis.otifTarget ? 'text-pass' : 'text-fail'}`}
+                tint={scopeOTIF === null ? 'neutral' : scopeOTIF >= kpis.otifTarget ? 'pass' : 'fail'}
+              />
+            </div>
+            <div className="flex-1 min-h-0 min-w-0 bg-white rounded-lg border border-[#e9e3df] p-3 flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <div className="flex items-center justify-between shrink-0 mb-2">
+                <p className="text-sm font-bold text-[#403833]">SOT &amp; OTIF Evolution</p>
+                <div className="flex items-center gap-2 text-[#9c9794]">
+                  <span className="text-[11px] font-medium px-2 py-1 rounded-md border border-[#e9e3df]">Weekly</span>
+                  <button onClick={() => setChartExpanded(true)} title="Expand chart" aria-label="Expand chart" className="hover:text-[#403833] transition-colors">
+                    <Maximize2 size={14} />
+                  </button>
+                </div>
               </div>
-              <div className="flex-1 min-h-0 min-w-0 bg-white rounded-lg border border-[#e9e3df] p-3 flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>
-                <div className="flex items-center justify-between shrink-0 mb-2">
-                  <p className="text-sm font-bold text-[#403833]">SOT &amp; OTIF Evolution</p>
-                  <div className="flex items-center gap-2 text-[#9c9794]">
-                    <span className="text-[11px] font-medium px-2 py-1 rounded-md border border-[#e9e3df]">Weekly</span>
-                    <button onClick={() => setChartExpanded(true)} title="Expand chart" aria-label="Expand chart" className="hover:text-[#403833] transition-colors">
-                      <Maximize2 size={14} />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex-1 min-h-0">
-                  <TopGraphChart points={kpis.topGraph} />
-                </div>
+              <div className="flex-1 min-h-0">
+                <TopGraphChart points={kpis.topGraph} />
               </div>
             </div>
-            <KPICardsRow
-              sotTarget={kpis.sotTarget}
-              totalPOs={scopeRollups.length}
-              onTimeCount={onTimeCount}
-              lateCount={lateCount}
-              avgDelayDays={avgDelayDays}
-              weekLabel={kpiWeekLabel}
-            />
           </div>
 
           {selectedWeek && (
-            <div className="px-4 py-1.5 bg-[#fff7ed] border-y border-brand flex items-center gap-2 shrink-0">
+            <div className="px-4 py-1.5 mt-3 bg-[#fff7ed] border-y border-brand flex items-center gap-2 shrink-0">
               <span className="text-xs font-semibold text-brand">{selectedWeek.label} selected</span>
               <button onClick={handleDeselectWeek} className="text-xs text-[#9c9794] hover:text-brand underline">
                 Clear — view full period
@@ -328,10 +347,11 @@ export function SotOtifDrilldown() {
           )}
 
           {/* Bottom section — Performance by Week / Supplier Scorecard / Key Insights, sharing the
-              remaining viewport height so the page never scrolls. */}
+              remaining viewport height so the page never scrolls. Scorecard gets the most width
+              (it now carries the Main Root Cause(s) column too), Key Insights the least. */}
           <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
             <div className="p-4 flex flex-col min-h-0 flex-1">
-              <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_1.3fr_1fr] gap-4 items-stretch" style={{ gridTemplateRows: 'minmax(0, 1fr)' }}>
+              <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[35fr_43fr_22fr] gap-4 items-stretch" style={{ gridTemplateRows: 'minmax(0, 1fr)' }}>
                 <div className="bg-white rounded-lg border border-[#e9e3df] p-4 flex flex-col min-h-0" style={{ boxShadow: 'var(--shadow-card)' }}>
                   <div className="flex items-center justify-between mb-3 shrink-0">
                     <p className="text-sm font-bold text-[#403833]">Performance by Week</p>
@@ -359,6 +379,7 @@ export function SotOtifDrilldown() {
                       selectedWeek={selectedWeek}
                       onSupplierClick={handleSupplierRowClick}
                       showAll={false}
+                      rootCauseRows={rootCauseRows}
                     />
                   </div>
                 </div>
@@ -369,6 +390,7 @@ export function SotOtifDrilldown() {
                   projection={nextWeekProjection}
                   sotTarget={kpis.sotTarget}
                   otifTarget={kpis.otifTarget}
+                  topRootCause={topRootCause}
                 />
               </div>
             </div>
@@ -429,7 +451,7 @@ export function SotOtifDrilldown() {
 
           {/* Selected-week KPI deep dive — PO-level and quantity-level SOT/OTIF side by side. */}
           <SupplierKpiStrip
-            weekLabel={selectedWeek?.label ?? null}
+            weekLabel={kpiWeekLabel}
             sotTarget={kpis.sotTarget}
             otifTarget={kpis.otifTarget}
             onTimeCount={onTimeCount}
@@ -523,6 +545,7 @@ export function SotOtifDrilldown() {
               selectedWeek={selectedWeek}
               onSupplierClick={handleSupplierRowClick}
               showAll
+              rootCauseRows={rootCauseRows}
             />
           </div>
         </LargeModal>

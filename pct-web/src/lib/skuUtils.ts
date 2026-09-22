@@ -24,4 +24,4 @@ export function categorizeSKU(sku: string): SKUCategory {
 // order matters here — category pills in the UI follow this sequence.
 // Comps/Other is intentionally excluded — it's out of scope for this version and is hard-filtered
 // out of all data in useFilters.ts, so there's nothing to show a pill for.
-export const SKU_CATEGORIES: SKUCategory[] = ['Beds', 'Mattresses', 'Accessories'];
+export const SKU_CATEGORIES: SKUCategory[] = ['Accessories', 'Beds', 'Mattresses'];
