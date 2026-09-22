@@ -16,7 +16,7 @@ import { TopGraphChart } from '../sections/TopGraphChart';
 import { SupplierInfoCard } from './SupplierInfoCard';
 import { SupplierKpiStrip } from './SupplierKpiStrip';
 import { ScorecardMatrix } from './ScorecardMatrix';
-import { PerformanceByWeekTable } from './PerformanceByWeekTable';
+import { SupplierHeatmap } from '../rootCause/SupplierHeatmap';
 import { KeyInsightsPanel } from './KeyInsightsPanel';
 import { SupplierKeyInsights } from './SupplierKeyInsights';
 import { PerformanceConsistency } from './PerformanceConsistency';
@@ -27,9 +27,8 @@ import { rollupByPO, computeConsistencyStats } from '../../lib/poAggregation';
 import { aggregateSOTRate, aggregateOTIFRate, aggregateByQty, computeSOTLine, computeOTIFLine } from '../../lib/kpiFormulas';
 import { getISOWeek, getISOWeekYear } from '../../lib/dateUtils';
 import { parseSotOtifParams, buildSotOtifParams } from '../../lib/sotOtifParams';
-import { downloadWorkbook } from '../../lib/xlsxWriter';
 import { useReasonClassification } from '../../hooks/useReasonClassification';
-import { computePORootCauseRows } from '../../lib/rootCauseAggregation';
+import { computePORootCauseRows, buildSupplierCategoryMatrix } from '../../lib/rootCauseAggregation';
 import { isSubstantiveReason, type ReasonCategory } from '../../lib/reasonClassification';
 
 function pctLabel(v: number | null) {
@@ -57,7 +56,6 @@ export function SotOtifDrilldown() {
   const [scorecardModalOpen, setScorecardModalOpen] = useState(false);
   const [scorecardSearch, setScorecardSearch] = useState('');
   const [chartExpanded, setChartExpanded] = useState(false);
-  const [perfWeekModalOpen, setPerfWeekModalOpen] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
 
   const today = useMemo(() => new Date(), []);
@@ -190,6 +188,9 @@ export function SotOtifDrilldown() {
     () => computePORootCauseRows(weekRangeLines, classifications, weeksInRange),
     [weekRangeLines, classifications, weeksInRange]
   );
+  // Same Supplier x Root Cause heatmap the Root Cause Detail page uses — reused verbatim in place
+  // of the old Performance by Week table (Ana: wants the same root-cause view here too).
+  const heatmapMatrix = useMemo(() => buildSupplierCategoryMatrix(rootCauseRows), [rootCauseRows]);
   const topRootCause = useMemo(() => {
     const categoryByPO = new Map<string, ReasonCategory>();
     rootCauseRows.forEach((r) => { if (r.finalCategory) categoryByPO.set(r.po, r.finalCategory); });
@@ -348,9 +349,11 @@ export function SotOtifDrilldown() {
             </div>
           )}
 
-          {/* Bottom section — Performance by Week / Supplier Scorecard / Key Insights, sharing the
-              remaining viewport height so the page never scrolls. Scorecard gets the most width
-              (it now carries the Main Root Cause(s) column too), Key Insights the least. */}
+          {/* Bottom section — Supplier x Root Cause heatmap / Supplier Scorecard / Key Insights,
+              sharing the remaining viewport height so the page never scrolls. The heatmap replaces
+              the old Performance by Week table (Ana: wants the same root-cause view used on the
+              Root Cause Detail page here too). Scorecard gets the most width (it now carries the
+              Main Root Cause(s) column too), Key Insights the least. */}
           <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
             <div className="p-3 flex flex-col min-h-0 flex-1">
               {/* minmax(0, Nfr) is required here, not bare Nfr — a bare fr track defaults to
@@ -359,14 +362,8 @@ export function SotOtifDrilldown() {
                   pushing the whole row wider than the viewport and shoving Key Insights off-screen
                   entirely instead of just scrolling the Scorecard's own table horizontally. */}
               <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,35fr)_minmax(0,43fr)_minmax(0,22fr)] gap-3 items-stretch" style={{ gridTemplateRows: 'minmax(0, 1fr)' }}>
-                <div className="bg-white rounded-lg border border-[#e9e3df] p-3 flex flex-col min-h-0 min-w-0" style={{ boxShadow: 'var(--shadow-card)' }}>
-                  <div className="flex items-center justify-between mb-2 shrink-0">
-                    <p className="text-sm font-bold text-[#403833]">Performance by Week</p>
-                    <button onClick={() => setPerfWeekModalOpen(true)} className="text-xs text-brand font-semibold hover:underline">View data</button>
-                  </div>
-                  <div className="flex-1 min-h-0 overflow-y-auto">
-                    <PerformanceByWeekTable lines={weekRangeLines} weeksInRange={weeksInRange} isChinaSupplier={isChinaSupplier} today={today} onWeekClick={handleChartWeekClick} topGraph={kpis.topGraph} />
-                  </div>
+                <div className="min-h-0 min-w-0 overflow-y-auto">
+                  <SupplierHeatmap matrix={heatmapMatrix} onSelectCell={(supplier) => handleSupplierRowClick(supplier)} />
                 </div>
                 <div className="bg-white rounded-lg border border-[#e9e3df] p-3 flex flex-col min-h-0 min-w-0" style={{ boxShadow: 'var(--shadow-card)' }}>
                   <div className="flex items-center justify-between mb-2 shrink-0">
@@ -497,40 +494,6 @@ export function SotOtifDrilldown() {
             </div>
           )}
         </div>
-      )}
-
-      {perfWeekModalOpen && (
-        <LargeModal
-          title="Performance by Week"
-          onClose={() => setPerfWeekModalOpen(false)}
-          rightActions={
-            <button
-              onClick={() => {
-                const rows: (string | number)[][] = [['Week', 'POs in Scope', 'SOT %', 'OTIF %']];
-                weeksInRange.forEach((w) => {
-                  const wLines = weekRangeLines.filter((l) => l.pgrd && getISOWeek(l.pgrd) === w.week && getISOWeekYear(l.pgrd) === w.year);
-                  const poCount = rollupByPO(wLines, isChinaSupplier, today).length;
-                  rows.push([w.label, poCount, aggregateSOTRate(wLines, isChinaSupplier, today) ?? '—', aggregateOTIFRate(wLines, isChinaSupplier) ?? '—']);
-                });
-                downloadWorkbook('Performance by Week', [{ name: 'Weekly Performance', rows }]);
-              }}
-              className="flex items-center gap-1.5 text-xs font-semibold text-white bg-brand rounded-lg px-3 py-1.5 hover:bg-brand-soft transition-colors"
-            >
-              <Download size={13} /> Export Excel
-            </button>
-          }
-        >
-          <div className="bg-white rounded-lg border border-[#e9e3df] p-4">
-            <PerformanceByWeekTable
-              lines={weekRangeLines}
-              weeksInRange={weeksInRange}
-              isChinaSupplier={isChinaSupplier}
-              today={today}
-              onWeekClick={(label) => { handleChartWeekClick(label); setPerfWeekModalOpen(false); }}
-              topGraph={kpis.topGraph}
-            />
-          </div>
-        </LargeModal>
       )}
 
       {scorecardModalOpen && (
