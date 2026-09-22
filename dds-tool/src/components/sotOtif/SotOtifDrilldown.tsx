@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { Download, MoreVertical, Maximize2 } from 'lucide-react';
+import { Maximize2 } from 'lucide-react';
 import { LargeModal } from '../shared/LargeModal';
 import { useData } from '../../context/DataContext';
 import { useFilters, type WeekInRange } from '../../hooks/useFilters';
@@ -297,25 +297,6 @@ export function SotOtifDrilldown() {
           curWeek={curWeek}
           curYear={curYear}
           centerContent={<GlobalActionsBadge filteredPOs={new Set(weekRangeLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} bucketFilter="sot_otif" onOpenChange={setActionsOpen} />}
-          rightActions={
-            <>
-              <button
-                title="Export (coming soon)"
-                disabled
-                className="flex items-center gap-1.5 text-xs font-semibold text-[#7b7571] border border-[#e9e3df] rounded-lg px-2.5 h-8 opacity-60 cursor-not-allowed"
-              >
-                <Download size={13} />
-                Export
-              </button>
-              <button
-                title="More options (coming soon)"
-                disabled
-                className="flex items-center justify-center w-8 h-8 rounded-lg border border-[#e9e3df] text-[#7b7571] opacity-60 cursor-not-allowed"
-              >
-                <MoreVertical size={15} />
-              </button>
-            </>
-          }
         />
 
         {isModeB && viaScorecard && (
@@ -356,7 +337,6 @@ export function SotOtifDrilldown() {
               <div className="flex items-center justify-between shrink-0 mb-1.5">
                 <p className="text-sm font-bold text-[#403833]">SOT &amp; OTIF Evolution</p>
                 <div className="flex items-center gap-2 text-[#9c9794]">
-                  <span className="text-[11px] font-medium px-2 py-1 rounded-md border border-[#e9e3df]">Weekly</span>
                   <button onClick={() => setChartExpanded(true)} title="Expand chart" aria-label="Expand chart" className="hover:text-[#403833] transition-colors">
                     <Maximize2 size={14} />
                   </button>
@@ -466,7 +446,6 @@ export function SotOtifDrilldown() {
               <div className="flex items-center justify-between shrink-0 mb-2">
                 <p className="text-sm font-bold text-[#403833]">SOT &amp; OTIF Evolution</p>
                 <div className="flex items-center gap-2 text-[#9c9794]">
-                  <span className="text-[11px] font-medium px-2 py-1 rounded-md border border-[#e9e3df]">Weekly</span>
                   <button onClick={() => setChartExpanded(true)} title="Expand chart" aria-label="Expand chart" className="hover:text-[#403833] transition-colors">
                     <Maximize2 size={14} />
                   </button>
