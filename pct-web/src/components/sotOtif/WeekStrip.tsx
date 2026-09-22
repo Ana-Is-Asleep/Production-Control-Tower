@@ -13,16 +13,19 @@ interface WeekStripProps {
   today: Date;
   selectedWeek: WeekInRange | null;
   onSelectWeek: (week: WeekInRange) => void;
+  // Clicking the already-selected tile again clears the selection instead of re-selecting it —
+  // same effect as the "Clear — view full period" link, just reachable from the strip itself.
+  onDeselectWeek: () => void;
 }
 
 // One tile per week, scoped to whatever `lines` the caller passes — a single supplier in Mode B,
 // every supplier currently in the filter in Mode A. Clicking a tile drives whatever's below it
-// (PO list in Mode B, Scorecard/heatmap/Key Insights in Mode A). Tile background always reflects
-// that week's own SOT% tier (performance status); selection is a separate, fixed-color signal
-// (brand-orange border + top indicator + shadow) so the two states never get confused with each
-// other. A week with no POs gets a neutral grey tile with no percentage shown at all, since
-// there's nothing to report.
-export function WeekStrip({ lines, weeksInRange, isChinaSupplier, today, selectedWeek, onSelectWeek }: WeekStripProps) {
+// (PO list in Mode B, Scorecard/heatmap/Key Insights in Mode A); clicking the selected tile again
+// deselects it. Tile background always reflects that week's own SOT% tier (performance status);
+// selection is a separate, fixed-color signal (brand-orange border + top indicator + shadow) so
+// the two states never get confused with each other. A week with no POs gets a neutral grey tile
+// with no percentage shown at all, since there's nothing to report.
+export function WeekStrip({ lines, weeksInRange, isChinaSupplier, today, selectedWeek, onSelectWeek, onDeselectWeek }: WeekStripProps) {
   return (
     <div className="flex gap-2 overflow-x-auto px-4 pb-1 shrink-0">
       {weeksInRange.map((w) => {
@@ -35,7 +38,7 @@ export function WeekStrip({ lines, weeksInRange, isChinaSupplier, today, selecte
         return (
           <button
             key={`${w.year}-${w.week}`}
-            onClick={() => onSelectWeek(w)}
+            onClick={() => (isSelected ? onDeselectWeek() : onSelectWeek(w))}
             className="relative shrink-0 w-20 rounded-lg text-center transition-all"
             style={{
               background: palette.lightBg,

@@ -292,6 +292,10 @@ export function SotOtifDrilldown() {
         <DetailHeader
           title={isModeB ? 'SOT / OTIF Detail' : 'SOT / OTIF Performance'}
           filters={filters}
+          onChange={setFilters}
+          allSuppliers={allSuppliers}
+          curWeek={curWeek}
+          curYear={curYear}
           centerContent={<GlobalActionsBadge filteredPOs={new Set(weekRangeLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} bucketFilter="sot_otif" onOpenChange={setActionsOpen} />}
           rightActions={
             <>
@@ -375,6 +379,7 @@ export function SotOtifDrilldown() {
               today={today}
               selectedWeek={effectiveWeek}
               onSelectWeek={handleSelectWeek}
+              onDeselectWeek={handleDeselectWeek}
             />
           </div>
 
@@ -482,6 +487,7 @@ export function SotOtifDrilldown() {
             today={today}
             selectedWeek={selectedWeek}
             onSelectWeek={handleSelectWeek}
+            onDeselectWeek={handleDeselectWeek}
           />
 
           {selectedWeek && (
