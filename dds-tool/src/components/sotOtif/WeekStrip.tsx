@@ -7,7 +7,7 @@ import type { WeekInRange } from '../../hooks/useFilters';
 import type { PurchaseLine } from '../../types';
 
 interface WeekStripProps {
-  lines: PurchaseLine[]; // single-supplier lines across the full week range
+  lines: PurchaseLine[]; // single-supplier lines in Mode B, every supplier in view in Mode A — either way, the full week range
   weeksInRange: WeekInRange[];
   isChinaSupplier: IsChinaSupplier;
   today: Date;
@@ -15,11 +15,13 @@ interface WeekStripProps {
   onSelectWeek: (week: WeekInRange) => void;
 }
 
-// Mode B — one tile per week for the selected supplier. Clicking a tile drives the PO list below.
-// Tile background always reflects that week's own SOT% tier (performance status); selection is a
-// separate, fixed-color signal (brand-orange border + top indicator + shadow) so the two states
-// never get confused with each other. A week with no POs gets a neutral grey tile with no
-// percentage shown at all, since there's nothing to report.
+// One tile per week, scoped to whatever `lines` the caller passes — a single supplier in Mode B,
+// every supplier currently in the filter in Mode A. Clicking a tile drives whatever's below it
+// (PO list in Mode B, Scorecard/heatmap/Key Insights in Mode A). Tile background always reflects
+// that week's own SOT% tier (performance status); selection is a separate, fixed-color signal
+// (brand-orange border + top indicator + shadow) so the two states never get confused with each
+// other. A week with no POs gets a neutral grey tile with no percentage shown at all, since
+// there's nothing to report.
 export function WeekStrip({ lines, weeksInRange, isChinaSupplier, today, selectedWeek, onSelectWeek }: WeekStripProps) {
   return (
     <div className="flex gap-2 overflow-x-auto px-4 pb-1 shrink-0">

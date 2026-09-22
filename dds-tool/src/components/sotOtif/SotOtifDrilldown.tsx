@@ -341,8 +341,22 @@ export function SotOtifDrilldown() {
             </div>
           </div>
 
+          {/* Same weekly performance selector as the single-supplier view, just scoped to every
+              supplier currently in the filter instead of one — clicking a week works the same way
+              here too, driving the Scorecard/heatmap/Key Insights below. */}
+          <div className="shrink-0 mt-2">
+            <WeekStrip
+              lines={weekRangeLines}
+              weeksInRange={weeksInRange}
+              isChinaSupplier={isChinaSupplier}
+              today={today}
+              selectedWeek={selectedWeek}
+              onSelectWeek={handleSelectWeek}
+            />
+          </div>
+
           {selectedWeek && (
-            <div className="px-4 py-1 mt-2 bg-[#fff7ed] border-y border-brand flex items-center gap-2 shrink-0">
+            <div className="px-4 py-1 mt-1 bg-[#fff7ed] border-y border-brand flex items-center gap-2 shrink-0">
               <span className="text-xs font-semibold text-brand">{selectedWeek.label} selected</span>
               <button onClick={handleDeselectWeek} className="text-xs text-[#9c9794] hover:text-brand underline">
                 Clear — view full period
