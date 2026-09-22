@@ -45,9 +45,9 @@ export function TopGraphChart({ points, onWeekClick }: TopGraphChartProps) {
             <YAxis yAxisId="pct" orientation="right" domain={[0, 100]} tick={{ fill: COLOR.muted, fontSize: 11 }} unit="%" axisLine={false} tickLine={false} />
             <YAxis yAxisId="pos" orientation="left" tick={{ fill: COLOR.muted, fontSize: 11 }} allowDecimals={false} axisLine={false} tickLine={false} />
             <ReferenceLine yAxisId="pct" y={90} stroke={COLOR.fail} strokeWidth={1.5} strokeDasharray="4 4" />
+            <Bar yAxisId="pos" dataKey="pastAccumulatedBacklog" stackId="poStack" fill={BAR_ACCUMULATED_BACKLOG} radius={[0, 0, 4, 4]} name="Backlog Accumulated" />
             <Bar yAxisId="pos" dataKey="shippedPOs" stackId="poStack" fill={BAR_SHIPPED} radius={[0, 0, 0, 0]} name="POs Requested – Shipped" />
-            <Bar yAxisId="pos" dataKey="backlogPOs" stackId="poStack" fill={BAR_TOTAL} radius={[0, 0, 0, 0]} name="POs Requested – Not Shipped" />
-            <Bar yAxisId="pos" dataKey="pastAccumulatedBacklog" stackId="poStack" fill={BAR_ACCUMULATED_BACKLOG} radius={[4, 4, 0, 0]} name="Backlog Accumulated" />
+            <Bar yAxisId="pos" dataKey="backlogPOs" stackId="poStack" fill={BAR_TOTAL} radius={[4, 4, 0, 0]} name="POs Requested – Not Shipped" />
             <Line yAxisId="pct" dataKey="sotPastPct" stroke={LINE_SOT} strokeWidth={2} dot={{ r: 4, fill: LINE_SOT, stroke: '#fff', strokeWidth: 1.5 }} name="SOT % (actual)" connectNulls />
             <Line yAxisId="pct" dataKey="sotFuturePct" stroke={LINE_SOT} strokeWidth={2} strokeDasharray="5 4" dot={{ r: 4, fill: LINE_SOT, stroke: '#fff', strokeWidth: 1.5 }} name="SOT % (projected)" connectNulls />
             <Line yAxisId="pct" dataKey="otifPastPct" stroke={LINE_OTIF} strokeWidth={2} dot={{ r: 4, fill: LINE_OTIF, stroke: '#fff', strokeWidth: 1.5 }} name="OTIF % (actual)" connectNulls />

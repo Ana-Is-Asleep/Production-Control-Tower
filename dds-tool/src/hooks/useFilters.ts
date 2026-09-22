@@ -10,7 +10,7 @@ import type { PurchaseLine } from '../types';
 
 export const WEEK_RANGE_MIN = -13;
 export const WEEK_RANGE_MAX = 5;
-export const WEEK_RANGE_DEFAULT: { start: number; end: number } = { start: -7, end: 3 };
+export const WEEK_RANGE_DEFAULT: { start: number; end: number } = { start: -6, end: 3 };
 
 // hard floor: ignore anything with a PGRD before 2026 — keeps old/legacy PO history out of every
 // section (including the AI Root Cause classifier, which shouldn't waste calls categorizing stale data)

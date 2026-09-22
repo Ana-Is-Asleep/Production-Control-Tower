@@ -78,7 +78,7 @@ export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWee
 
         <div className="flex justify-center">{centerContent}</div>
 
-        <div className="flex items-center gap-2 flex-wrap justify-end min-w-0">
+        <div className="flex items-center gap-1.5 flex-wrap justify-end min-w-0">
           {showWeekRange && (
             <div className="flex items-center gap-2 bg-white border border-[#e9e3df] rounded-lg px-2.5 h-8">
               <Calendar size={14} className="text-[#7b7571]" />
@@ -93,40 +93,40 @@ export function PageHeader({ breadcrumb, filters, onChange, allSuppliers, curWee
               {rightActions}
             </>
           )}
-        </div>
-      </div>
 
-      <div className="flex items-center gap-1.5 flex-wrap mt-1.5 justify-end">
-        {CHANNELS.map((c) => (
-          <button
-            key={c}
-            onClick={() => toggleChannel(c)}
-            className={`filter-pill text-xs px-2.5 py-0.5 rounded-full border font-medium whitespace-nowrap ${filters.channels.includes(c) ? 'bg-[#403833] text-white border-[#403833]' : 'border-[#e9e3df] text-[#58524e] hover:border-[#403833]'}`}
-          >
-            {c}
-          </button>
-        ))}
-        {showCategory && (
-          <>
-            <span className="text-[#e9e3df]">|</span>
-            {SKU_CATEGORIES.map((c) => (
-              <button
-                key={c}
-                onClick={() => toggleCategory(c)}
-                className={`filter-pill text-xs px-2.5 py-0.5 rounded-full border font-medium whitespace-nowrap ${filters.categories.includes(c) ? 'text-white border-transparent' : 'border-[#e9e3df] text-[#58524e] hover:border-[#403833]'}`}
-                style={filters.categories.includes(c) ? { background: CATEGORY_COLORS[c] } : {}}
-              >
-                {c}
-              </button>
-            ))}
-          </>
-        )}
-        {(filters.suppliers.length > 0 || filters.channels.length > 0 || filters.categories.length > 0 ||
-          filters.weekRange.start !== DEFAULT_FILTERS.weekRange.start || filters.weekRange.end !== DEFAULT_FILTERS.weekRange.end) && (
-          <button onClick={() => onChange(DEFAULT_FILTERS)} className="flex items-center gap-1 text-xs text-[#9c9794] hover:text-fail transition-colors">
-            <RotateCcw size={12} /> Reset filters
-          </button>
-        )}
+          <span className="w-px h-5 bg-[#e9e3df] mx-1" />
+
+          {CHANNELS.map((c) => (
+            <button
+              key={c}
+              onClick={() => toggleChannel(c)}
+              className={`filter-pill text-xs px-2 py-1 min-w-[74px] text-center rounded-full border font-medium whitespace-nowrap ${filters.channels.includes(c) ? 'bg-[#403833] text-white border-[#403833]' : 'border-[#e9e3df] text-[#58524e] hover:border-[#403833]'}`}
+            >
+              {c}
+            </button>
+          ))}
+          {showCategory && (
+            <>
+              <span className="text-[#e9e3df]">|</span>
+              {SKU_CATEGORIES.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => toggleCategory(c)}
+                  className={`filter-pill text-xs px-2 py-1 min-w-[74px] text-center rounded-full border font-medium whitespace-nowrap ${filters.categories.includes(c) ? 'text-white border-transparent' : 'border-[#e9e3df] text-[#58524e] hover:border-[#403833]'}`}
+                  style={filters.categories.includes(c) ? { background: CATEGORY_COLORS[c] } : {}}
+                >
+                  {c}
+                </button>
+              ))}
+            </>
+          )}
+          {(filters.suppliers.length > 0 || filters.channels.length > 0 || filters.categories.length > 0 ||
+            filters.weekRange.start !== DEFAULT_FILTERS.weekRange.start || filters.weekRange.end !== DEFAULT_FILTERS.weekRange.end) && (
+            <button onClick={() => onChange(DEFAULT_FILTERS)} className="flex items-center gap-1 text-xs text-[#9c9794] hover:text-fail transition-colors">
+              <RotateCcw size={12} /> Reset filters
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

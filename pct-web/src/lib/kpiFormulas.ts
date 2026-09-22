@@ -86,6 +86,28 @@ export function aggregateOTIFRate(lines: PurchaseLine[], isChinaSupplier: IsChin
   return aggregateByPOHeader(lines, (l) => computeOTIFLine(l, isChinaSupplier(l.vendorCode)).otif);
 }
 
+export interface QtyRateResult {
+  onQty: number;
+  totalQty: number;
+  pct: number | null;
+}
+
+// Same per-line SOT/OTIF classification as aggregateByPOHeader, just weighted by requested
+// quantity instead of by PO count — e.g. "96% of quantity shipped on time" alongside the existing
+// "98% of POs shipped on time", since a handful of large POs slipping can matter more than the
+// PO count alone shows.
+export function aggregateByQty(lines: PurchaseLine[], perLine: (line: PurchaseLine) => boolean | null): QtyRateResult {
+  let onQty = 0;
+  let totalQty = 0;
+  for (const line of lines) {
+    const result = perLine(line);
+    if (result === null) continue;
+    totalQty += line.qty;
+    if (result) onQty += line.qty;
+  }
+  return { onQty, totalQty, pct: totalQty > 0 ? Math.round((onQty / totalQty) * 100) : null };
+}
+
 export const SOT_TARGET = 90;
 export const OTIF_TARGET = 90;
 

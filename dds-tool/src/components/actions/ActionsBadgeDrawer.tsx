@@ -53,7 +53,7 @@ export function ActionsBadgeDrawer({
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-semibold text-xs transition-transform hover:scale-105 shrink-0 ${openCount > 0 ? 'bg-brand text-white' : 'bg-pass text-white'}`}
         style={{ boxShadow: 'var(--shadow-card-hover)' }}
       >
-        {openCount > 0 ? `⚠ ${openCount} open action${openCount === 1 ? '' : 's'}` : '✓ No open actions'}
+        Action points
       </button>
 
       {open && mounted && createPortal(

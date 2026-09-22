@@ -36,8 +36,9 @@ export function TopGraphSection({ points, sotTarget, otifTarget, drillDownHref }
         subtitle={latestPast ? `Evolution vs. 90% target · evaluated week ${latestPast.weekLabel}` : 'Evolution vs. 90% target'}
       />
       <div className="flex-1 min-h-0 flex items-stretch gap-3 mt-2">
-        <div className="flex flex-col justify-center gap-2 shrink-0 w-[110px]">
+        <div className="grid grid-rows-2 gap-2 shrink-0 w-[110px]">
           <KpiBox
+            className="h-full flex flex-col justify-center"
             label={`SOT · ${sotTarget}%`}
             value={pctLabel(currentSOT)}
             valueClassName={`text-xl ${currentSOT === null ? 'text-[#c8c0bb]' : currentSOT >= sotTarget ? 'text-pass' : 'text-fail'}`}
@@ -45,6 +46,7 @@ export function TopGraphSection({ points, sotTarget, otifTarget, drillDownHref }
             sub={latestPast && <span className="text-[9px] text-[#9c9794]">{latestPast.weekLabel}</span>}
           />
           <KpiBox
+            className="h-full flex flex-col justify-center"
             label={`OTIF · ${otifTarget}%`}
             value={pctLabel(currentOTIF)}
             valueClassName={`text-xl ${currentOTIF === null ? 'text-[#c8c0bb]' : currentOTIF >= otifTarget ? 'text-pass' : 'text-fail'}`}
