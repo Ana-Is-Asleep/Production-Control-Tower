@@ -74,7 +74,7 @@ export function LeadTimeDrilldown() {
   const [skuQuery, setSkuQuery] = useState('');
   const [drill, setDrill] = useState<DrillSelection | null>(null);
   const [weekRange, setWeekRange] = useState(initial.weekRange);
-  const [, setActionsOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
   const [chartViewData, setChartViewData] = useState(false);
 
   const isModeB = filters.suppliers.length === 1;
@@ -193,6 +193,9 @@ export function LeadTimeDrilldown() {
           }
         />
 
+        {/* Header stays full width above — only this content area reserves space for the Actions
+            drawer (which starts below the header, not overlapping it). */}
+        <div className="transition-[padding] duration-150" style={{ paddingRight: actionsOpen ? 340 : undefined }}>
         <div className="px-5 pt-3 flex items-center justify-between border-b border-[#e9e3df] flex-wrap gap-2">
           <div className="flex items-center gap-1">
             {([['overview', 'Lead Time Overview'], ['sku', isModeB ? 'Product Analysis' : 'SKU & Supplier Analysis']] as [LTTab, string][]).map(([key, label]) => (
@@ -337,6 +340,7 @@ export function LeadTimeDrilldown() {
           )}
 
           {drill && <LeadTimeDrillPanel title={drill.title} rows={drill.rows} onClose={() => setDrill(null)} />}
+        </div>
         </div>
       </div>
 

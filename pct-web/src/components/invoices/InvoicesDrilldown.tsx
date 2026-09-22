@@ -63,7 +63,7 @@ export function InvoicesDrilldown() {
   const [drill, setDrill] = useState<DrillSelection | null>(null);
   const [showAllSuppliers, setShowAllSuppliers] = useState(false);
   const [dataQualityOpen, setDataQualityOpen] = useState(false);
-  const [, setActionsOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
 
   const channel: InvoiceChannel = filters.channels.length === 1 ? filters.channels[0] : 'All';
 
@@ -131,7 +131,9 @@ export function InvoicesDrilldown() {
           }
         />
 
-        <div className="p-4 flex flex-col gap-4">
+        {/* Header stays full width above — only this content area reserves space for the Actions
+            drawer (which starts below the header, not overlapping it). */}
+        <div className="p-4 flex flex-col gap-4 transition-[padding] duration-150" style={{ paddingRight: actionsOpen ? 340 : undefined }}>
           <div className="text-[11px] text-[#9c9794]">
             Effective Due Date considers the SCF-adjusted payment terms where applicable — not the raw Due Date.
           </div>

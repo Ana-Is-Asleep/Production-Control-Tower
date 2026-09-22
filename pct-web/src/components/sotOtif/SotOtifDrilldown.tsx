@@ -55,7 +55,7 @@ export function SotOtifDrilldown() {
   const [scorecardModalOpen, setScorecardModalOpen] = useState(false);
   const [scorecardSearch, setScorecardSearch] = useState('');
   const [chartExpanded, setChartExpanded] = useState(false);
-  const [, setActionsOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
 
   const today = useMemo(() => new Date(), []);
   const kpis = useKPIs(weekRangeLines, filteredLines, weeksInRange, isChinaSupplier);
@@ -298,6 +298,10 @@ export function SotOtifDrilldown() {
           centerContent={<GlobalActionsBadge filteredPOs={new Set(weekRangeLines.map((l) => l.po))} allSuppliers={allSuppliers} filters={filters} bucketFilter="sot_otif" onOpenChange={setActionsOpen} />}
         />
 
+        {/* Header stays full width above — only this wrapper reserves space for the Actions
+            drawer (which starts below the header, not overlapping it), so the header never
+            shrinks or wraps while the drawer is open. */}
+        <div className="flex-1 min-h-0 flex flex-col transition-[padding] duration-150" style={{ paddingRight: actionsOpen ? 340 : undefined }}>
         {isModeB && viaScorecard && (
           <div className="px-5 py-1.5 bg-white border-b border-[#e9e3df] shrink-0">
             <button onClick={handleAllSuppliers} className="text-xs font-medium text-brand hover:underline">
@@ -506,6 +510,7 @@ export function SotOtifDrilldown() {
           )}
         </div>
       )}
+        </div>
 
       {scorecardModalOpen && (
         <LargeModal title="Supplier Scorecard — All Suppliers" onClose={() => setScorecardModalOpen(false)}>

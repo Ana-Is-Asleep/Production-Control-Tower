@@ -72,7 +72,7 @@ export function BacklogDrilldown() {
 
   const [selectedSku, setSelectedSku] = useState<string | null>(null);
   const [showEsdPassedOnly, setShowEsdPassedOnly] = useState(false);
-  const [, setActionsOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
   // clear the SKU/ESD-passed table filters when the supplier changes (or Mode B is left) so a
   // stale filter from a previous supplier can't silently carry over
   useEffect(() => {
@@ -134,6 +134,10 @@ export function BacklogDrilldown() {
           }
         />
 
+        {/* Header stays full width above — only this content area reserves space for the Actions
+            drawer (which starts below the header, not overlapping it), so the header never
+            shrinks or wraps while the drawer is open. */}
+        <div className="transition-[padding] duration-150" style={{ paddingRight: actionsOpen ? 340 : undefined }}>
         {isModeB && (
           <div className="px-5 py-1.5 bg-white border-b border-[#e9e3df] shrink-0 flex items-center justify-between">
             <span className="text-xs font-semibold text-pass flex items-center gap-1">✓ Supplier selected</span>
@@ -235,6 +239,7 @@ export function BacklogDrilldown() {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

@@ -44,7 +44,7 @@ export function RootCauseDrilldown() {
 
   const [mode, setMode] = useState<RootCauseMode>(initial.mode);
   const [tableFilter, setTableFilter] = useState<TableFilter | null>(null);
-  const [, setActionsOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
 
   useEffect(() => {
     const params = buildRootCauseParams(filters, mode);
@@ -166,7 +166,9 @@ export function RootCauseDrilldown() {
         </div>
       </header>
 
-      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
+      {/* Header stays full width above — only this content area reserves space for the Actions
+          drawer (which starts below the header, not overlapping it). */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 transition-[padding] duration-150" style={{ paddingRight: actionsOpen ? 340 : undefined }}>
         <RootCauseActionQueue lines={weekRangeLines} filteredPOs={new Set(weekRangeLines.map((l) => l.po))} />
 
         <KPIStrip kpis={kpis} trend={trendDirection} trendCaption={trendCaption} />

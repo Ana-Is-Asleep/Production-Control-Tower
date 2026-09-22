@@ -45,7 +45,7 @@ export function MissingEsdDrilldown() {
 
   const [urgency, setUrgency] = useState<UrgencyFilter>(initial.urgency);
   const [selectedBucketKeys, setSelectedBucketKeys] = useState<string[] | null>(null);
-  const [, setActionsOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
 
   useEffect(() => {
     const params = buildMissingEsdParams(filters, urgency);
@@ -116,7 +116,9 @@ export function MissingEsdDrilldown() {
           }
         />
 
-        <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
+        {/* Header stays full width above — only this content area reserves space for the Actions
+            drawer (which starts below the header, not overlapping it). */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 transition-[padding] duration-150" style={{ paddingRight: actionsOpen ? 340 : undefined }}>
           <MissingEsdKpiRow
             needingActionCount={needingActionRows.length}
             overdueCount={overdueCount}

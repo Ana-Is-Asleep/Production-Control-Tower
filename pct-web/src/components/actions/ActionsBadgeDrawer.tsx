@@ -58,8 +58,10 @@ export function ActionsBadgeDrawer({
 
       {open && mounted && createPortal(
         <div
-          className="fixed inset-y-0 right-0 z-50 w-[340px] max-w-full bg-white flex flex-col"
-          style={{ boxShadow: 'var(--shadow-slide)' }}
+          className="fixed right-0 bottom-0 z-50 w-[340px] max-w-full bg-white flex flex-col"
+          // top offset clears the page header (~56px on every page that mounts this) — the drawer
+          // sits only over the content area below it, never over the header itself.
+          style={{ top: 56, boxShadow: 'var(--shadow-slide)' }}
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-[#e9e3df] shrink-0">
             <h2 className="text-sm font-semibold text-[#403833]">Actions</h2>

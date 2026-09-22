@@ -88,25 +88,27 @@ export function Dashboard() {
         )}
 
         {hasData && (
-          <div className="page-enter flex-1 min-h-0 flex overflow-hidden">
-            <div
-              className="flex-1 min-w-0 flex flex-col overflow-hidden"
-            >
-              <PageHeader
-                filters={filters}
-                onChange={setFilters}
-                allSuppliers={allSuppliers}
-                curWeek={curWeek}
-                curYear={curYear}
-                showCurrentWeek
-                centerContent={
-                  <ActionsBadgeDrawer
-                    actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers} filters={filters}
-                    tab={actionsTab} onTabChange={setActionsTab} statusFilter={actionsStatusFilter} onStatusFilterChange={setActionsStatusFilter}
-                    open={actionsDrawerOpen} onOpenChange={setActionsDrawerOpen}
-                  />
-                }
-              />
+          <div className="page-enter flex-1 min-h-0 flex flex-col overflow-hidden">
+            {/* Header is a direct child here — never inside the padded wrapper below — so it stays
+                full width and never shrinks/wraps while the Actions drawer is open. Only the
+                content area reserves space for the drawer (which itself starts below the header,
+                not overlapping it — see ActionsBadgeDrawer's top offset). */}
+            <PageHeader
+              filters={filters}
+              onChange={setFilters}
+              allSuppliers={allSuppliers}
+              curWeek={curWeek}
+              curYear={curYear}
+              showCurrentWeek
+              centerContent={
+                <ActionsBadgeDrawer
+                  actions={actions} onSave={updateAction} onAddOpenPoint={addAction} filteredPOs={filteredPOs} allSuppliers={allSuppliers} filters={filters}
+                  tab={actionsTab} onTabChange={setActionsTab} statusFilter={actionsStatusFilter} onStatusFilterChange={setActionsStatusFilter}
+                  open={actionsDrawerOpen} onOpenChange={setActionsDrawerOpen}
+                />
+              }
+            />
+            <div className="flex-1 min-h-0 flex flex-col overflow-hidden transition-[padding] duration-150" style={actionsDrawerOpen ? { paddingRight: 340 } : undefined}>
               <div className="p-1.5 flex-1 min-h-0 flex flex-col gap-1.5 w-full overflow-y-auto">
                 <div style={{ flex: '3.5 1 150px' }} className="min-h-0">
                   <TopGraphSection
