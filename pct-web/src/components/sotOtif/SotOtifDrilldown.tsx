@@ -127,6 +127,10 @@ export function SotOtifDrilldown() {
     if (!lastCompleted) return scopeLines;
     return weekRangeLines.filter((l) => l.pgrd && getISOWeek(l.pgrd) === lastCompleted.week && getISOWeekYear(l.pgrd) === lastCompleted.year);
   }, [selectedWeek, scopeLines, weekRangeLines, weeksInRange]);
+  // What kpiLines/scopeSOT/scopeOTIF above actually represent — the selected week, or (when
+  // nothing is selected) the last completed week, matching kpiLines' own fallback exactly. Shown
+  // under the Mode A SOT/OTIF target cards so the % is never left unlabeled as to which week it's for.
+  const kpiWeekLabel = selectedWeek?.label ?? weeksInRange.find((w) => w.isCurrent)?.label ?? null;
 
   // Every upcoming (not-yet-completed) week's projected SOT/OTIF, in order — same ESD-based
   // projection already driving the chart's dashed "projected" line (useKPIs.ts). Surfaced two
@@ -327,6 +331,7 @@ export function SotOtifDrilldown() {
                 value={pctLabel(scopeSOT)}
                 valueClassName={`text-2xl ${scopeSOT === null ? 'text-[#c8c0bb]' : scopeSOT >= kpis.sotTarget ? 'text-pass' : 'text-fail'}`}
                 tint={scopeSOT === null ? 'neutral' : scopeSOT >= kpis.sotTarget ? 'pass' : 'fail'}
+                sub={kpiWeekLabel && <span className="text-[9px] text-[#9c9794]">{kpiWeekLabel}</span>}
               />
               <KpiBox
                 className="h-full flex flex-col justify-center"
@@ -334,6 +339,7 @@ export function SotOtifDrilldown() {
                 value={pctLabel(scopeOTIF)}
                 valueClassName={`text-2xl ${scopeOTIF === null ? 'text-[#c8c0bb]' : scopeOTIF >= kpis.otifTarget ? 'text-pass' : 'text-fail'}`}
                 tint={scopeOTIF === null ? 'neutral' : scopeOTIF >= kpis.otifTarget ? 'pass' : 'fail'}
+                sub={kpiWeekLabel && <span className="text-[9px] text-[#9c9794]">{kpiWeekLabel}</span>}
               />
             </div>
             <div className="flex-1 min-h-0 min-w-0 bg-white rounded-lg border border-[#e9e3df] p-2.5 flex flex-col" style={{ boxShadow: 'var(--shadow-card)' }}>

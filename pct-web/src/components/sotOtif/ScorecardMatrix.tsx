@@ -66,7 +66,7 @@ export function ScorecardMatrix({ lines, weeksInRange, isChinaSupplier, today, s
         <table className="w-full text-xs border-collapse">
           <thead>
             <tr className="bg-[#403833] text-white">
-              <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">Supplier</th>
+              <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ maxWidth: 130 }}>Supplier</th>
               <th className="px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">POs in Scope</th>
               <th className="px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap">
                 {selectedWeek ? 'SOT %' : 'Overall SOT'}
@@ -84,7 +84,9 @@ export function ScorecardMatrix({ lines, weeksInRange, isChinaSupplier, today, s
                 onClick={() => onSupplierClick(r.supplier)}
                 className="border-b border-[#e9e3df] hover:bg-[#f9f7f6] cursor-pointer transition-colors"
               >
-                <td className="px-3 py-2 font-semibold text-[#403833] whitespace-nowrap">{r.supplier}</td>
+                <td className="px-3 py-2 font-semibold text-[#403833]" style={{ maxWidth: 130 }}>
+                  <span className="block truncate" title={r.supplier}>{r.supplier}</span>
+                </td>
                 <td className="px-2 py-2 text-center text-[#58524e]">{r.posInScope}</td>
                 <td className="px-2 py-2 text-center font-semibold" style={{ color: sotTierColor(r.overallSOT).text }}>
                   {r.overallSOT === null ? '—' : `${r.overallSOT}%`}
