@@ -1,8 +1,14 @@
 import type { PurchaseLine } from '../types';
 import type { ActionItem } from '../types/actions';
-import { SUPPLIER_SCM_MAP } from './supplierScmMapping';
+import { lookupScmEmail } from './supplierScmMapping';
+import { getChannel } from './channelUtils';
+import { categorizeSKU } from './skuUtils';
 import { rollupByPO } from './poAggregation';
 import type { IsChinaSupplier } from './kpiFormulas';
+
+function scmForLine(line: PurchaseLine): string {
+  return lookupScmEmail(line.vendorCode, getChannel(line.destination), categorizeSKU(line.sku));
+}
 
 // Rules only evaluate PO data from this date onwards, regardless of the dashboard's week filter.
 const RULES_DATA_FLOOR = new Date(2026, 0, 1);
@@ -34,7 +40,7 @@ function evaluateR001(lines: PurchaseLine[], existingActions: ActionItem[], toda
       supplierCode: line.vendorCode,
       supplierName: line.supplier,
       description: `EGRD in the past with no booking. Delay likely.`,
-      owner: SUPPLIER_SCM_MAP[line.vendorCode?.trim()] ?? '',
+      owner: scmForLine(line),
       comment: '',
       status: 'open',
       createdAt: now,
@@ -73,7 +79,7 @@ function evaluateR002(lines: PurchaseLine[], existingActions: ActionItem[], isCh
       supplierCode: r.lines[0].vendorCode,
       supplierName: r.supplier,
       description: 'Missed SOT target. Root cause needed.',
-      owner: SUPPLIER_SCM_MAP[r.lines[0].vendorCode?.trim()] ?? '',
+      owner: scmForLine(r.lines[0]),
       comment: '',
       status: 'open',
       createdAt: now,

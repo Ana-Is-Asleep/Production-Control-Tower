@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { ActionItem } from '../types/actions';
 import { loadActions, saveActions } from '../lib/actionsStorage';
 import { runRulesEngine, pruneStaleR002Flags } from '../lib/rulesEngine';
-import { SUPPLIER_SCM_MAP } from '../lib/supplierScmMapping';
+import { defaultScmForVendor } from '../lib/supplierScmMapping';
 import type { IsChinaSupplier } from '../lib/kpiFormulas';
 import type { PurchaseLine } from '../types';
 
@@ -15,7 +15,7 @@ function backfillOwners(actions: ActionItem[]): ActionItem[] {
   let changed = false;
   const next = actions.map((a) => {
     if (a.type !== 'flag' || a.owner || !a.supplierCode) return a;
-    const owner = SUPPLIER_SCM_MAP[a.supplierCode.trim()];
+    const owner = defaultScmForVendor(a.supplierCode);
     if (!owner) return a;
     changed = true;
     return { ...a, owner };

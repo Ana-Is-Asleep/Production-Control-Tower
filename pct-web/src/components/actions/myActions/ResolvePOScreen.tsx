@@ -4,11 +4,34 @@ import { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Target } from 'lucide-react';
 import type { ActionItem, ActionStatus, RootCauseReason } from '../../../types/actions';
 import { ROOT_CAUSE_REASONS, ROOT_CAUSE_REASON_LABELS } from '../../../types/actions';
-import { RULE_LABELS, needsRootCause, rootCauseMissing } from '../../../lib/actionsUtils';
+import { needsRootCause, rootCauseMissing } from '../../../lib/actionsUtils';
 import { progressBucket } from '../../../lib/myActionsUtils';
 import { isSubstantiveReason } from '../../../lib/reasonClassification';
+import { formatDateMedium } from '../../../lib/dateUtils';
 import { useData } from '../../../context/DataContext';
 import { POTimeline } from './POTimeline';
+import type { PurchaseLine } from '../../../types';
+
+// Spelled out per-rule with this PO's own dates, rather than the generic rule label — "EGRD in
+// the past with no booking" alone didn't make clear WHAT the SCM was being asked to do about it
+// (R001 just needs a booking, no root cause; R002 needs a root cause to close). Falls back to the
+// stored description for any future rule this doesn't know about yet.
+function explainAction(action: ActionItem, poLine: PurchaseLine | undefined, rootCauseRequired: boolean): { headline: string; detail: string } {
+  if (action.ruleKey === 'R001') {
+    const egrd = poLine?.egrd ? formatDateMedium(poLine.egrd) : null;
+    return {
+      headline: 'EGRD passed with no shipment booked',
+      detail: `${egrd ? `Expected Goods Ready Date was ${egrd} — already past — and no` : 'No'} Expected Shipping Date (ESD) has been booked yet for this PO. Book the shipment, then update the status below — no root cause needed here.`,
+    };
+  }
+  if (action.ruleKey === 'R002') {
+    return {
+      headline: 'Missed SOT target',
+      detail: 'This PO’s PGRD week closed without shipping on time. Select the root cause below to close this flag.',
+    };
+  }
+  return { headline: action.description, detail: rootCauseRequired ? 'Root cause required.' : '' };
+}
 
 const STATUS_OPTIONS: ActionStatus[] = ['open', 'in_progress', 'blocked', 'closed'];
 const STATUS_LABELS: Record<ActionStatus, string> = { open: 'Open', in_progress: 'In Progress', blocked: 'Blocked', closed: 'Closed' };
@@ -58,6 +81,7 @@ export function ResolvePOScreen({ queue, currentId, weekLabel, onSave, onSelect,
 
   const rootCauseRequired = needsRootCause(action);
   const incomplete = rootCauseRequired && rootCauseMissing(draft);
+  const explanation = explainAction(action, poLine, rootCauseRequired);
 
   const handleComponentPoChange = (value: string) => {
     const match = value.toUpperCase().startsWith('PO-') ? allLines.find((l) => l.po.toUpperCase() === value.toUpperCase()) : undefined;
@@ -154,8 +178,8 @@ export function ResolvePOScreen({ queue, currentId, weekLabel, onSave, onSelect,
             <Target size={16} className="text-brand shrink-0 mt-0.5" />
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9c9794]">Why this action exists</p>
-              <p className="text-sm font-bold text-[#403833] mt-0.5">{action.ruleKey ? (RULE_LABELS[action.ruleKey] ?? action.description) : action.description}</p>
-              {rootCauseRequired && <p className="text-xs text-[#7b7571] mt-0.5">Root cause required.</p>}
+              <p className="text-sm font-bold text-[#403833] mt-0.5">{explanation.headline}</p>
+              {explanation.detail && <p className="text-xs text-[#7b7571] mt-1 leading-relaxed">{explanation.detail}</p>}
             </div>
           </div>
 
