@@ -1,0 +1,7 @@
+# OS/editor cruft that can land anywhere in the repo — each app also has its own
+# .gitignore for its build tool's specifics (node_modules, .next, dist, etc.)
+.DS_Store
+Thumbs.db
+*.pem
+*.log
+.vercel

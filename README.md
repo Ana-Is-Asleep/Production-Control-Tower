@@ -1,132 +1,114 @@
-# DDS - Production Control Tower
+# Production Control Tower
 
-Internal tool for the **P2W EU D2C** supply chain team at emma. Built for the weekly DDS (Daily Direction Setting) meeting. Upload your Business Central exports and get a clean view of SOT, OTIF, backlog, invoices, lead times and pickups all in one place.
+Internal supply chain tool for emma's Production Control team. Upload Business Central purchase
+order exports and get a single view of SOT/OTIF performance, backlog, missing bookings, invoicing,
+lead times, and root-cause tracking — plus a guided weekly workflow for SCMs to resolve their own
+flagged actions.
+
+## Repo structure
+
+This repo currently contains **two implementations of the same app**, kept in lockstep feature-for-feature:
+
+```
+dds-tool/   Next.js 15 (App Router) — current production app, deployed on Vercel
+pct-web/    Vite + React Router — migration target for moving off Vercel, not yet deployed
+```
+
+Every change is mirrored between the two. `dds-tool` is the one currently live; `pct-web` exists so
+the app can move to a different hosting platform without a rewrite. Whether `pct-web` eventually
+replaces `dds-tool` outright, or both keep being maintained side by side, is still an open decision —
+until it's made, treat both as equally real.
+
+## Branching & deploys
+
+- **`main`** — production. Vercel builds and deploys `dds-tool` from this branch automatically.
+- **`dev`** — everything else. Push work-in-progress here first; Vercel gives it its own preview
+  deployment on a separate URL, so nothing lands in front of real users until it's been checked.
+- Merge `dev` → `main` only once a change has been verified in the preview deployment.
 
 ## What it does
 
-The tool has a main dashboard and several drill-down pages. Everything responds to vendor, category, and PGRD week filters.
+The app has a main dashboard and several drill-down pages, all responsive to supplier, channel,
+category, and PGRD-week filters:
 
 | Section | What it shows |
 |---|---|
-| **SOT + OTIF** | % of POs shipped on time and in full vs the 90% target. Trend chart for the last 6 weeks + 3 future. Click a week bar to filter the breakdown table. Vendor drill-down shows which POs are pulling the score down and their BC loss reason. |
-| **Backlog** | POs without ASD, split into Critical (>14d overdue), Recent (14d or less), and Future Backlog (ESD already slipping). Stacked bar chart by vendor. |
-| **Not Booked** | POs where Shiptify has not confirmed a pickup booking (no EDD in BC). Grouped by PO with expandable lines. |
-| **Invoices** | Overdue P2W, Total Pending, Due by End of Week, Approved Awaiting Payment with SCF due date recalculation per supplier. Online/Offline channel filter. Supplier breakdown table for overdue. |
-| **Lead Times** | Production LT (Order Date to ASD) vs agreed LT and 30-day target. Per-vendor bar chart. Early/late split with averages. |
-| **Pickups** | Upcoming Shiptify bookings (next real calendar week) as bars, historical average per day of week as a dashed line. Click into days to see which POs are scheduled. |
-| **Prepare for Meeting** | Two-step flow: pick your vendors, add root causes for every failing line. Progress bar. Ready button goes green when everything is annotated. |
+| **Dashboard** | Compact cards summarizing SOT/OTIF, Backlog, Missing ESD, and Root Cause, each linking to its own full drill-down. |
+| **SOT & OTIF** | % of POs shipped on time and in full vs. the 90% target, trended by week. Per-supplier scorecard, a Supplier × Root Cause heatmap, and a weekly performance strip. |
+| **Backlog** | POs past their PGRD with no ASD yet, split by how overdue they are. Per-supplier breakdown. |
+| **Missing ESD** | POs with EGRD already in the past and no shipment booked (no ESD) — the earliest-warning signal, before a PO can even be evaluated for SOT. |
+| **Root Cause** | Analysis of *why* POs missed SOT — driven entirely by root causes SCMs submit while resolving their flagged actions (see My Actions below), not by AI-guessed text. |
+| **Invoicing** | Overdue and pending-approval invoices, aging buckets, and supplier exposure. |
+| **Lead Time** | Production lead time (Order Date → ASD) vs. target, per supplier and SKU category. |
+| **My Actions** | A guided, one-task-at-a-time workflow: an SCM picks their name and a PGRD week, then works through every PO action assigned to them (grouped by what's actually being asked — book a shipment, explain a miss, etc.), followed by any outstanding Open Points. |
+| **All Actions** | The full searchable history of every flag and Open Point, across every SCM, open or closed. |
+| **Raw Data** | The uploaded Business Central export, filterable and exportable. |
 
 ## Running it
 
-### GitHub Codespaces
+Both apps need Node.js 20+ and read their data entirely client-side (nothing persists server-side
+except the two Anthropic/Airtable-backed API routes noted below) — actions and uploaded data live in
+the browser's `localStorage` for the session.
 
-1. Go to the repo on GitHub
-2. Click **Code** > **Codespaces** > **Create codespace on main**
-3. It runs `npm install` automatically when the environment starts
-4. In the terminal: `cd dds-tool && npm run dev`
-5. A browser tab opens on port 3000
-
-### Local
-
-You need Node.js 20+.
+### dds-tool (Next.js)
 
 ```bash
-git clone https://github.com/Ana-Is-Asleep/Production-Control-Tower
-cd Production-Control-Tower/dds-tool
+cd dds-tool
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). Needs `AIRTABLE_API_KEY`, `AIRTABLE_BASE_ID`,
+and an Anthropic key (see `.env.example`) for the vendor-mapping and loss-reason-classification API
+routes — everything else works without them.
 
-### Docker
-
-```bash
-cd dds-tool
-docker build -t dds-tool .
-docker run -p 3000:3000 dds-tool
-```
-
-### Anywhere else
-
-No environment variables needed, everything runs client-side.
+### pct-web (Vite)
 
 ```bash
-npm run build
-npm start
+cd pct-web
+npm install
+npm run dev
 ```
 
-## Uploading data
+Opens on Vite's default port. No server-side API routes — this app is fully static/client-side.
 
-Drag all your files at once into the Upload panel (top right).
+### Uploading data
 
-| File | What it is | Required |
-|---|---|---|
-| Purchase Header | BC Purchase Header export | Yes |
-| Purchase Lines | BC Purchase Order Lines export | Yes |
-| Invoices | `Un-Posted_and_posted_invoices.xlsx` | Optional |
-
-Files are auto-detected by their column headers, no renaming needed. The extended 46-column Lines file gives you more accurate ESD data (Expected Shipping Date) vs the default 20-column export.
-
-## Filters
-
-| Filter | What it does |
-|---|---|
-| **Vendor** | Filters everything: SOT, backlog, pickups, lead times, invoices all update |
-| **Category** | Beds / Mattresses / Accessories / Comps/Other, derived from the SKU code |
-| **Week** | Switches the analysis to a different PGRD week. Pickups always show the next real calendar week regardless. |
-
-Filters persist when you drill down. If Flex 2000 is selected and you click Backlog, the backlog page shows Flex 2000 only.
+Drag your Business Central exports into the Upload panel: Purchase Header and Purchase Lines are
+required; an invoices export is optional. Files are auto-detected by column headers.
 
 ## KPI formulas
 
-**SOT (Shipped On Time)**
-```
-Week(ASD) <= Week(PGRD)  AND  CQTY >= 0.97 x QTY
-```
+**SOT (Shipped On Time)** — per line, compared against the PGRD week (China suppliers: PGRD − 1 week):
+- PGRD week already closed: on-time if `Week(ASD) <= threshold week`; no ASD at all = a hard fail.
+- PGRD week current or future: on-time if `Week(ESD) <= threshold week`; no ESD yet = undetermined (doesn't count either way).
 
 **OTIF (On Time In Full)**
 ```
-Week(EGRD) <= Week(PGRD)  AND  CQTY >= 0.97 x QTY
+Week(EGRD) <= threshold week   AND   CQTY >= QTY
 ```
 
-**Expected SOT** (future weeks, predicted from Shiptify booking)
-```
-Week(ESD) <= Week(PGRD)
-```
-
-**Production Lead Time**
-```
-ASD - Order Date  (days, target = 30)
-```
-
-Weeks are Sunday-aligned (Europe spec). 3% quantity tolerance on in-full because BC rounds confirmed quantities.
+Weeks are ISO (Monday–Sunday), PGRD is always a week-ending Sunday.
 
 ## Tech stack
 
-- **Next.js 15** App Router, pure client-side (no server components, no API routes)
-- **TypeScript**
-- **Tailwind CSS**
-- **Recharts** for charts
-- **xlsx** for parsing BC exports (formula/HTML injection disabled)
-- **date-fns** for date logic
+| | dds-tool | pct-web |
+|---|---|---|
+| Framework | Next.js 15 (App Router, client-only) | Vite + React Router |
+| Language | TypeScript | TypeScript |
+| Styling | Tailwind CSS | Tailwind CSS |
+| Charts | Recharts | Recharts |
+| Parsing | `xlsx` (formula/HTML injection disabled) | `xlsx` |
+| Dates | `date-fns` | `date-fns` |
 
-## Repo structure
+## Repo layout (per app)
 
 ```
-dds-tool/
-  src/
-    app/           next.js pages (one folder per route)
-    components/    Dashboard, PrepareModal, UploadPanel, shared UI
-    context/       DataContext: BC lines, invoices, annotations, global filters
-    hooks/         useFilters, useKPIs, useAnnotations
-    lib/           business logic: kpiFormulas, bcParser, invoiceUtils, leadTimeUtils, skuUtils
-    types/         TypeScript interfaces
-    data/          agreed lead time sample data (Airtable integration coming)
+src/
+  app/ or pages via App.tsx   routes — one per drill-down page
+  components/                 Dashboard, drill-downs, Actions/My Actions, shared UI
+  context/                    DataContext — uploaded PO lines, invoices, global filters
+  hooks/                      useFilters, useKPIs, useActions, useVendorMapping
+  lib/                        business logic — kpiFormulas, rulesEngine, poAggregation, bcParser
+  types/                      shared TypeScript interfaces
 ```
-
-## Coming up
-
-- Airtable integration for agreed lead times
-- Lead time file upload
-- Backlog recovery timeline
