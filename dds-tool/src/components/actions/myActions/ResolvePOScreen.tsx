@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Target } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, CheckCircle2, Circle, Target } from 'lucide-react';
 import type { ActionItem, ActionStatus, RootCauseReason } from '../../../types/actions';
 import { ROOT_CAUSE_REASONS, ROOT_CAUSE_REASON_LABELS } from '../../../types/actions';
 import { needsRootCause, rootCauseMissing } from '../../../lib/actionsUtils';
@@ -38,30 +38,37 @@ const STATUS_LABELS: Record<ActionStatus, string> = { open: 'Open', in_progress:
 const STATUS_DOT: Record<ActionStatus, string> = { open: 'bg-fail', in_progress: 'bg-warn', blocked: 'bg-[#9c9794]', closed: 'bg-pass' };
 
 interface ResolvePOScreenProps {
-  queue: ActionItem[]; // live items (fresh from the store), in stable queue order
+  queue: ActionItem[]; // live items (fresh from the store), scoped to the current rule-type batch
   currentId: string;
   weekLabel: string;
+  sectionLabel: string; // this batch's rule label, e.g. "EGRD in the past with no booking"
+  stepIndex: number; // 1-based — which rule-type batch this is
+  stepTotal: number; // how many rule-type batches there are in total this week
   onSave: (id: string, patch: Partial<ActionItem>) => void;
   onSelect: (id: string) => void;
-  onNext: () => void; // advance past the last item -> completion screen
+  onNext: () => void; // advance past the last item in this batch -> next batch, or completion screen
   onPrevious: () => void;
 }
 
 // Focused, one-PO-at-a-time resolution screen — the guided workflow's core. Root cause is always
 // required here (not just to close, per ActionDetailModal's rule) since the entire point of this
-// flow is collecting the SCM's answer; Status is free to leave as anything.
-export function ResolvePOScreen({ queue, currentId, weekLabel, onSave, onSelect, onNext, onPrevious }: ResolvePOScreenProps) {
+// flow is collecting the SCM's answer; Status is free to leave as anything. The queue passed in is
+// already scoped to one rule-type batch (see MyActionsPage's poGroups) — Save & Next only ever
+// moves within this batch; crossing into the next batch is the caller's job (onNext).
+export function ResolvePOScreen({ queue, currentId, weekLabel, sectionLabel, stepIndex, stepTotal, onSave, onSelect, onNext, onPrevious }: ResolvePOScreenProps) {
   const { allLines } = useData();
   const index = queue.findIndex((a) => a.id === currentId);
   const action = queue[index];
   const [draft, setDraft] = useState<ActionItem | null>(action ?? null);
   const [newComment, setNewComment] = useState('');
   const [showError, setShowError] = useState(false);
+  const [showLines, setShowLines] = useState(false);
 
   useEffect(() => {
     setDraft(action ?? null);
     setNewComment('');
     setShowError(false);
+    setShowLines(false);
   }, [action]);
 
   const poLines = useMemo(() => allLines.filter((l) => l.po === action?.poReference), [allLines, action]);
@@ -80,12 +87,34 @@ export function ResolvePOScreen({ queue, currentId, weekLabel, onSave, onSelect,
   if (!action || !draft) return null;
 
   const rootCauseRequired = needsRootCause(action);
-  const incomplete = rootCauseRequired && rootCauseMissing(draft);
+  // Non-R002 flags (e.g. R001 "book this shipment") have no structured root cause, but closing one
+  // still needs a real explanation of why it happened — "Booked" isn't an answer, it's a status.
+  // Same resolution-reason contract ActionCard/ActionDetailModal already enforce elsewhere: only
+  // required at the moment of closing, not before.
+  const resolutionReasonRequired = !rootCauseRequired;
+  const isClosing = draft.status === 'closed';
+  const resolutionReasonMissing = resolutionReasonRequired && isClosing && !draft.resolutionReason?.trim();
+  const incomplete = (rootCauseRequired && rootCauseMissing(draft)) || resolutionReasonMissing;
   const explanation = explainAction(action, poLine, rootCauseRequired);
 
   const handleComponentPoChange = (value: string) => {
     const match = value.toUpperCase().startsWith('PO-') ? allLines.find((l) => l.po.toUpperCase() === value.toUpperCase()) : undefined;
     setDraft((d) => d && ({ ...d, missingComponentPoNumber: value, ...(match ? { missingComponentSupplier: match.supplier } : {}) }));
+  };
+
+  // Selecting a root cause IS the resolution for an R002 flag (Ana: "root cause selection already
+  // is the why for these" — same rule ActionDetailModal documents) — so once it's complete, close
+  // the flag automatically instead of making the SCM also flip Status by hand. Clearing it back to
+  // incomplete reopens it, so a closed flag never ends up without a valid root cause.
+  const updateRootCauseField = (patch: Partial<ActionItem>) => {
+    setDraft((d) => {
+      if (!d) return d;
+      const merged = { ...d, ...patch };
+      const stillMissing = rootCauseMissing(merged);
+      if (stillMissing) return merged.status === 'closed' ? { ...merged, status: 'open' } : merged;
+      return merged.status === 'closed' ? merged : { ...merged, status: 'closed' };
+    });
+    setShowError(false);
   };
 
   const commit = () => {
@@ -108,8 +137,9 @@ export function ResolvePOScreen({ queue, currentId, weekLabel, onSave, onSelect,
           the same place, per spec point 4. */}
       <div className="w-60 shrink-0 border-r border-[#e9e3df] bg-white flex flex-col overflow-hidden">
         <div className="p-3 border-b border-[#f4f1ef] shrink-0">
-          <p className="text-xs font-bold text-[#403833]">{weekLabel} Actions</p>
-          <p className="text-[10px] text-[#9c9794] mt-0.5">{completedCount} of {queue.length} completed</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-brand">Step {stepIndex} of {stepTotal}</p>
+          <p className="text-xs font-bold text-[#403833] mt-0.5">{sectionLabel}</p>
+          <p className="text-[10px] text-[#9c9794] mt-0.5">{weekLabel} · {completedCount} of {queue.length} completed</p>
           <div className="h-1.5 bg-[#f5f2ee] rounded-full overflow-hidden mt-1.5">
             <div className="h-full bg-brand transition-all" style={{ width: `${queue.length ? (completedCount / queue.length) * 100 : 0}%` }} />
           </div>
@@ -162,7 +192,10 @@ export function ResolvePOScreen({ queue, currentId, weekLabel, onSave, onSelect,
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-lg font-extrabold text-[#403833]">{action.poReference}</p>
-              <p className="text-xs text-[#9c9794] mt-0.5">{action.supplierName || 'No supplier'}</p>
+              <p className="text-xs text-[#9c9794] mt-0.5">
+                {action.supplierName || 'No supplier'}
+                {poLine?.destination && <> · {poLine.destination}</>}
+              </p>
             </div>
             <span className={`text-[10px] font-semibold px-2 py-1 rounded-full whitespace-nowrap flex items-center gap-1.5 ${draft.status === 'closed' ? 'bg-pass-bg text-pass-text' : 'bg-fail-bg text-fail-text'}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[draft.status]}`} />
@@ -172,6 +205,44 @@ export function ResolvePOScreen({ queue, currentId, weekLabel, onSave, onSelect,
 
           <div className="bg-white rounded-lg border border-[#e9e3df] p-4">
             <POTimeline line={poLine} />
+          </div>
+
+          <div className="bg-white rounded-lg border border-[#e9e3df] overflow-hidden">
+            <button
+              onClick={() => setShowLines((v) => !v)}
+              className="w-full flex items-center justify-between px-4 py-3 text-left"
+            >
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9c9794]">
+                SKUs &amp; quantities ({poLines.length} line{poLines.length === 1 ? '' : 's'})
+              </span>
+              <ChevronDown size={14} className={`text-[#9c9794] transition-transform ${showLines ? 'rotate-180' : ''}`} />
+            </button>
+            {showLines && (
+              <div className="overflow-x-auto border-t border-[#f4f1ef]">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-[#9c9794]">
+                      {['SKU', 'Qty Ordered', 'Qty Confirmed', 'PGRD', 'EGRD', 'ESD', 'ASD'].map((h) => (
+                        <th key={h} className="px-3 py-2 text-left font-semibold uppercase tracking-wide text-[10px] whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {poLines.map((l) => (
+                      <tr key={`${l.po}-${l.line}`} className="border-t border-[#f4f1ef]">
+                        <td className="px-3 py-1.5 font-semibold text-[#403833] whitespace-nowrap">{l.sku}</td>
+                        <td className="px-3 py-1.5 text-[#58524e]">{l.qty.toLocaleString()}</td>
+                        <td className="px-3 py-1.5 text-[#58524e]">{l.cqty.toLocaleString()}</td>
+                        <td className="px-3 py-1.5 text-[#58524e] whitespace-nowrap">{formatDateMedium(l.pgrd)}</td>
+                        <td className="px-3 py-1.5 text-[#58524e] whitespace-nowrap">{formatDateMedium(l.egrd)}</td>
+                        <td className="px-3 py-1.5 text-[#58524e] whitespace-nowrap">{formatDateMedium(l.esd)}</td>
+                        <td className="px-3 py-1.5 text-[#58524e] whitespace-nowrap">{formatDateMedium(l.asd)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           <div className="bg-[#fff7ed] border border-brand/20 rounded-lg p-4 flex items-start gap-3">
@@ -202,8 +273,7 @@ export function ResolvePOScreen({ queue, currentId, weekLabel, onSave, onSelect,
                   value={draft.rootCauseReason ?? ''}
                   onChange={(e) => {
                     const value = (e.target.value || undefined) as RootCauseReason | undefined;
-                    setDraft({ ...draft, rootCauseReason: value, missingComponent: undefined, coverPoNumber: undefined });
-                    setShowError(false);
+                    updateRootCauseField({ rootCauseReason: value, missingComponent: undefined, coverPoNumber: undefined });
                   }}
                   className={`w-full text-xs border rounded-lg px-2.5 py-2 ${showError && incomplete ? 'border-fail' : 'border-[#e9e3df]'}`}
                 >
@@ -214,7 +284,7 @@ export function ResolvePOScreen({ queue, currentId, weekLabel, onSave, onSelect,
                   <div className="mt-2 space-y-2">
                     <input
                       value={draft.missingComponent ?? ''}
-                      onChange={(e) => { setDraft({ ...draft, missingComponent: e.target.value }); setShowError(false); }}
+                      onChange={(e) => updateRootCauseField({ missingComponent: e.target.value })}
                       placeholder="Which component is missing? (required)"
                       className={`w-full text-xs border rounded-lg px-2.5 py-2 ${showError && incomplete ? 'border-fail' : 'border-[#e9e3df]'}`}
                     />
@@ -235,12 +305,30 @@ export function ResolvePOScreen({ queue, currentId, weekLabel, onSave, onSelect,
                 {draft.rootCauseReason === 'covers' && (
                   <input
                     value={draft.coverPoNumber ?? ''}
-                    onChange={(e) => { setDraft({ ...draft, coverPoNumber: e.target.value }); setShowError(false); }}
+                    onChange={(e) => updateRootCauseField({ coverPoNumber: e.target.value })}
                     placeholder="Cover supplier's PO number (delayed)"
                     className={`mt-2 w-full text-xs border rounded-lg px-2.5 py-2 ${showError && incomplete ? 'border-fail' : 'border-[#e9e3df]'}`}
                   />
                 )}
                 {showError && incomplete && <p className="text-[10px] text-fail mt-1">A root cause is required to continue.</p>}
+              </div>
+            )}
+
+            {resolutionReasonRequired && (
+              <div>
+                <label className="text-[10px] font-semibold uppercase tracking-wide text-[#9c9794] block mb-1">Why did this happen?{isClosing ? ' (required to close)' : ''}</label>
+                <div className="bg-[#fff7ed] border border-brand/30 rounded-lg px-2.5 py-2 text-[10px] text-[#7b7571] leading-relaxed mb-1.5">
+                  <p className="font-semibold text-[#403833] mb-1">Before closing — capture the root cause (5 Whys):</p>
+                  1. Why did this happen? → 2. Why did that happen? → 3. Why? → 4. Why? → 5. Why? (root cause)
+                </div>
+                <textarea
+                  value={draft.resolutionReason ?? ''}
+                  onChange={(e) => { setDraft({ ...draft, resolutionReason: e.target.value }); setShowError(false); }}
+                  placeholder="Required to close — walk through the 5 Whys above (e.g. why wasn't this booked?)"
+                  rows={3}
+                  className={`w-full text-xs border rounded-lg px-2.5 py-2 resize-none ${showError && resolutionReasonMissing ? 'border-fail' : 'border-[#e9e3df]'}`}
+                />
+                {showError && resolutionReasonMissing && <p className="text-[10px] text-fail mt-1">A resolution reason is required to close this item — "Booked" isn't a reason.</p>}
               </div>
             )}
 

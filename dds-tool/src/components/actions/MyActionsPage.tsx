@@ -6,7 +6,7 @@ import { useActions } from '../../hooks/useActions';
 import { useData } from '../../context/DataContext';
 import { Sidebar } from '../shell/Sidebar';
 import { SCM_EMAILS, emailToDisplayName } from '../../lib/scmEmails';
-import { reasonBucket } from '../../lib/actionsUtils';
+import { RULE_LABELS } from '../../lib/actionsUtils';
 import {
   buildPgrdWeekOptions, buildPOQueue, buildOpenPointQueue, progressBucket,
   type ActionWeek,
@@ -23,6 +23,37 @@ const STATUS_DOT: Record<ActionStatus, string> = { open: 'bg-fail', in_progress:
 
 function weekKeyOf(w: ActionWeek) { return `${w.year}-${w.week}`; }
 
+// Fixed display order for rule-type batches — R001 (needs a booking) before R002 (needs a root
+// cause), since booking a shipment can sometimes resolve the SOT concern too. Any future rule not
+// listed here just falls in after these, alphabetically.
+const RULE_ORDER = ['R001', 'R002'];
+function ruleSortKey(ruleKey: string) {
+  const i = RULE_ORDER.indexOf(ruleKey);
+  return i === -1 ? RULE_ORDER.length : i;
+}
+
+interface PoActionGroup {
+  ruleKey: string;
+  label: string;
+  items: ActionItem[];
+}
+
+// Groups the PO-action queue by rule type — a PO can carry more than one open flag (e.g. both
+// R001 and R002), and mixing those into a single flat list made the same PO show up twice back to
+// back with completely different asks (book a shipment vs. explain a miss). One section per rule
+// type instead, worked through as its own step.
+function groupByRule(queue: ActionItem[]): PoActionGroup[] {
+  const byKey = new Map<string, ActionItem[]>();
+  for (const a of queue) {
+    const key = a.ruleKey ?? 'other';
+    if (!byKey.has(key)) byKey.set(key, []);
+    byKey.get(key)!.push(a);
+  }
+  return [...byKey.entries()]
+    .sort(([a], [b]) => ruleSortKey(a) - ruleSortKey(b))
+    .map(([ruleKey, items]) => ({ ruleKey, label: RULE_LABELS[ruleKey] ?? ruleKey, items }));
+}
+
 // Guided, one-task-at-a-time workflow for SCMs: pick who you are + which PGRD week you're working
 // on, then walk through every PO action assigned to you (and afterwards, your outstanding Open
 // Points) one screen at a time — a weekly task inbox, not another filterable dashboard. The
@@ -37,6 +68,7 @@ export function MyActionsPage() {
   const [loadedWeek, setLoadedWeek] = useState<ActionWeek | null>(null);
   const [poQueueIds, setPoQueueIds] = useState<string[]>([]);
   const [currentPoId, setCurrentPoId] = useState<string | null>(null);
+  const [activeRuleKey, setActiveRuleKey] = useState<string | null>(null);
   const [opQueueIds, setOpQueueIds] = useState<string[]>([]);
   const [currentOpId, setCurrentOpId] = useState<string | null>(null);
 
@@ -47,6 +79,9 @@ export function MyActionsPage() {
   // edits made while stepping through the queue are reflected immediately everywhere they're shown.
   const poQueue = useMemo(() => poQueueIds.map((id) => actions.find((a) => a.id === id)).filter((a): a is ActionItem => !!a), [poQueueIds, actions]);
   const opQueue = useMemo(() => opQueueIds.map((id) => actions.find((a) => a.id === id)).filter((a): a is ActionItem => !!a), [opQueueIds, actions]);
+  const poGroups = useMemo(() => groupByRule(poQueue), [poQueue]);
+  const activeGroupIndex = poGroups.findIndex((g) => g.ruleKey === activeRuleKey);
+  const activeQueue = activeGroupIndex >= 0 ? poGroups[activeGroupIndex].items : [];
 
   const completedPoCount = poQueue.filter((a) => progressBucket(a.status) === 'completed').length;
   const inProgressPoCount = poQueue.filter((a) => progressBucket(a.status) === 'in_progress').length;
@@ -55,7 +90,7 @@ export function MyActionsPage() {
 
   const reset = () => {
     setScm(''); setWeekKey(''); setScreen('select'); setLoadedWeek(null);
-    setPoQueueIds([]); setCurrentPoId(null); setOpQueueIds([]); setCurrentOpId(null);
+    setPoQueueIds([]); setCurrentPoId(null); setActiveRuleKey(null); setOpQueueIds([]); setCurrentOpId(null);
   };
 
   const handleLoad = () => {
@@ -67,8 +102,10 @@ export function MyActionsPage() {
     setScreen('overview');
   };
 
-  const startPoQueue = (startId?: string) => {
-    setCurrentPoId(startId ?? poQueue[0]?.id ?? null);
+  const startPoQueue = (ruleKey: string, startId?: string) => {
+    const group = poGroups.find((g) => g.ruleKey === ruleKey);
+    setActiveRuleKey(ruleKey);
+    setCurrentPoId(startId ?? group?.items[0]?.id ?? null);
     setScreen('resolve-po');
   };
 
@@ -78,6 +115,19 @@ export function MyActionsPage() {
       setScreen('po-complete');
     } else {
       setScreen('all-done');
+    }
+  };
+
+  // Advances past the last item in the CURRENT rule-type batch — moves on to the next batch (e.g.
+  // R001 bookings done -> straight into R002 root causes) rather than jumping to Open Points until
+  // every batch is actually done.
+  const advanceToNextBatch = () => {
+    const next = poGroups[activeGroupIndex + 1];
+    if (next) {
+      setActiveRuleKey(next.ruleKey);
+      setCurrentPoId(next.items[0]?.id ?? null);
+    } else {
+      afterPoQueueDone();
     }
   };
 
@@ -200,70 +250,79 @@ export function MyActionsPage() {
                 ))}
               </div>
 
-              <div className="bg-white rounded-lg border border-[#e9e3df] overflow-hidden mt-5">
-                <div className="px-4 py-3 border-b border-[#f4f1ef]">
-                  <p className="text-xs font-bold text-[#403833]">PO Actions ({poQueue.length})</p>
-                </div>
-                {poQueue.length === 0 ? (
+              {poQueue.length === 0 ? (
+                <div className="bg-white rounded-lg border border-[#e9e3df] mt-5">
                   <p className="text-center py-8 text-sm text-[#9c9794]">No PO actions for this SCM in {loadedWeek.label}.</p>
-                ) : (
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="text-[#9c9794]">
-                        {['#', 'PO Number', 'Supplier', 'Reason', 'PGRD Week', 'PGRD', 'ESD', 'Status', ''].map((h) => (
-                          <th key={h} className="px-3 py-2 text-left font-semibold uppercase tracking-wide text-[10px]">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {poQueue.map((a, i) => {
-                        const line = allLines.find((l) => l.po === a.poReference);
-                        return (
-                          <tr key={a.id} onClick={() => startPoQueue(a.id)} className="border-t border-[#f4f1ef] hover:bg-[#f9f7f6] cursor-pointer">
-                            <td className="px-3 py-2 text-[#9c9794]">{i + 1}</td>
-                            <td className="px-3 py-2 font-semibold text-[#403833] whitespace-nowrap">{a.poReference}</td>
-                            <td className="px-3 py-2 text-[#403833] max-w-[180px] truncate">{a.supplierName || '—'}</td>
-                            <td className="px-3 py-2 text-[#58524e] max-w-[200px] truncate">{reasonBucket(a)}</td>
-                            <td className="px-3 py-2 text-[#403833] whitespace-nowrap">{loadedWeek.label}</td>
-                            <td className="px-3 py-2 text-[#403833] whitespace-nowrap">{formatDateShort(line?.pgrd ?? null)}</td>
-                            <td className="px-3 py-2 text-[#403833] whitespace-nowrap">{formatDateShort(line?.esd ?? null)}</td>
-                            <td className="px-3 py-2 whitespace-nowrap">
-                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full inline-flex items-center gap-1.5 bg-[#f5f2ee] text-[#58524e]">
-                                <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[a.status]}`} />
-                                {STATUS_LABELS[a.status]}
-                              </span>
-                            </td>
-                            <td className="px-3 py-2 text-[#9c9794]">›</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-
-              {poQueue.length > 0 && (
-                <div className="flex justify-end mt-4">
-                  <button onClick={() => startPoQueue()} className="text-sm font-semibold text-white bg-brand rounded-lg px-5 py-2 hover:bg-brand-soft transition-colors">
-                    {completedPoCount > 0 ? 'Continue' : 'Start'} resolving →
-                  </button>
                 </div>
+              ) : (
+                // One section per rule type (step), not a single flat list — the same PO can
+                // otherwise show up twice back to back with two completely different asks.
+                poGroups.map((g) => {
+                  const groupCompleted = g.items.filter((a) => progressBucket(a.status) === 'completed').length;
+                  return (
+                    <div key={g.ruleKey} className="bg-white rounded-lg border border-[#e9e3df] overflow-hidden mt-5">
+                      <div className="px-4 py-3 border-b border-[#f4f1ef] flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-bold text-[#403833]">{g.label}</p>
+                          <p className="text-[10px] text-[#9c9794] mt-0.5">{groupCompleted} of {g.items.length} completed</p>
+                        </div>
+                        <button onClick={() => startPoQueue(g.ruleKey)} className="text-xs font-semibold text-white bg-brand rounded-lg px-3.5 py-1.5 hover:bg-brand-soft transition-colors shrink-0">
+                          {groupCompleted > 0 ? 'Continue' : 'Start'} →
+                        </button>
+                      </div>
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="text-[#9c9794]">
+                            {['#', 'PO Number', 'Supplier', 'PGRD Week', 'PGRD', 'ESD', 'Status', ''].map((h) => (
+                              <th key={h} className="px-3 py-2 text-left font-semibold uppercase tracking-wide text-[10px]">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {g.items.map((a, i) => {
+                            const line = allLines.find((l) => l.po === a.poReference);
+                            return (
+                              <tr key={a.id} onClick={() => startPoQueue(g.ruleKey, a.id)} className="border-t border-[#f4f1ef] hover:bg-[#f9f7f6] cursor-pointer">
+                                <td className="px-3 py-2 text-[#9c9794]">{i + 1}</td>
+                                <td className="px-3 py-2 font-semibold text-[#403833] whitespace-nowrap">{a.poReference}</td>
+                                <td className="px-3 py-2 text-[#403833] max-w-[180px] truncate">{a.supplierName || '—'}</td>
+                                <td className="px-3 py-2 text-[#403833] whitespace-nowrap">{loadedWeek.label}</td>
+                                <td className="px-3 py-2 text-[#403833] whitespace-nowrap">{formatDateShort(line?.pgrd ?? null)}</td>
+                                <td className="px-3 py-2 text-[#403833] whitespace-nowrap">{formatDateShort(line?.esd ?? null)}</td>
+                                <td className="px-3 py-2 whitespace-nowrap">
+                                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full inline-flex items-center gap-1.5 bg-[#f5f2ee] text-[#58524e]">
+                                    <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[a.status]}`} />
+                                    {STATUS_LABELS[a.status]}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2 text-[#9c9794]">›</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
         )}
 
-        {screen === 'resolve-po' && currentPoId && loadedWeek && (
+        {screen === 'resolve-po' && currentPoId && loadedWeek && activeGroupIndex >= 0 && (
           <ResolvePOScreen
-            queue={poQueue}
+            queue={activeQueue}
             currentId={currentPoId}
             weekLabel={loadedWeek.label}
+            sectionLabel={poGroups[activeGroupIndex].label}
+            stepIndex={activeGroupIndex + 1}
+            stepTotal={poGroups.length}
             onSave={(id, patch) => updateAction(id, patch)}
             onSelect={setCurrentPoId}
-            onNext={afterPoQueueDone}
+            onNext={advanceToNextBatch}
             onPrevious={() => {
-              const idx = poQueue.findIndex((a) => a.id === currentPoId);
-              if (idx > 0) setCurrentPoId(poQueue[idx - 1].id);
+              const idx = activeQueue.findIndex((a) => a.id === currentPoId);
+              if (idx > 0) setCurrentPoId(activeQueue[idx - 1].id);
             }}
           />
         )}
