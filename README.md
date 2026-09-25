@@ -5,23 +5,9 @@ order exports and get a single view of SOT/OTIF performance, backlog, missing bo
 lead times, and root-cause tracking — plus a guided weekly workflow for SCMs to resolve their own
 flagged actions.
 
-## Repo structure
-
-This repo currently contains **two implementations of the same app**, kept in lockstep feature-for-feature:
-
-```
-dds-tool/   Next.js 15 (App Router) — current production app, deployed on Vercel
-pct-web/    Vite + React Router — migration target for moving off Vercel, not yet deployed
-```
-
-Every change is mirrored between the two. `dds-tool` is the one currently live; `pct-web` exists so
-the app can move to a different hosting platform without a rewrite. Whether `pct-web` eventually
-replaces `dds-tool` outright, or both keep being maintained side by side, is still an open decision —
-until it's made, treat both as equally real.
-
 ## Branching & deploys
 
-- **`main`** — production. Vercel builds and deploys `dds-tool` from this branch automatically.
+- **`main`** — production. Vercel builds and deploys from this branch automatically.
 - **`dev`** — everything else. Push work-in-progress here first; Vercel gives it its own preview
   deployment on a separate URL, so nothing lands in front of real users until it's been checked.
 - Merge `dev` → `main` only once a change has been verified in the preview deployment.
@@ -46,11 +32,9 @@ category, and PGRD-week filters:
 
 ## Running it
 
-Both apps need Node.js 20+ and read their data entirely client-side (nothing persists server-side
-except the two Anthropic/Airtable-backed API routes noted below) — actions and uploaded data live in
-the browser's `localStorage` for the session.
-
-### dds-tool (Next.js)
+Needs Node.js 20+. The app is pure client-side — nothing persists server-side except the two
+Airtable/Anthropic-backed API routes noted below; uploaded data and actions live in the browser's
+`localStorage` for the session.
 
 ```bash
 cd dds-tool
@@ -59,18 +43,8 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000). Needs `AIRTABLE_API_KEY`, `AIRTABLE_BASE_ID`,
-and an Anthropic key (see `.env.example`) for the vendor-mapping and loss-reason-classification API
-routes — everything else works without them.
-
-### pct-web (Vite)
-
-```bash
-cd pct-web
-npm install
-npm run dev
-```
-
-Opens on Vite's default port. No server-side API routes — this app is fully static/client-side.
+and an Anthropic key (see `dds-tool/.env.example`) for the vendor-mapping (China-supplier detection)
+and loss-reason-classification API routes — everything else works without them.
 
 ### Uploading data
 
@@ -92,23 +66,22 @@ Weeks are ISO (Monday–Sunday), PGRD is always a week-ending Sunday.
 
 ## Tech stack
 
-| | dds-tool | pct-web |
-|---|---|---|
-| Framework | Next.js 15 (App Router, client-only) | Vite + React Router |
-| Language | TypeScript | TypeScript |
-| Styling | Tailwind CSS | Tailwind CSS |
-| Charts | Recharts | Recharts |
-| Parsing | `xlsx` (formula/HTML injection disabled) | `xlsx` |
-| Dates | `date-fns` | `date-fns` |
+- **Next.js 15** (App Router, client-only — no server components, no SSR)
+- **TypeScript**
+- **Tailwind CSS**
+- **Recharts** for charts
+- **xlsx** for parsing BC exports (formula/HTML injection disabled)
+- **date-fns** for date logic
 
-## Repo layout (per app)
+## Repo layout
 
 ```
-src/
-  app/ or pages via App.tsx   routes — one per drill-down page
-  components/                 Dashboard, drill-downs, Actions/My Actions, shared UI
-  context/                    DataContext — uploaded PO lines, invoices, global filters
-  hooks/                      useFilters, useKPIs, useActions, useVendorMapping
-  lib/                        business logic — kpiFormulas, rulesEngine, poAggregation, bcParser
-  types/                      shared TypeScript interfaces
+dds-tool/
+  src/
+    app/           routes — one folder per page (App Router)
+    components/    Dashboard, drill-downs, Actions/My Actions, shared UI
+    context/       DataContext — uploaded PO lines, invoices, global filters
+    hooks/         useFilters, useKPIs, useActions, useVendorMapping
+    lib/           business logic — kpiFormulas, rulesEngine, poAggregation, bcParser
+    types/         shared TypeScript interfaces
 ```
